@@ -186,7 +186,7 @@ if Confirm.ask('Would you like to update your device now?'):
         contents = update_conf_file.read().decode('utf-8') #TODO: Doesn't support beta versions (fwiw modifying beta is against eula & tos - unrelated to changing versions tho!)
         data_attributes = contents.split('\n')
 
-        data_attributes[2] = f"#SERVER={server_host_name}"
+        data_attributes[2] = f"SERVER={server_host_name}"
 
         modified_conf_version = '\n'.join(data_attributes) # add final ?
 

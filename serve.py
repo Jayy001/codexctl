@@ -170,7 +170,12 @@ def get_host_name():
 
     return hostname(host)
 
-def start_server(host_name):
+def start_server(hn):
+    global host_name
+    host_name = hn
+    
+    global available_versions
+    
     available_versions = scan_updates()
 
     print("Device should use: ", host_name)
