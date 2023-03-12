@@ -58,8 +58,12 @@ class updates_manager: # or checker
     def get_latest_toltec_supported(self):
         console.print("Getting latest [yellow bold]toltec supported[/yellow bold] version")
         site_body_html = requests.get('https://toltec-dev.org/').text # or /raw ?
+        m = re.search('Toltec does not support OS builds newer than (.*)\. You will soft-brick', site_body_html)
+        if m is None:
+            console.print('[red]Failed to get latest toltec supported version. Unable to find text[/red]')
+            return None
 
-        return re.search('Toltec does not support OS builds newer than (.*)\. You will soft-brick', site_body_html).group(1).strip()
+        return m.group(1).strip()
 
     def get_latest_update(self):
         data = self._generate_xml_data()
