@@ -4,16 +4,20 @@
 # rm-update-helper (REMARKABLE 2 FOR NOW ONLY) 
 A quick script that helps to upgrade/downgrade the remarkable device using [ddvks update server](https://github.com/ddvk/remarkable-update)
 
-
-
 # How to use?
 
 Firstly, connect your RM over usb. Make sure its reachable.
 Then you have a couple of options - either download the compiled .exe in the "releases" tab or download and run it manually from the source.
 
 To run it from source, install the required libs:
-```
+```shell
 pip install paramiko rich
+```
+
+After you've installed the dependencies you can run the script with the following:
+
+```shell
+python main.py
 ```
 
 When prompted, enter your desired version - (no current supported for the latest 3.x.x & beta versions, eventually it will get all up-to-date updates). Leave blank for the latest [toltec](https://toltec-dev.org/) supported version
