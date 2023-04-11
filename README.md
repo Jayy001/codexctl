@@ -11,9 +11,15 @@ A quick script that helps to upgrade/downgrade the remarkable device using [ddvk
 Firstly, connect your RM over usb. Make sure its reachable.
 Then you have a couple of options - either download the compiled .exe in the "releases" tab or download and run it manually from the source.
 
-To run it from source, install the required libs:
+To run it from source:
+1. Clone this repo into a local directory.
+2. Install the required libs:
 ```
-pip install paramiko rich
+pip install paramiko rich toml
+```
+3. Run the script:
+```
+python main.py
 ```
 
 When prompted, enter your desired version - (no current supported for the latest 3.x.x & beta versions, eventually it will get all up-to-date updates). Leave blank for the latest [toltec](https://toltec-dev.org/) supported version
