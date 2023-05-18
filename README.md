@@ -11,7 +11,7 @@ Then you have a couple of options - either download the compiled .exe in the "re
 
 To run it from source, install the required libs:
 ```shell
-pip install paramiko rich
+pip install paramiko rich netifaces
 ```
 
 After you've installed the dependencies you can run the script with the following:
