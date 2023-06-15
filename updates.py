@@ -46,7 +46,7 @@ class update_manager:
             self.latest_version = latest_version
 
         if toltec:
-            self.latest_toltec_version = self.get_latest_toltec_supported()
+            self.latest_toltec_version = "2.15.1.1189" # Crutch
 
     def get_update(self, version=None):
         if version is None:
@@ -68,7 +68,8 @@ class update_manager:
 
         return self.download_file(file_url, file_name)
 
-    def get_latest_toltec_supported(self):
+    # DO NOT USE
+    def __get_latest_toltec_supported(self):
         console.print(
             "Getting latest [yellow bold]toltec supported[/yellow bold] version"
         )
