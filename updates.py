@@ -40,13 +40,17 @@ class update_manager:
         if not os.path.exists("updates"):
             os.mkdir("updates")
 
-        if latest_version is None:
-            self.latest_version = self.get_latest_update()[0]  # Version
-        else:
-            self.latest_version = latest_version
+        self.latest_version = latest_version
+
+        if self.latest_version is None:
+            self.latest_version = self.get_latest_update()  # Version
+
+            if self.latest_version is None:
+                self.latest_version = "3.2.3.1595"
+            
 
         if toltec:
-            self.latest_toltec_version = "2.15.1.1189" # Crutch
+            self.latest_toltec_version = "2.15.1.1189" # Crutc
 
     def get_update(self, version=None):
         if version is None:
