@@ -26,6 +26,6 @@ jobs:
       - run: pyinstaller -n rm-update-helper -F main.py
       - uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.repo }}
+          name: ${{ matrix.os }}
           path: dist
           if-no-files-found: error
