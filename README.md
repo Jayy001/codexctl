@@ -11,6 +11,7 @@ Then you have a couple of options - either download the compiled .exe in the "re
 
 To run it from source, install the required libs:
 ```shell
+pip install wheel
 pip install paramiko rich netifaces requests
 ```
 
