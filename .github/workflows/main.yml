@@ -1,0 +1,31 @@
+name: build
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+jobs:
+  repos:
+    name: Build for ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the Git repository
+        uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+          cache: 'pip'
+      - run: pip install wheel
+      - run: pip install -r requirements.txt
+      - run: pip install pyinstaller
+      - run: pyinstaller -n rm-update-helper -F main.py
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.os }}
+          path: dist
+          if-no-files-found: error
