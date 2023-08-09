@@ -7,7 +7,6 @@ A quick script that helps to upgrade/downgrade the remarkable device using [ddvk
 # How to use?
 
 Firstly, connect your RM over usb. Make sure its reachable.
-Then you have a couple of options - either download the compiled .exe in the "releases" tab or download and run it manually from the source.
 
 To run it from source, install the required libs:
 ```shell
