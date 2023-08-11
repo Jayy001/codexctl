@@ -46,7 +46,8 @@ jobs:
           path: artifacts
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "artifacts/*"
+          artifacts: "artifacts/*/*"
           name: ${{ env.NAME }}
           tag: ${{ env.TAG }}
           generateReleaseNotes: true
+          makeLatest: true
