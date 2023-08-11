@@ -44,6 +44,15 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           path: artifacts
+      - name: Rename artifacts
+        run: |
+          ls artifacts | while read artifact; do
+            pushd artifacts/${artifact}
+            ls | while read file; do
+              mv ${file} ${artifact}.${file}
+            done
+            popd
+          done
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "artifacts/*/*"
