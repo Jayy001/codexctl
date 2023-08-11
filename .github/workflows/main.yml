@@ -38,11 +38,15 @@ jobs:
       contents: write
     steps:
       - name: Set current date as env variable
-        run: echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
+        run: |
+          echo "NAME=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
+          echo "TAG=$(date +'%Y.%m.%d.%H.%M.%S')" >> $GITHUB_ENV
       - uses: actions/download-artifact@v3
         with:
           path: artifacts
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "artifacts/*"
-          tag: ${{ env.NOW }}
+          name: ${{ env.NAME }}
+          tag: ${{ env.TAG }}
+          generateReleaseNotes: true
