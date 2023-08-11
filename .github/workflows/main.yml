@@ -48,7 +48,7 @@ jobs:
         run: |
           ls artifacts | while read artifact; do
             pushd artifacts/${artifact}
-            zip ../${artifact}.zip .
+            zip -r ../${artifact}.zip .
             popd
           done
       - uses: ncipollo/release-action@v1
