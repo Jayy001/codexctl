@@ -49,5 +49,6 @@ jobs:
           artifacts: "artifacts/*/*"
           name: ${{ env.NAME }}
           tag: ${{ env.TAG }}
+          commit: ${{ github.sha }}
           generateReleaseNotes: true
           makeLatest: true
