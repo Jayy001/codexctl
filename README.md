@@ -10,6 +10,7 @@ Firstly, connect your RM over usb. Make sure its reachable.
 
 To run it from source, install the required libs:
 ```shell
+pip install wheel
 pip install paramiko rich netifaces requests
 ```
 
