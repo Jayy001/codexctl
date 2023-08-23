@@ -11,7 +11,7 @@ jobs:
     name: Build for ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the Git repository
@@ -29,3 +29,33 @@ jobs:
           name: ${{ matrix.os }}
           path: dist
           if-no-files-found: error
+  release:
+    name: Release
+    needs: [repos]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - name: Set current date as env variable
+        run: |
+          echo "NAME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
+          echo "TAG=$(date +%s)" >> $GITHUB_ENV
+      - uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      - name: Rename artifacts
+        run: |
+          ls artifacts | while read artifact; do
+            pushd artifacts/${artifact}
+            zip -r ../${artifact}.zip .
+            popd
+          done
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "artifacts/*.zip"
+          name: ${{ env.NAME }}
+          tag: ${{ env.TAG }}
+          commit: ${{ github.sha }}
+          generateReleaseNotes: true
+          makeLatest: true
