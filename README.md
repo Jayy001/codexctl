@@ -1,7 +1,7 @@
 <p align="center">
 <img src="demo.gif">
   
-# rm-update-helper (REMARKABLE 2 FOR NOW ONLY) 
+# rm-update-helper (MIGRATIONS IN PROGRESS) 
 A quick script that helps to upgrade/downgrade the remarkable device using [ddvks update server](https://github.com/ddvk/remarkable-update)
 
 # How to use?
