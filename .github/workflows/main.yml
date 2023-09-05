@@ -21,13 +21,13 @@ jobs:
           python-version: '3.8'
           cache: 'pip'
       - run: pip install wheel
-      - run: pip install -r requirements.txt
+      - run: cd remote && pip install -r requirements.txt
       - run: pip install pyinstaller
-      - run: pyinstaller -n rm-update-helper -F main.py
+      - run: cd remote && pyinstaller -n rm-update-helper -F main.py
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}
-          path: dist
+          path: remote/dist
           if-no-files-found: error
   release:
     name: Release
