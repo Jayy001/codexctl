@@ -8,6 +8,8 @@ A quick script that helps to upgrade/downgrade the remarkable device using [ddvk
 
 Firstly, connect your RM over usb. Make sure its reachable.
 
+You can find the latest built version of the tool for your computer attached to the [latest release](https://github.com/Jayy001/codexctl/releases).
+
 To run it from source, install the required libs:
 ```shell
 pip install wheel
