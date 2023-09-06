@@ -14,7 +14,7 @@ pip install wheel
 pip install paramiko rich netifaces requests
 ```
 
-After you've installed the dependencies you can run the script with the following:
+After you've installed the dependencies you can run the script in the remote directory with the following:
 
 ```shell
 python main.py
