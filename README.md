@@ -24,14 +24,14 @@ When prompted, enter your desired version - (no current supported for the latest
 
 The script will then attempt to download the version file, modify the RM devices config and start the update server. Once this is done, either:
 
-1) SSH into the device, and run
+- SSH into the device, and run
 ```
 systemctl start update-engine
 update_engine_client -check_for_update
 journalctl -u update-engine -f
 reboot
 ```
-2) Navigate to the devices "update" setting. Click check for updates and then reboot once its done.
+- Navigate to the devices "update" setting. Click check for updates and then reboot once its done.
 
 # What if I want to upgrade back to the latest version?
 
