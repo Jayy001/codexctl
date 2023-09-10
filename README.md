@@ -1,28 +1,63 @@
 <p align="center">
 <img src="demo.gif">
-  
-# rm-update-helper (MIGRATIONS IN PROGRESS) 
-A quick script that helps to upgrade/downgrade the remarkable device using [ddvks update server](https://github.com/ddvk/remarkable-update)
 
-# How to use?
+# Codexctl
+A utility program that helps to manage the remarkable device version utilizing [ddvks update server](https://github.com/ddvk/remarkable-update) 
 
-Firstly, connect your RM over usb. Make sure its reachable.
+### Installation and use
 
-To run it from source, install the required libs:
-```shell
-pip install wheel
-pip install paramiko rich netifaces requests
+This program is can be directly ran on the ReMarkable device as well as from a remote device such as your computer, it currently only has support for **command line interfaces** but a graphical interface is soon to come. The steps to install are closely similar apart from the couple of extra depedancies needed for running on a remote device. 
+
+```
+git clone https://github.com/Jayy001/codexctl.git 
+cd codexctl
+pip install requests
 ```
 
-After you've installed the dependencies you can run the script with the following:
+Thats it for running it directly on the remarkable. If you are running on a remote device you will need to run the following too,
 
-```shell
-python main.py
+```
+pip install paramiko # This is for SSH access
+pip install netifaces # This is for getting the IP of the remote host
 ```
 
-When prompted, enter your desired version - (no current supported for the latest 3.x.x & beta versions, eventually it will get all up-to-date updates). Leave blank for the latest [toltec](https://toltec-dev.org/) supported version
 
-The script will then attempt to download the version file, modify the RM devices config and start the update server. Once this is done, either:
+
+The script is designed to have as little interactivity as possible (apart from entering the password when connecting  & managing remotely) meaning arguments are directly taken from the command to run the script. 
+
+```
+❯ python codexctl.py --help
+usage: Codexctl app [-h] [--debug] {install,download,status,list} ...
+
+positional arguments:
+  {install,download,status,list}
+    install             Install the specified version (will download if not available on the device)
+    download            Download the specified version firmware file
+    status              Get the current version of the device and other information
+    list                List all versions available for use
+
+options:
+  -h, --help            show this help message and exit
+  --debug               Print debug info
+```
+
+
+
+### Examples
+
+```
+python codexctl.py install --version latest # Downloads & installs the latest version 
+python codexctl.py download --version toltec # Downloads the latest toltec version to updates folder
+python codexctl.py install # Installs the most up to date version firmware found in updates folder
+python codexctl.py list # Lists all avaliable versions
+python codexctl.py status # Gives the current & previous versions installed 
+```
+
+
+
+## Limitations (PLEASE READ THIS!)
+
+Currently only the *install* and *download* features are only available when running directly on the ReMarkable device itself as it utilizes reading the confirm files but there are plans to make this available when running from a remote device. Furthermore if installing from a remote device, it will not automate the process of checking for an update on the remarkable device so you will have to do one of the following once the update server is running:
 
 1) SSH into the device, and run
 ```
@@ -32,8 +67,4 @@ journalctl -u update-engine -f
 reboot
 ```
 2) Navigate to the devices "update" setting. Click check for updates and then reboot once its done.
-
-# What if I want to upgrade back to the latest version?
-
-Just check for udates on the tablet and it'll take you to the latest one! This script does not permanently modify anything. 
 
