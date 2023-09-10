@@ -1,5 +1,5 @@
 <p align="center">
-<img src="demo.gif">
+<img src="media/demoLocal.gif">
 
 # Codexctl
 A utility program that helps to manage the remarkable device version utilizing [ddvks update server](https://github.com/ddvk/remarkable-update) 
