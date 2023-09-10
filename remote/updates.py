@@ -16,6 +16,11 @@ class update_manager:
             "https://updates.cloud.remarkable.engineering/service/update2"
         )
         self.id_lookups = {
+            "3.6.0.1865": "7wgexMSZP5",
+            "3.5.2.1807": "3bZjC0Xn5C",
+            "3.5.1.1798": "9CfoVp8qCU",
+            "3.4.1.1790": "rYfHxYmwC8",
+            "3.4.0.1784": "fD3GCOcU9m",
             "3.3.2.1666": "ihUirIf133",
             "3.2.3.1595": "fTtpld3Mvn",
             "3.2.2.1581": "dwyp884gLP",
