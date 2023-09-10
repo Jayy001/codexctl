@@ -10,8 +10,13 @@ class UpdateManager:
 		self.updates_url = (
 			"https://updates.cloud.remarkable.engineering/service/update2"
 		)
-		self.device_version = device_version if device_version else '3.2.3.1595'
+		self.device_version = device_version if device_version else "3.2.3.1595"
 		self.id_lookups = {
+			"3.6.0.1865": "7wgexMSZP5",
+			"3.5.2.1807": "3bZjC0Xn5C",
+			"3.5.1.1798": "9CfoVp8qCU",
+			"3.4.1.1790": "rYfHxYmwC8",
+			"3.4.0.1784": "fD3GCOcU9m",
 			"3.3.2.1666": "ihUirIf133",
 			"3.2.3.1595": "fTtpld3Mvn",
 			"3.2.2.1581": "dwyp884gLP",
@@ -36,10 +41,10 @@ class UpdateManager:
 		if not os.path.exists("updates"):
 			os.mkdir("updates")
 
-		self.latest_version = self.get_latest_version()  
-			
-		self.latest_toltec_version = "2.15.1.1189" # Crutch
-	
+		self.latest_version = self.get_latest_version()
+
+		self.latest_toltec_version = "2.15.1.1189"  # Crutch
+
 	def get_version(self, version=None):
 		if version is None:
 			version = self.latest_version
@@ -59,7 +64,7 @@ class UpdateManager:
 		file_url = f"{BASE_URL}/{version}/{file_name}"
 
 		return self.download_file(file_url, file_name)
- 
+
 	def __get_latest_toltec_supported(self):
 		site_body_html = requests.get("https://toltec-dev.org/").text  # or /raw ?
 		m = re.search(
@@ -80,7 +85,7 @@ class UpdateManager:
 			return
 
 		file_version, file_uri, file_name = self._parse_response(response)
-		
+
 		return file_version
 
 	def _generate_xml_data(self):
@@ -145,21 +150,25 @@ class UpdateManager:
 		return file_version, file_uri, file_name
 
 	@staticmethod
-	def download_file(uri, name): # Credit to https://stackoverflow.com/questions/15644964/python-progress-bar-and-downloads
+	def download_file(
+		uri, name
+	):  # Credit to https://stackoverflow.com/questions/15644964/python-progress-bar-and-downloads
 		with open(f"updates/{name}", "wb") as f:
-		    response = requests.get(uri, stream=True)
-		    total_length = response.headers.get('content-length')
+			response = requests.get(uri, stream=True)
+			total_length = response.headers.get("content-length")
 
-		    if total_length is None: # no content length header, TODO: Error handling & Hash checking
-		        f.write(response.content)
-		    else:
-		        dl = 0
-		        total_length = int(total_length)
-		        for data in response.iter_content(chunk_size=4096):
-		            dl += len(data)
-		            f.write(data)
-		            done = int(50 * dl / total_length)
-		            sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (50-done)) )    
-		            sys.stdout.flush()
-		print(end='\r')
+			if (
+				total_length is None
+			):  # no content length header, TODO: Error handling & Hash checking
+				f.write(response.content)
+			else:
+				dl = 0
+				total_length = int(total_length)
+				for data in response.iter_content(chunk_size=4096):
+					dl += len(data)
+					f.write(data)
+					done = int(50 * dl / total_length)
+					sys.stdout.write("\r[%s%s]" % ("=" * done, " " * (50 - done)))
+					sys.stdout.flush()
+		print(end="\r\n")
 		return name

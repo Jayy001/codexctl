@@ -111,7 +111,7 @@ class MySimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
                     "update_sha1": update_sha1,
                     "update_sha256": update_sha256,
                     "update_size" : update_size,
-                    "codebase_url": 'http://localhost:8000/',
+                    "codebase_url": host_url,
                     }
 
             response = response_template.format(**params)
@@ -142,14 +142,19 @@ class MySimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
             self.wfile.write(response_ok.encode())
             return
 
-def startUpdate(versionsGiven):
+def startUpdate(versionsGiven, host, port=8080):
     global available_versions
+    global host_url # I am aware globals are generally bad practice, but this is a quick and dirty solution
+    
+    host_url = f'http://{host}:{port}/' 
     available_versions = versionsGiven
+    
+    print(versionsGiven, host)
 
     if not available_versions:
         raise FileNotFoundError("Could not find any update files")
 
     handler = MySimpleHTTPRequestHandler
-    httpd = HTTPServer(('0.0.0.0', 8000), handler)
-    print(f"Starting fake updater: 8000")
+    httpd = HTTPServer((host, port), handler)
+    print(f"Starting fake updater at {host}:{port}")
     httpd.serve_forever()
