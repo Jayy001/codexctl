@@ -1,5 +1,5 @@
 <p align="center">
-<img src="demo.gif">
+<img src="media/demoLocal.gif">
 
 # Codexctl
 A utility program that helps to manage the remarkable device version utilizing [ddvks update server](https://github.com/ddvk/remarkable-update) 
@@ -22,18 +22,19 @@ pip install netifaces # This is for getting the IP of the remote host
 ```
 
 
-
 The script is designed to have as little interactivity as possible (apart from entering the password when connecting  & managing remotely) meaning arguments are directly taken from the command to run the script. 
 
 ```
-❯ python codexctl.py --help
-usage: Codexctl app [-h] [--debug] {install,download,status,list} ...
+❯ python codexctl.py  --help
+usage: Codexctl app [-h] [--debug] {install,download,status,restore,list} ...
 
 positional arguments:
-  {install,download,status,list}
-    install             Install the specified version (will download if not available on the device)
+  {install,download,status,restore,list}
+    install             Install the specified version (will download if not available on the
+                        device)
     download            Download the specified version firmware file
     status              Get the current version of the device and other information
+    restore             Restores to previous version installed on device
     list                List all versions available for use
 
 options:
@@ -41,30 +42,12 @@ options:
   --debug               Print debug info
 ```
 
-
-
-### Examples
-
+# Examples
 ```
-python codexctl.py install --version latest # Downloads & installs the latest version 
-python codexctl.py download --version toltec # Downloads the latest toltec version to updates folder
-python codexctl.py install # Installs the most up to date version firmware found in updates folder
-python codexctl.py list # Lists all avaliable versions
-python codexctl.py status # Gives the current & previous versions installed 
+python codexctl.py install latest # Downloads and installs latest version
+python codexctl.py download toltec # Downloads latest version that has full support for toltec
+python codexctl.py download 3.0.4.1305 --rm1 # Downloads 3.0.4.1305 firmware file for remarkable 1
+python codexctl.py status # Prints current & previous version (can only be used when running on device itself)
+python codexctl.py list # Lists all available versions 
+python codexctl.py restore # Restores previous version
 ```
-
-
-
-## Limitations (PLEASE READ THIS!)
-
-Currently only the *install* and *download* features are only available when running directly on the ReMarkable device itself as it utilizes reading the confirm files but there are plans to make this available when running from a remote device. Furthermore if installing from a remote device, it will not automate the process of checking for an update on the remarkable device so you will have to do one of the following once the update server is running:
-
-1) SSH into the device, and run
-```
-systemctl start update-engine
-update_engine_client -check_for_update
-journalctl -u update-engine -f
-reboot
-```
-2) Navigate to the devices "update" setting. Click check for updates and then reboot once its done.
-
