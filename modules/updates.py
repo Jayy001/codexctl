@@ -68,9 +68,7 @@ class UpdateManager:
 		if not os.path.exists("updates"):
 			os.mkdir("updates")
 
-		#self.latest_version = self.get_latest_version()
-
-		self.latest_toltec_version = "2.15.1.1189"  #TODO: This is a crutch
+		self.latest_toltec_version = "2.15.1.1189" 
 
 	def get_version(self, device=2, version=None):
 		if device == 1:

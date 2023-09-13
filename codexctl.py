@@ -8,6 +8,7 @@ import subprocess
 import re
 import threading
 import os.path
+import logging
 
 remoteDepsMet = True
 
@@ -19,6 +20,8 @@ except ImportError:
 
 parser = argparse.ArgumentParser("Codexctl app")
 parser.add_argument("--debug", action="store_true", help="Print debug info")
+parser.add_argument("--rm1", action="store_true", default=False, help="Use rm1")
+parser.add_argument("--password", required=False, help="Specify password for SSH")
 
 subparsers = parser.add_subparsers(dest="command")
 subparsers.required = True  # This fixes a bug with older versions of python
@@ -41,22 +44,14 @@ list_ = subparsers.add_parser("list", help="List all versions available for use"
 install.add_argument("version", help="Version to install")
 download.add_argument("version", help="Version to download")
 
-download.add_argument(
-    "--rm1", help="Add this to select rm1", action="store_true", required=False
-)
-install.add_argument(
-    "--rm1", help="Add this to select rm1", action="store_true", required=False
-)
-
 args = parser.parse_args()
 updateman = UpdateManager()
 choice = args.command
 
 deviceType = 2
 
-if hasattr(args, "rm1"):
-    if args.rm1:
-        deviceType = 1  # Weird checking but okay/alright
+if args.rm1:
+    deviceType = 1  
 
 restoreCode = """
 # switches the active root partition
@@ -118,7 +113,17 @@ def connect_to_rm(ip="10.11.99.1"):
     client = paramiko.client.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-    if "n" in input("Would you like to use a password to connect? (Y/n) ").lower():
+    if args.password:
+        try:
+            client.connect("10.11.99.1", username="root", password=args.password)
+            
+            print("Connected to device")
+            return client
+        
+        except paramiko.ssh_exception.AuthenticationException:
+            print("Incorrect password given in arguments!: {error}")
+            
+    if "n" in input("Would you like to manually a password to connect? (Y/n) ").lower():
         while True:
             key_path = input("Enter path to SSH key: ")
 
@@ -233,7 +238,7 @@ if choice == "install":
 
         elif len(serverHost) == 1:  # This means its found the USB interface
             serverHost = serverHost[0]
-            remarkableRemote = connect_to_rm("10.11.99.1")
+            remarkableRemote = connect_to_rm()
         else:
             hostInterfaces = "\n".join(serverHost)
 
@@ -259,9 +264,10 @@ if choice == "install":
 
     edit_config(remarkableRemote=remarkableRemote, serverIP=serverHost, port=8080)
 
+    print(f'Available versions to update to are: {availableVersions}\nThe device will update to the latest one.')
     x = threading.Thread(
         target=startUpdate, args=(availableVersions, serverHost), daemon=True
-    )  # TODO: Get version automatically
+    )
     x.start()
 
     # Is it worth mapping the messages to a variable?
@@ -284,6 +290,13 @@ if choice == "install":
         if "y" in input("Done! Would you like to shutdown?: ").lower():
             subprocess.run(["shutdown", "now"])
     else:
+        print('Checking if device can reach server')
+        _stdin, stdout, _stderr = remarkableRemote.exec_command(f"sleep 2 && echo | nc {serverHost} 8080")
+        stdout.channel.recv_exit_status()
+        
+        if stdout.channel.recv_exit_status() != 0:
+            raise SystemExit("Device cannot reach server! Is the firewall blocking connections?")
+        
         print("Starting update service on device")
         remarkableRemote.exec_command("systemctl start update-engine")
 
@@ -316,20 +329,33 @@ elif choice == "status":
             versionID = file.read().rstrip()
         with open("/usr/share/remarkable/update.conf") as file:
             versionContents = file.read().rstrip()
+    except FileNotFoundError: # Repeating code :((
+        if len(get_host_ip()) == 1:
+            ip = "10.11.99.1"
+        else:
+            ip = get_remarkable_ip()
+        
+        remarkableRemote = connect_to_rm(ip=ip)
+        ftp = remarkableRemote.open_sftp()  # or ssh
 
-        beta = re.search("(?<=BetaProgram=).*", configContents).group()
-        prev = re.search("(?<=PreviousVersion=).*", configContents).group()
-        current = re.search(
-            "(?<=REMARKABLE_RELEASE_VERSION=).*", versionContents
-        ).group()
-
-        print(
-            f'You are running {current} [{versionID}]{"[BETA]" if beta else ""}, previous version was {prev}'
-        )
-    except Exception as error:
-        print(
-            f"Error: {error} (Maybe you aren't running this on the ReMarkable device?"
-        )
+        with ftp.file("/etc/remarkable.conf") as file:
+            configContents = file.read().decode("utf-8")
+        
+        with ftp.file("/etc/version") as file:
+            versionID = file.read().decode("utf-8").strip("\n")
+        
+        with ftp.file("/usr/share/remarkable/update.conf") as file:
+            versionContents = file.read().decode("utf-8")
+            
+    beta = re.search("(?<=BetaProgram=).*", configContents).group()
+    prev = re.search("(?<=PreviousVersion=).*", configContents).group()
+    current = re.search(
+        "(?<=REMARKABLE_RELEASE_VERSION=).*", versionContents
+    ).group()
+    
+    print(
+        f'You are running {current} [{versionID}]{"[BETA]" if beta else ""}, previous version was {prev}'
+    )
 
 elif choice == "restore":
     if "y" not in input("Are you sure you want to restore? (y/N) ").lower():
@@ -360,7 +386,7 @@ elif choice == "restore":
 
         _stdin, stdout, _stderr = remarkableRemote.exec_command(restoreCode)
         stdout.channel.recv_exit_status()
-
+        
         print("Done, Please reboot the device!")
 
 elif choice == "list":
