@@ -6,6 +6,11 @@ on:
   push:
     branches:
       - main
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   repos:
     name: Build for ${{ matrix.os }}
