@@ -4,9 +4,14 @@
 # Codexctl
 A utility program that helps to manage the remarkable device version utilizing [ddvks update server](https://github.com/ddvk/remarkable-update) 
 
-### Installation and use
+### Installation & Use
 
-This program is can be directly ran on the ReMarkable device as well as from a remote device such as your computer, it currently only has support for **command line interfaces** but a graphical interface is soon to come. The steps to install are closely similar apart from the couple of extra depedancies needed for running on a remote device. 
+This program can be directly ran on the ReMarkable device as well as from a remote device such as your computer, it currently only has support for **command line interfaces** but a graphical interface is soon to come. The steps to install are closely similar apart from the couple of extra depedancies needed for running on a remote device. 
+
+## Downloading compiled binaries
+Thanks to @Eeems, you can directly download the compiled binary from the [releases](https://github.com/Jayy001/codexctl/releases/) page! Just select your operating system & download the zip repo containing the binaries - then open up a terminal and run how you would from there. `./codexctl --help` 
+
+## Building from source
 
 ```
 git clone https://github.com/Jayy001/codexctl.git 
@@ -23,7 +28,9 @@ pip install netifaces # This is for getting the IP of the remote host
 ```
 
 
-The script is designed to have as little interactivity as possible (apart from entering the password when connecting  & managing remotely) meaning arguments are directly taken from the command to run the script. 
+The script is designed to have as little interactivity as possible, meaning arguments are directly taken from the command to run the script. 
+
+## Usage 
 
 ```
 ❯ python codexctl.py  --help
