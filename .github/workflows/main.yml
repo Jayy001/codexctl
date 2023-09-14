@@ -20,11 +20,12 @@ jobs:
         with:
           python-version: '3.8'
           cache: 'pip'
-      - run: pip install wheel
-      - run: pip install -r requirements.txt
-      - run: pip install nuitka
-      - run: |
-          dist
+      - name: Build codexctl
+        run: |
+          pip install wheel
+          pip install -r requirements.txt
+          pip install nuitka
+          mkdir -p dist
           python -m nuitka \
             --enable-plugin=pylint-warnings \
             --onefile \
