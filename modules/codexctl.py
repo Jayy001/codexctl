@@ -4,8 +4,8 @@ import re
 import threading
 import os.path
 
-from modules.updates import UpdateManager
-from modules.server import startUpdate, scanUpdates
+from updates import UpdateManager
+from server import startUpdate, scanUpdates
 
 REMOTE_DEPS_MET = True
 

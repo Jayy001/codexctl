@@ -32,7 +32,7 @@ jobs:
             --lto=yes \
             --assume-yes-for-downloads \
             --output-dir=dist \
-            codexctl.py
+            modules/codexctl.py
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}
