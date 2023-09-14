@@ -29,7 +29,6 @@ jobs:
             --enable-plugin=anti-bloat \
             --enable-plugin=pylint-warnings \
             --onefile \
-            --linux-onefile-icon=media/overview.svg \
             --assume-yes-for-downloads \
             codexctl.py
       - uses: actions/upload-artifact@v3
