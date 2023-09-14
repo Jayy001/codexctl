@@ -24,17 +24,18 @@ jobs:
       - run: pip install -r requirements.txt
       - run: pip install nuitka
       - run: |
-          NUITKA_CACHE_DIR=nuitka-cache python -m nuitka \
-            --follow-imports \
-            --enable-plugin=anti-bloat \
+          dist
+          python -m nuitka \
             --enable-plugin=pylint-warnings \
             --onefile \
+            --lto=yes \
             --assume-yes-for-downloads \
+            --output-dir=dist \
             codexctl.py
       - uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.os }}-codexctl
-          path: codexctl
+          name: ${{ matrix.os }}
+          path: dist
           if-no-files-found: error
   release:
     name: Release
