@@ -6,6 +6,11 @@ on:
   push:
     branches:
       - main
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   repos:
     name: Build for ${{ matrix.os }}
@@ -20,14 +25,24 @@ jobs:
         with:
           python-version: '3.8'
           cache: 'pip'
-      - run: pip install wheel
-      - run: cd remote && pip install -r requirements.txt
-      - run: pip install pyinstaller
-      - run: cd remote && pyinstaller -n rm-update-helper -F main.py
+      - name: Build codexctl
+        run: |
+          pip install wheel
+          pip install -r requirements.txt
+          pip install nuitka
+          mkdir -p dist
+          python -m nuitka \
+            --enable-plugin=pylint-warnings \
+            --onefile \
+            --lto=yes \
+            --assume-yes-for-downloads \
+            --remove-output \
+            --output-dir=dist \
+            modules/codexctl.py
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}
-          path: remote/dist
+          path: dist
           if-no-files-found: error
   release:
     name: Release
