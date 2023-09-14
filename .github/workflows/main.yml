@@ -21,13 +21,21 @@ jobs:
           python-version: '3.8'
           cache: 'pip'
       - run: pip install wheel
-      - run: cd remote && pip install -r requirements.txt
-      - run: pip install pyinstaller
-      - run: cd remote && pyinstaller -n rm-update-helper -F main.py
+      - run: pip install -r requirements.txt
+      - run: pip install nuitka
+      - run: |
+          NUITKA_CACHE_DIR=nuitka-cache python -m nuitka \
+            --follow-imports \
+            --enable-plugin=anti-bloat \
+            --enable-plugin=pylint-warnings \
+            --onefile \
+            --linux-onefile-icon=media/overview.svg \
+            --assume-yes-for-downloads \
+            codexctl.py
       - uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.os }}
-          path: remote/dist
+          name: ${{ matrix.os }}-codexctl
+          path: codexctl
           if-no-files-found: error
   release:
     name: Release
