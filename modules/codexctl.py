@@ -87,7 +87,7 @@ def connect_to_rm(args, ip="10.11.99.1"):
         except paramiko.ssh_exception.AuthenticationException:
             print("Incorrect password given in arguments!: {error}")
 
-    if "n" in input("Would you like to manually a password to connect? (Y/n) ").lower():
+    if "n" in input("Would you like to use a password to connect? (Y/n) ").lower():
         while True:
             key_path = input("Enter path to SSH key: ")
 
