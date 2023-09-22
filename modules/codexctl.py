@@ -212,8 +212,10 @@ def do_install(args, device_type):
 
     while not prerequisites_met:
         available_versions = scanUpdates()
-        version = version_lookup(version=args.version, device=device_type)
+        if available_versions == {}:
+            raise SystemExit("No updates available!")
 
+        version = version_lookup(version=args.version, device=device_type)
         for device, ids in available_versions.items():
             if version in ids:
                 available_versions = {device: ids}
@@ -230,9 +232,6 @@ def do_install(args, device_type):
 
             if result == "Not in version list":
                 raise SystemExit("Error: This version is not supported!")
-
-    if available_versions == {}:
-        raise SystemExit("No updates available!")
 
     server_host = "0.0.0.0"
     remarkable_remote = None
