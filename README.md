@@ -22,6 +22,7 @@ pip install requests
 Thats it for running it directly on the remarkable. If you are running on a remote device you will need to run the following too,
 
 ```
+pip install wheel
 pip install -r requirements.txt
 ```
 
