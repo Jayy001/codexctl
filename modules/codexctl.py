@@ -198,12 +198,12 @@ def do_status(args):
         with ftp.file("/usr/share/remarkable/update.conf") as file:
             version_contents = file.read().decode("utf-8")
 
-    beta = re.search("(?<=BetaProgram=).*", config_contents).group()
+    beta = re.search("(?<=BetaProgram=).*", config_contents)
     prev = re.search("(?<=PreviousVersion=).*", config_contents).group()
     current = re.search("(?<=REMARKABLE_RELEASE_VERSION=).*", version_contents).group()
 
     print(
-        f'You are running {current} [{version_id}]{"[BETA]" if beta else ""}, previous version was {prev}'
+        f'You are running {current} [{version_id}]{"[BETA]" if beta is not None and beta.group() else ""}, previous version was {prev}'
     )
 
 
