@@ -23,8 +23,7 @@ Thats it for running it directly on the remarkable. If you are running on a remo
 
 ```
 pip install wheel
-pip install paramiko # This is for SSH access
-pip install netifaces # This is for getting the IP of the remote host
+pip install -r requirements.txt
 ```
 
 
