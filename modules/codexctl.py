@@ -3,6 +3,8 @@ import subprocess
 import re
 import threading
 import os.path
+import socket
+import psutil
 
 from modules.updates import UpdateManager
 from modules.server import startUpdate, scanUpdates
@@ -11,7 +13,6 @@ REMOTE_DEPS_MET = True
 
 try:
     import paramiko
-    import netifaces as ni
 except ImportError:
     REMOTE_DEPS_MET = False
 
@@ -40,12 +41,12 @@ updateman = UpdateManager()
 def get_host_ip():
     possible_ips = []
     try:
-        for interface in ni.interfaces():
-            for num in ni.ifaddresses(interface).values():
-                for ip in num:
-                    if ip["addr"].startswith("10.11.99"):
-                        return [ip["addr"]]
-                    possible_ips.append(ip["addr"])
+        for interface, snics in psutil.net_if_addrs().items():
+            for snic in snics:
+                if snic.family == socket.AF_INET:
+                    if snic.address.startswith("10.11.99"):
+                        return [snic.address]
+                    possible_ips.append(snic.address)
     except Exception as error:
         pass
 
@@ -77,15 +78,18 @@ def connect_to_rm(args, ip="10.11.99.1"):
     client = paramiko.client.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-    if args.password:
+    if args.auth:
         try:
-            client.connect("10.11.99.1", username="root", password=args.password)
+            if os.path.isfile(args.auth):
+                client.connect("10.11.99.1", username="root", key_filename=args.auth)
+            else:
+                client.connect("10.11.99.1", username="root", password=args.auth)
 
             print("Connected to device")
             return client
 
         except paramiko.ssh_exception.AuthenticationException:
-            print("Incorrect password given in arguments!: {error}")
+            print("Incorrect password or ssh path given in arguments!: {error}")
 
     if "n" in input("Would you like to use a password to connect? (Y/n) ").lower():
         while True:
@@ -180,7 +184,12 @@ def do_status(args):
             version_id = file.read().rstrip()
         with open("/usr/share/remarkable/update.conf") as file:
             version_contents = file.read().rstrip()
-    except FileNotFoundError:  # Repeating code :((
+    except FileNotFoundError: 
+        if not REMOTE_DEPS_MET:
+            raise SystemExit(
+            "Error: Detected as running on the remote device, but could not resolve dependencies. "
+            'Please install them with "pip install -r requirements.txt'
+        )
         if len(get_host_ip()) == 1:
             ip = "10.11.99.1"
         else:
@@ -206,32 +215,36 @@ def do_status(args):
         f'You are running {current} [{version_id}]{"[BETA]" if beta is not None and beta.group() else ""}, previous version was {prev}'
     )
 
+def get_available_version(version):
+    available_versions = scanUpdates()
+    
+    for device, ids in available_versions.items():
+        if version in ids:
+            available_version = {device: ids}
+            
+            return available_version
 
 def do_install(args, device_type):
-    prerequisites_met = False
+    available_versions = scanUpdates()
 
-    while not prerequisites_met:
-        available_versions = scanUpdates()
-        if available_versions == {}:
-            raise SystemExit("No updates available!")
+    version = version_lookup(version=args.version, device=device_type)
+    available_versions = get_available_version(version)
 
-        version = version_lookup(version=args.version, device=device_type)
-        for device, ids in available_versions.items():
-            if version in ids:
-                available_versions = {device: ids}
-                prerequisites_met = True
-                break
+    if available_versions is None:
+        print(
+            f"The version firmware file you specified could not be found, attempting to download ({version})"
+        )
+        result = updateman.get_version(version=version, device=device_type)
+        
+        if result is None:
+            raise SystemExit("Error: Was not able to download firmware file!")
 
-            print(
-                f"The version firmware file you specified could not be found, attempting to download ({version})"
-            )
-            result = updateman.get_version(version=version, device=device_type)
-
-            if result is None:
-                raise SystemExit("Error: Was not able to download firmware file!")
-
-            if result == "Not in version list":
-                raise SystemExit("Error: This version is not supported!")
+        if result == "Not in version list":
+            raise SystemExit("Error: This version is not supported!")
+        
+        available_versions = get_available_version(version)
+        if available_versions is None:
+            raise SystemExit("Error: Something went wrong trying to download update file!")
 
     server_host = "0.0.0.0"
     remarkable_remote = None
@@ -239,7 +252,7 @@ def do_install(args, device_type):
     if not os.path.isfile("/usr/share/remarkable/update.conf") and not REMOTE_DEPS_MET:
         raise SystemExit(
             "Error: Detected as running on the remote device, but could not resolve dependencies. "
-            'Please install them with "pip install paramiko netifaces"'
+            'Please install them with "pip install -r requirements.txt'
         )
 
     server_host = get_host_ip()
@@ -284,7 +297,7 @@ def do_install(args, device_type):
         target=startUpdate, args=(available_versions, server_host), daemon=True
     )
     thread.start()
-
+    
     # Is it worth mapping the messages to a variable?
     if remarkable_remote is None:
         print("Enabling update service")
@@ -343,7 +356,7 @@ def do_restore(args):
     elif not REMOTE_DEPS_MET:
         raise SystemExit(
             "Error: Detected as running on the remote device, but could not resolve dependencies. "
-            'Please install them with "pip install paramiko netifaces"'
+            'Please install them with "pip install -r requirements.txt"'
         )
 
     else:
@@ -352,9 +365,8 @@ def do_restore(args):
             remote_ip = "10.11.99.1"
         else:
             print("Detected as WiFi connection")
-            # TODO: actually get IP address
-            # remote_ip = get_remarkable_ip()
-            remote_ip = "192.168.0.57"
+            remote_ip = get_remarkable_ip()
+
         remarkable_remote = connect_to_rm(args, remote_ip)
 
         _stdin, stdout, _stderr = remarkable_remote.exec_command(RESTORE_CODE)
@@ -374,7 +386,7 @@ def main():
     parser = argparse.ArgumentParser("Codexctl app")
     parser.add_argument("--debug", action="store_true", help="Print debug info")
     parser.add_argument("--rm1", action="store_true", default=False, help="Use rm1")
-    parser.add_argument("--password", required=False, help="Specify password for SSH")
+    parser.add_argument("--auth", required=False, help="Specify password or SSH key for SSH")
 
     subparsers = parser.add_subparsers(dest="command")
     subparsers.required = True  # This fixes a bug with older versions of python
