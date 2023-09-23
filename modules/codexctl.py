@@ -199,7 +199,7 @@ def do_status(args):
             version_contents = file.read().decode("utf-8")
 
     beta = re.search("(?<=BetaProgram=).*", config_contents)
-    prev = re.search("(?<=PreviousVersion=).*", config_contents).group()
+    prev = re.search("(?<=[Pp]reviousVersion=).*", config_contents).group()
     current = re.search("(?<=REMARKABLE_RELEASE_VERSION=).*", version_contents).group()
 
     print(
