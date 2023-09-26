@@ -1,4 +1,5 @@
 import os, time, requests, re, uuid, sys
+from pathlib import Path
 
 import xml.etree.ElementTree as ET
 
@@ -6,11 +7,12 @@ import xml.etree.ElementTree as ET
 class UpdateManager:
 	def __init__(
 		self, device_version=None
-	):  # TODO: Patch notes & Hash checking / verification
+	):  
 		self.updates_url = (
 			"https://updates.cloud.remarkable.engineering/service/update2"
 		)
-
+  
+		self.DOWNLOAD_FOLDER = Path.home() / 'Downloads'
 		self.device_version = device_version if device_version else "3.2.3.1595"
 		self.id_lookups_rm1 = {
 			"3.6.0.1865": "nnuJzg6Jj4",
@@ -63,14 +65,18 @@ class UpdateManager:
 			"2.11.0.442": "tJDDwsDM4V",
 			"2.10.3.379": "n16KxgSfCk",
 			"2.10.2.356": "JLB6Ax3hnJ",
-		} #TODO: Somehow automate this process?
-
-		if not os.path.exists("updates"):
-			os.mkdir("updates")
+		}
 
 		self.latest_toltec_version = "2.15.1.1189" 
 
-	def get_version(self, device=2, version=None):
+	def get_version(self, device=2, version=None, download_folder=None):
+		if download_folder is None:
+			download_folder = self.DOWNLOAD_FOLDER
+
+		# Check if download folder exists
+		if not os.path.exists(download_folder):
+			return "Download folder does not exist"
+   
 		if device == 1:
 			versionDict = self.id_lookups_rm1
 		else:
@@ -98,7 +104,7 @@ class UpdateManager:
 		file_name = f"{version}_reMarkable{'2' if device == 2 else ''}{id}.signed"
 		file_url = f"{BASE_URL}/{version}/{file_name}"
 
-		return self.download_file(file_url, file_name)
+		return self.download_file(file_url, file_name, download_folder)
 
 	def __get_latest_toltec_supported(self):
 		site_body_html = requests.get("https://toltec-dev.org/").text  # or /raw ?
@@ -196,7 +202,7 @@ class UpdateManager:
 
 	@staticmethod
 	def download_file(
-		uri, name
+		uri, name, download_folder
 	):  # Credit to https://stackoverflow.com/questions/15644964/python-progress-bar-and-downloads
 		response = requests.get(uri, stream=True)
 		total_length = response.headers.get("content-length")
@@ -209,7 +215,7 @@ class UpdateManager:
 		except TypeError:
 			return None
 
-		with open(f"updates/{name}", "wb") as f:
+		with open(f"{download_folder}/{name}", "wb") as f:
 			dl = 0
    
 			for data in response.iter_content(chunk_size=4096):
