@@ -124,7 +124,16 @@ def connect_to_rm(args, ip="10.11.99.1"):
 
 def set_server_config(contents, server_host_name):
     data_attributes = contents.split("\n")
-    data_attributes[2] = f"SERVER={server_host_name}"
+    line = 0
+    for i in range(0, len(data_attributes)):
+        if data_attributes[i].startswith("[GENERAL]"):
+            line = i + 1
+        if not data_attributes[i].startswith("SERVER="):
+            continue
+
+        data_attributes[i] = f"#{data_attributes[i]}"
+
+    data_attributes.insert(line, f"SERVER={server_host_name}")
     return "\n".join(data_attributes)
 
 
@@ -184,12 +193,12 @@ def do_status(args):
             version_id = file.read().rstrip()
         with open("/usr/share/remarkable/update.conf") as file:
             version_contents = file.read().rstrip()
-    except FileNotFoundError: 
+    except FileNotFoundError:
         if not REMOTE_DEPS_MET:
             raise SystemExit(
-            "Error: Detected as running on the remote device, but could not resolve dependencies. "
-            'Please install them with "pip install -r requirements.txt'
-        )
+                "Error: Detected as running on the remote device, but could not resolve dependencies. "
+                'Please install them with "pip install -r requirements.txt'
+            )
         if len(get_host_ip()) == 1:
             ip = "10.11.99.1"
         else:
@@ -215,14 +224,16 @@ def do_status(args):
         f'You are running {current} [{version_id}]{"[BETA]" if beta is not None and beta.group() else ""}, previous version was {prev}'
     )
 
+
 def get_available_version(version):
     available_versions = scanUpdates()
-    
+
     for device, ids in available_versions.items():
         if version in ids:
             available_version = {device: ids}
-            
+
             return available_version
+
 
 def do_install(args, device_type):
     available_versions = scanUpdates()
@@ -235,16 +246,18 @@ def do_install(args, device_type):
             f"The version firmware file you specified could not be found, attempting to download ({version})"
         )
         result = updateman.get_version(version=version, device=device_type)
-        
+
         if result is None:
             raise SystemExit("Error: Was not able to download firmware file!")
 
         if result == "Not in version list":
             raise SystemExit("Error: This version is not supported!")
-        
+
         available_versions = get_available_version(version)
         if available_versions is None:
-            raise SystemExit("Error: Something went wrong trying to download update file!")
+            raise SystemExit(
+                "Error: Something went wrong trying to download update file!"
+            )
 
     server_host = "0.0.0.0"
     remarkable_remote = None
@@ -297,7 +310,7 @@ def do_install(args, device_type):
         target=startUpdate, args=(available_versions, server_host), daemon=True
     )
     thread.start()
-    
+
     # Is it worth mapping the messages to a variable?
     if remarkable_remote is None:
         print("Enabling update service")
@@ -307,11 +320,12 @@ def do_install(args, device_type):
             "update_engine_client -update",
             text=True,
             stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             shell=True,
         )
-
         if process.wait() != 0:
-            # TODO: More verbose error handling!
+            print("".join(process.stderr.readlines()))
+            # TODO get error from systemd-journald
             raise SystemExit("There was an error updating :(")
 
         if "y" in input("Done! Would you like to shutdown?: ").lower():
@@ -337,6 +351,8 @@ def do_install(args, device_type):
         exit_status = stdout.channel.recv_exit_status()
 
         if exit_status != 0:
+            print("".join(_stderr.readlines()))
+            # TODO get error from systemd-journald
             raise SystemExit("There was an error updating :(")
 
         print("Success! Please restart the reMarkable device!")
@@ -386,7 +402,9 @@ def main():
     parser = argparse.ArgumentParser("Codexctl app")
     parser.add_argument("--debug", action="store_true", help="Print debug info")
     parser.add_argument("--rm1", action="store_true", default=False, help="Use rm1")
-    parser.add_argument("--auth", required=False, help="Specify password or SSH key for SSH")
+    parser.add_argument(
+        "--auth", required=False, help="Specify password or SSH key for SSH"
+    )
 
     subparsers = parser.add_subparsers(dest="command")
     subparsers.required = True  # This fixes a bug with older versions of python
