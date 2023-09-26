@@ -32,14 +32,14 @@ The script is designed to have as little interactivity as possible, meaning argu
 ## Usage 
 
 ```
-❯ python codexctl.py  --help
-usage: Codexctl app [-h] [--debug] {install,download,status,restore,list} ...
+❯ python codexctl.py --help
+usage: Codexctl app [-h] [--debug] [--rm1] [--auth AUTH] [--verbose] {install,download,backup,status,restore,list} ...
 
 positional arguments:
-  {install,download,status,restore,list}
-    install             Install the specified version (will download if not available on the
-                        device)
+  {install,download,backup,status,restore,list}
+    install             Install the specified version (will download if not available on the device)
     download            Download the specified version firmware file
+    backup              Download remote files to local directory
     status              Get the current version of the device and other information
     restore             Restores to previous version installed on device
     list                List all versions available for use
@@ -47,6 +47,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --debug               Print debug info
+  --rm1                 Use rm1
+  --auth AUTH           Specify password or SSH key for SSH
+  --verbose             Enable verbose logging
 ```
 
 # Examples
@@ -57,4 +60,7 @@ python codexctl.py download 3.0.4.1305 --rm1 # Downloads 3.0.4.1305 firmware fil
 python codexctl.py status # Prints current & previous version (can only be used when running on device itself)
 python codexctl.py list # Lists all available versions 
 python codexctl.py restore # Restores previous version
+python codexctl.py --verbose # Enables logging
+python codexctl.py --backup # Exports all files to local directory
+python codexctl.py --backup -l root -r FM --no-recursion --no-overwrite # Exports all files from FM directory to root folder on localhost
 ```
