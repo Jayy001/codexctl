@@ -5,19 +5,19 @@ import threading
 import os.path
 import socket
 import psutil
-import tempfile 
+import sys
+import tempfile
 import shutil
 import logging
 
 from pathlib import Path
-
+from loguru import logger
 
 from modules.sync import RmWebInterfaceAPI
 from modules.updates import UpdateManager
 from modules.server import startUpdate, scanUpdates
 
 REMOTE_DEPS_MET = True
-
 
 try:
 	import paramiko
@@ -43,25 +43,26 @@ fw_setenv "fallback_partition" "${OLDPART}"
 fw_setenv "active_partition" "${NEWPART}"
 """
 
-updateman = UpdateManager()
-
 
 def get_host_ip():
 	possible_ips = []
 	try:
 		for interface, snics in psutil.net_if_addrs().items():
+			logger.debug(f"New interface found: {interface}")
 			for snic in snics:
 				if snic.family == socket.AF_INET:
 					if snic.address.startswith("10.11.99"):
 						return [snic.address]
+					logger.debug(f"Adding new address: {snic.address}")
 					possible_ips.append(snic.address)
 	except Exception as error:
-		pass
+		logger.error(f"Error getting interfaces: {error}")
 
 	return possible_ips
 
 
 def version_lookup(version, device):
+	logger.debug(f"Looking up {version} for ReMarkable {device}")
 	if version == "latest":
 		return updateman.get_latest_version(device=device)
 	if version == "toltec":
@@ -87,17 +88,20 @@ def connect_to_rm(args, ip="10.11.99.1"):
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 	if args.auth:
+		logger.debug("Using authentication argument")
 		try:
 			if os.path.isfile(args.auth):
-				client.connect("10.11.99.1", username="root", key_filename=args.auth)
+				logger.debug(f"Interpreting as key file location: {args.auth}")
+				client.connect(ip, username="root", key_filename=args.auth)
 			else:
-				client.connect("10.11.99.1", username="root", password=args.auth)
+				logger.debug(f"Interpreting as password: [REDACTED]")
+				client.connect(ip, username="root", password=args.auth)
 
 			print("Connected to device")
 			return client
 
 		except paramiko.ssh_exception.AuthenticationException:
-			print("Incorrect password or ssh path given in arguments!: {error}")
+			print("Incorrect password or ssh path given in arguments!")
 
 	if "n" in input("Would you like to use a password to connect? (Y/n) ").lower():
 		while True:
@@ -108,7 +112,8 @@ def connect_to_rm(args, ip="10.11.99.1"):
 
 				continue
 			try:
-				client.connect("10.11.99.1", username="root", key_filename=key_path)
+				logger.debug(f"Attempting to connect with {key_path}")
+				client.connect(ip, username="root", key_filename=key_path)
 			except Exception as error:
 				print("Error while connecting to device: {error}")
 
@@ -119,6 +124,7 @@ def connect_to_rm(args, ip="10.11.99.1"):
 			password = input("Enter RM SSH password: ")
 
 			try:
+				logger.debug(f"Attempting to connect with {password}")
 				client.connect(ip, username="root", password=password)
 			except paramiko.ssh_exception.AuthenticationException:
 				print("Incorrect password given")
@@ -133,16 +139,26 @@ def connect_to_rm(args, ip="10.11.99.1"):
 def set_server_config(contents, server_host_name):
 	data_attributes = contents.split("\n")
 	line = 0
+
+	logger.debug(f"Contents are: {contents}")
+
 	for i in range(0, len(data_attributes)):
 		if data_attributes[i].startswith("[GENERAL]"):
+			logger.debug("Found GENERAL= line")
 			line = i + 1
 		if not data_attributes[i].startswith("SERVER="):
 			continue
 
 		data_attributes[i] = f"#{data_attributes[i]}"
+		logger.debug(f"Using {data_attributes[i]}")
 
 	data_attributes.insert(line, f"SERVER={server_host_name}")
-	return "\n".join(data_attributes)
+	converted = "\n".join(data_attributes)
+
+	logger.debug("Converted contents are: {converted}")
+
+	return converted
+
 
 """
 This works as intended, but the remarkable device seems to ignore it...
@@ -159,21 +175,26 @@ def enable_web_over_usb(remarkable_remote=None):
 	else:
 		remarkable_remote.exec_command("sed -i 's/WebInterfaceEnabled=.*/WebInterfaceEnabled=true/g' /home/root/.config/remarkable/xochitl.conf")
 """
-  
+
+
 def edit_config(server_ip, port=8080, remarkable_remote=None):
+	server_host_name = f"http://{server_ip}:{port}"
+	logger.debug(f"Hostname is: {server_host_name}")
+
 	if not remarkable_remote:
+		logger.debug("Detected running on local device")
 		with open("/usr/share/remarkable/update.conf", encoding="utf-8") as file:
-			modified_conf_version = set_server_config(
-				file.read(), f"http://{server_ip}:{port}"
-			)
+			modified_conf_version = set_server_config(file.read(), server_host_name)
 
 		with open("/usr/share/remarkable/update.conf", "w") as file:
 			file.write(modified_conf_version)
 
 		return
 
-	server_host_name = f"http://{server_ip}:{port}"
+	logger.debug("Connecting to FTP")
 	ftp = remarkable_remote.open_sftp()  # or ssh
+	logger.debug("Connected")
+
 	with ftp.file("/usr/share/remarkable/update.conf") as update_conf_file:
 		modified_conf_version = set_server_config(
 			update_conf_file.read().decode("utf-8"), server_host_name
@@ -197,7 +218,9 @@ def get_remarkable_ip():
 def do_download(args, device_type):
 	version = version_lookup(version=args.version, device=device_type)
 	print(f"Downloading {version} to {args.out if args.out else 'downloads folder'}")
-	filename = updateman.get_version(version=version, device=device_type, download_folder=args.out)
+	filename = updateman.get_version(
+		version=version, device=device_type, download_folder=args.out
+	)
 
 	if filename is None:
 		raise SystemExit("Error: Was not able to download firmware file!")
@@ -227,8 +250,12 @@ def do_status(args):
 		else:
 			ip = get_remarkable_ip()
 
+		logger.debug(f"IP of remarkable is {ip}")
 		remarkable_remote = connect_to_rm(args, ip=ip)
+
+		logger.debug("Connecting to FTP")
 		ftp = remarkable_remote.open_sftp()  # or ssh
+		logger.debug("Connected")
 
 		with ftp.file("/etc/remarkable.conf") as file:
 			config_contents = file.read().decode("utf-8")
@@ -251,6 +278,7 @@ def do_status(args):
 def get_available_version(version):
 	available_versions = scanUpdates()
 
+	logger.debug(f"Available versions found are: {available_versions}")
 	for device, ids in available_versions.items():
 		if version in ids:
 			available_version = {device: ids}
@@ -261,15 +289,16 @@ def get_available_version(version):
 def do_install(args, device_type):
 	temp_path = None
 
-	if args.serve_folder: # update folder
+	if args.serve_folder:  # update folder
 		os.chdir(args.serve_folder)
 	else:
 		temp_path = tempfile.mkdtemp()
 		os.chdir(temp_path)
-  
+
 	if not os.path.exists("updates"):
 		os.mkdir("updates")
 
+	logger.debug(f"Serve path: {os.getcwd()}")
 	available_versions = scanUpdates()
 
 	version = version_lookup(version=args.version, device=device_type)
@@ -279,7 +308,13 @@ def do_install(args, device_type):
 		print(
 			f"The version firmware file you specified could not be found, attempting to download ({version})"
 		)
-		result = updateman.get_version(version=version, device=device_type, download_folder=f'{os.getcwd()}/updates')
+		result = updateman.get_version(
+			version=version,
+			device=device_type,
+			download_folder=f"{os.getcwd()}/updates",
+		)
+
+		logger.debug(f"Result of downloading version is {result}")
 
 		if result is None:
 			raise SystemExit("Error: Was not able to download firmware file!")
@@ -303,6 +338,8 @@ def do_install(args, device_type):
 		)
 
 	server_host = get_host_ip()
+
+	logger.debug(f"Server host is {server_host}")
 
 	if server_host is None:
 		raise SystemExit(
@@ -335,11 +372,14 @@ def do_install(args, device_type):
 
 		remarkable_remote = connect_to_rm(args, remote_ip)
 
+	logger.debug("Editing config file")
 	edit_config(remarkable_remote=remarkable_remote, server_ip=server_host, port=8080)
 
 	print(
 		f"Available versions to update to are: {available_versions}\nThe device will update to the latest one."
 	)
+
+	logger.debug("Starting server thread")
 	thread = threading.Thread(
 		target=startUpdate, args=(available_versions, server_host), daemon=True
 	)
@@ -357,10 +397,15 @@ def do_install(args, device_type):
 			stderr=subprocess.PIPE,
 			shell=True,
 		)
+
 		if process.wait() != 0:
 			print("".join(process.stderr.readlines()))
-			
+
 			raise SystemExit("There was an error updating :(")
+
+		logger.debug(
+			f'Stdout of update checking service is {"".join(process.stderr.readlines())}'
+		)
 
 		if "y" in input("Done! Would you like to shutdown?: ").lower():
 			subprocess.run(["shutdown", "now"])
@@ -369,9 +414,10 @@ def do_install(args, device_type):
 		_stdin, stdout, _stderr = remarkable_remote.exec_command(
 			f"sleep 2 && echo | nc {server_host} 8080"
 		)
-		stdout.channel.recv_exit_status()
+		check = stdout.channel.recv_exit_status()
 
-		if stdout.channel.recv_exit_status() != 0:
+		logger.debug(f"Stdout of nc checking: {stdout}")
+		if check != 0:
 			raise SystemExit(
 				"Device cannot reach server! Is the firewall blocking connections?"
 			)
@@ -388,9 +434,14 @@ def do_install(args, device_type):
 			print("".join(_stderr.readlines()))
 			raise SystemExit("There was an error updating :(")
 
+		logger.debug(
+			f'Stdout of update checking service is {"".join(_stderr.readlines())}'
+		)
+
 		print("Success! Please restart the reMarkable device!")
-	
+
 	if temp_path:
+		logger.debug(f"Removing {temp_path}")
 		shutil.rmtree(temp_path)
 
 
@@ -399,7 +450,6 @@ def do_restore(args):
 		raise SystemExit("Aborted!!!")
 
 	if os.path.isfile("/usr/share/remarkable/update.conf"):
-		
 		subprocess.run(RESTORE_CODE, shell=True, text=True)
 
 		if "y" in input("Done! Would you like to shutdown?: ").lower():
@@ -424,6 +474,8 @@ def do_restore(args):
 		_stdin, stdout, _stderr = remarkable_remote.exec_command(RESTORE_CODE)
 		stdout.channel.recv_exit_status()
 
+		logger.debug(f"Output of switch command: {stdout}")
+
 		print("Done, Please reboot the device!")
 
 
@@ -432,16 +484,22 @@ def do_list():
 	[print(codexID) for codexID in updateman.id_lookups_rm2]
 	print("\nRM1:")
 	[print(codexID) for codexID in updateman.id_lookups_rm1]
-	
+
 
 def do_backup(args):
-	print('Please make sure the web-interface is enabled in the remarkable settings!\nStarting backup...')
-		
-	rmWeb = RmWebInterfaceAPI(BASE='http://10.11.99.1/') 
-	rmWeb.sync(localFolder=args.local, remoteFolder=args.remote, recursive=not args.no_recursion, overwrite=not args.no_overwrite)
+	print(
+		"Please make sure the web-interface is enabled in the remarkable settings!\nStarting backup..."
+	)
 
-		
-		
+	rmWeb = RmWebInterfaceAPI(BASE="http://10.11.99.1/", logger=logger)
+	rmWeb.sync(
+		localFolder=args.local,
+		remoteFolder=args.remote,
+		recursive=not args.no_recursion,
+		overwrite=not args.no_overwrite,
+	)
+
+
 def main():
 	parser = argparse.ArgumentParser("Codexctl app")
 	parser.add_argument("--debug", action="store_true", help="Print debug info")
@@ -449,9 +507,7 @@ def main():
 	parser.add_argument(
 		"--auth", required=False, help="Specify password or SSH key for SSH"
 	)
-	parser.add_argument(
-		"--verbose", required=False, help="Enable verbose logging"
-	)
+	parser.add_argument("--verbose", required=False, help="Enable verbose logging", action="store_true")
 
 	subparsers = parser.add_subparsers(dest="command")
 	subparsers.required = True  # This fixes a bug with older versions of python
@@ -475,25 +531,62 @@ def main():
 	subparsers.add_parser("list", help="List all versions available for use")
 
 	install.add_argument("version", help="Version to install")
-	install.add_argument("-sf", "--serve-folder", help="Location of folder containing update folder & files", default=None)
-	
+	install.add_argument(
+		"-sf",
+		"--serve-folder",
+		help="Location of folder containing update folder & files",
+		default=None,
+	)
+
 	download.add_argument("version", help="Version to download")
 	download.add_argument("--out", help="Folder to download to", default=None)
-	
-	backup.add_argument("-r", "--remote", help="Remote directory to backup. Defaults to download folder", default="")
-	backup.add_argument("-l", "--local", help="Local directory to backup to. Defaults to download folder", default="./")
-	
-	backup.add_argument("-nr", "--no-recursion", help="Disables recursively backup remote directory", action="store_true")
-	backup.add_argument("-no-ow", "--no-overwrite", help="Disables overwrite", action="store_true")
-	
+
+	backup.add_argument(
+		"-r",
+		"--remote",
+		help="Remote directory to backup. Defaults to download folder",
+		default="",
+	)
+	backup.add_argument(
+		"-l",
+		"--local",
+		help="Local directory to backup to. Defaults to download folder",
+		default="./",
+	)
+
+	backup.add_argument(
+		"-nr",
+		"--no-recursion",
+		help="Disables recursively backup remote directory",
+		action="store_true",
+	)
+	backup.add_argument(
+		"-no-ow", "--no-overwrite", help="Disables overwrite", action="store_true"
+	)
+
 	args = parser.parse_args()
+	level = "ERROR"
 	
+	if args.verbose:
+		level = "DEBUG"
+ 
+	logger.remove()
+	logger.add(sys.stderr, level=level)
+	logging.basicConfig(level=logging.DEBUG if args.verbose else logging.ERROR) # For paramioko
+
+	global updateman
+	updateman = UpdateManager(logger=logger)
+ 
+	logger.debug(f"Remote deps met: {REMOTE_DEPS_MET}")
+
 	choice = args.command
 
 	device_type = 2
 
 	if args.rm1:
 		device_type = 1
+
+	logger.debug(f"Inputs are: {args}")
 
 	### Decision making ###
 	if choice == "install":
@@ -510,7 +603,7 @@ def main():
 
 	elif choice == "list":
 		do_list()
-	
+
 	elif choice == "backup":
 		do_backup(args)
 

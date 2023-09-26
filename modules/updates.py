@@ -1,4 +1,5 @@
 import os, time, requests, re, uuid, sys
+
 from pathlib import Path
 
 import xml.etree.ElementTree as ET
@@ -6,14 +7,18 @@ import xml.etree.ElementTree as ET
 
 class UpdateManager:
 	def __init__(
-		self, device_version=None
+		self, device_version=None, logger=None
 	):  
 		self.updates_url = (
 			"https://updates.cloud.remarkable.engineering/service/update2"
 		)
   
+		self.logger = logger
 		self.DOWNLOAD_FOLDER = Path.home() / 'Downloads'
 		self.device_version = device_version if device_version else "3.2.3.1595"
+  
+		self.logger.debug(f'Download folder is {self.DOWNLOAD_FOLDER}')
+  
 		self.id_lookups_rm1 = {
 			"3.6.0.1865": "nnuJzg6Jj4",
 			"3.5.2.1807": "UGWiACaUG0",
@@ -104,6 +109,7 @@ class UpdateManager:
 		file_name = f"{version}_reMarkable{'2' if device == 2 else ''}{id}.signed"
 		file_url = f"{BASE_URL}/{version}/{file_name}"
 
+		self.logger.debug(f'File URL is {file_url}, File name is {file_name}')
 		return self.download_file(file_url, file_name, download_folder)
 
 	def __get_latest_toltec_supported(self):
@@ -169,6 +175,8 @@ class UpdateManager:
 		while tries < 3:
 			tries += 1
 
+			self.logger.debug(f'Sending POST request to {self.updates_url} with data {data} [Try {tries}]')
+                     
 			response = requests.post(self.updates_url, data)
 
 			if response.status_code == 429:
@@ -183,8 +191,8 @@ class UpdateManager:
 
 		return response.text
 
-	@staticmethod
-	def _parse_response(resp):
+
+	def _parse_response(self, resp):
 		xml_data = ET.fromstring(resp)
 
 		if "noupdate" in resp or xml_data is None:  # Is none?
@@ -198,15 +206,17 @@ class UpdateManager:
 		)
 		file_version = xml_data.find("app/updatecheck/manifest").attrib["version"]
 
+		self.logger.debug(f'File version is {file_version}, file uri is {file_uri}, file name is {file_name}')
 		return file_version, file_uri, file_name
 
-	@staticmethod
+	
 	def download_file(
-		uri, name, download_folder
+		self, uri, name, download_folder
 	):  # Credit to https://stackoverflow.com/questions/15644964/python-progress-bar-and-downloads
 		response = requests.get(uri, stream=True)
 		total_length = response.headers.get("content-length")
 		
+		self.logger.debug("Downloading file from {uri} to {download_folder}/{name}")
 		try:
 			total_length = int(total_length)
 
@@ -215,6 +225,7 @@ class UpdateManager:
 		except TypeError:
 			return None
 
+		self.logger.debug(f'Total length is {total_length}')
 		with open(f"{download_folder}/{name}", "wb") as f:
 			dl = 0
    
@@ -226,8 +237,9 @@ class UpdateManager:
 				sys.stdout.flush()
     
 		print(end="\r\n")
-  
-		if os.path.getsize(f"updates/{name}") != total_length:
+
+		self.logger.debug(f"Downloaded {download_folder}/{name}")
+		if os.path.getsize(f"{download_folder}/{name}") != total_length:
 			raise SystemExit("Error: File size mismatch! Is your connection stable?")
 
 		return name
