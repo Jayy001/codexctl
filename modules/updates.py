@@ -216,7 +216,7 @@ class UpdateManager:
 		response = requests.get(uri, stream=True)
 		total_length = response.headers.get("content-length")
 		
-		self.logger.debug("Downloading file from {uri} to {download_folder}/{name}")
+		self.logger.debug(f"Downloading file from {uri} to {download_folder}/{name}")
 		try:
 			total_length = int(total_length)
 

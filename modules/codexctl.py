@@ -416,7 +416,7 @@ def do_install(args, device_type):
 		)
 		check = stdout.channel.recv_exit_status()
 
-		logger.debug(f"Stdout of nc checking: {stdout}")
+		logger.debug(f"Stdout of nc checking: {stdout.readlines()}")
 		if check != 0:
 			raise SystemExit(
 				"Device cannot reach server! Is the firewall blocking connections?"
