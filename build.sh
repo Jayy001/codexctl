@@ -39,6 +39,8 @@ cd codexctl
 python3 -m pip install --extra-index-url extra-index-url=https://www.piwheels.org/simple -r requirements.txt
 python3 -m pip install nuitka
 
+opkg install patchelf
+
 python3 -m nuitka \
     --enable-plugin=pylint-warnings \
     --onefile \
