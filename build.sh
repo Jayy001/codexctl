@@ -28,14 +28,17 @@ done
   's|^src/gz[[:space:]]entware[[:space:]]https?([[:graph:]]+)|http\1/include/include.tar.gz|p' \
   /opt/etc/opkg.conf)" | /opt/bin/busybox tar x -vzC /opt/include
 
+source /opt/bin/gcc_env.sh
+
 ln -s /opt/lib/libffi.so.8 /opt/lib/libffi.so
 
-source /opt/bin/gcc_env.sh
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source "$HOME/.cargo/env"
 python3 -m pip install -U pip setuptools
-python3 -m pip install -r requirements.txt
+
+git clone https://github.com/Jayy001/codexctl.git
+cd codexctl
+python3 -m pip install --extra-index-url extra-index-url=https://www.piwheels.org/simple -r requirements.txt
 python3 -m pip install nuitka
+
 python3 -m nuitka \
     --enable-plugin=pylint-warnings \
     --onefile \
