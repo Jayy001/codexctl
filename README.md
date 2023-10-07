@@ -14,7 +14,7 @@ Thanks to @Eeems, you can directly download the compiled binary from the [releas
 ## Building from source
 
 ```
-git clone https://github.com/Jayy001/codexctl.git 
+git clone https://github.com/Jayy001/codexctl.git
 cd codexctl
 pip install requests
 ```
