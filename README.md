@@ -9,7 +9,7 @@ A utility program that helps to manage the remarkable device version utilizing [
 This program can be directly ran on the ReMarkable device as well as from a remote device such as your computer, it currently only has support for **command line interfaces** but a graphical interface is soon to come. The steps to install are closely similar apart from the couple of extra depedancies needed for running on a remote device. 
 
 ## Downloading compiled binaries
-Thanks to @Eeems, you can directly download the compiled binary from the [releases](https://github.com/Jayy001/codexctl/releases/) page! Just select your operating system & download the zip repo containing the binaries - then open up a terminal and run how you would from there. `./codexctl --help` 
+You can directly download the compiled binary from the [releases](https://github.com/Jayy001/codexctl/releases/) page. Just select your operating system & download the zip repo containing the binaries - then open up a terminal and run how you would from there. `./codexctl --help`
 
 ## Building from source
 
