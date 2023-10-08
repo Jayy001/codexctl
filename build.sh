@@ -32,12 +32,11 @@ source /opt/bin/gcc_env.sh
 
 ln -s /opt/lib/libffi.so.8 /opt/lib/libffi.so
 
-python3 -m pip install -U pip setuptools
+python3 -m pip install -U pip setuptools python3-psutil
 
 git clone https://github.com/Jayy001/codexctl.git
 cd codexctl
-python3 -m pip install --extra-index-url extra-index-url=https://www.piwheels.org/simple -r requirements.txt
-python3 -m pip install nuitka
+python3 -m pip install --extra-index-url extra-index-url=https://www.piwheels.org/simple -r requirements.txt nuitka
 
 opkg install patchelf
 
