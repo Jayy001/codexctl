@@ -11,7 +11,7 @@ echo "Installing recommended build tools"
 opkg install coreutils-install diffutils ldconfig patch pkg-config --force-overwrite
 
 echo "Installing automake, cmake, meson, and ninja"
-opkg install automake libintl-full libtool-bin cmake icu libopenssl bash git git-http python3-pip python3-setuptools coreutils-od python3-psutil python3-bcrypt
+opkg install automake libintl-full libtool-bin cmake icu libopenssl bash git git-http python3-pip python3-setuptools coreutils-od python3-psutil python3-bcrypt python3-cryptography
 python3 -m pip install -U wheel
 cd /opt/tmp
 git clone https://github.com/ninja-build/ninja.git
