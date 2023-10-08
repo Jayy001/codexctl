@@ -30,6 +30,10 @@ opkg install --force-overwrite --force-reinstall libncurses-dev libxml2-dev pyth
 
 source /opt/bin/gcc_env.sh
 
+echo "Installing rust"
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source "$HOME/.cargo/env"
+
 echo "Installing python dependencies"
 ln -s /opt/lib/libffi.so.8 /opt/lib/libffi.so
 python3 -m pip install -U pip setuptools
