@@ -20,6 +20,7 @@ class UpdateManager:
 		self.logger.debug(f'Download folder is {self.DOWNLOAD_FOLDER}')
   
 		self.id_lookups_rm1 = {
+			"3.6.1.1894": "CGaIOXfzAA",
 			"3.6.0.1865": "nnuJzg6Jj4",
 			"3.5.2.1807": "UGWiACaUG0",
 			"3.5.1.1798": "cR2nzMvbcW",
@@ -46,6 +47,7 @@ class UpdateManager:
 			"2.10.2.356": "Lp90j3g4at",
 		}
 		self.id_lookups_rm2 = {
+			"3.6.1.1894": "T2dkdktE1H",
 			"3.6.0.1865": "7wgexMSZP5",
 			"3.5.2.1807": "3bZjC0Xn5C",
 			"3.5.1.1798": "9CfoVp8qCU",
