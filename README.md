@@ -14,12 +14,12 @@ Thanks to @Eeems, you can directly download the compiled binary from the [releas
 ## Building from source
 
 ```
-git clone https://github.com/Jayy001/codexctl.git 
+git clone https://github.com/Jayy001/codexctl.git
 cd codexctl
 pip install requests
 ```
 
-Thats it for running it directly on the remarkable. If you are running on a remote device you will need to run the following too,
+Thats it for running it directly on the remarkable. If you are running on a remote device you will need to use Python 3.8 or higher and run the following,
 
 ```
 pip install wheel
