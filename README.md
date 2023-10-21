@@ -19,7 +19,7 @@ cd codexctl
 pip install requests
 ```
 
-Thats it for running it directly on the remarkable. If you are running on a remote device you will need to run the following too,
+Thats it for running it directly on the remarkable. If you are running on a remote device you will need to use Python 3.8 or higher and run the following,
 
 ```
 pip install wheel
