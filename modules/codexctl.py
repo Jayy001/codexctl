@@ -16,6 +16,7 @@ from loguru import logger
 from modules.sync import RmWebInterfaceAPI
 from modules.updates import UpdateManager
 from modules.server import startUpdate, scanUpdates
+from modules.extractor import extract
 
 REMOTE_DEPS_MET = True
 
@@ -500,6 +501,18 @@ def do_backup(args):
 	)
 
 
+def do_extract(args):
+	if not args.out:
+		args.out = os.getcwd() + "/extracted"
+
+	logger.debug(f"Extracting {args.file} to {args.out}")
+
+	try:
+		extract(args.file, args.out)
+	except Exception as error:
+		raise SystemExit(f"Error: {error}")
+
+
 def main():
 	parser = argparse.ArgumentParser("Codexctl app")
 	parser.add_argument("--debug", action="store_true", help="Print debug info")
@@ -507,7 +520,9 @@ def main():
 	parser.add_argument(
 		"--auth", required=False, help="Specify password or SSH key for SSH"
 	)
-	parser.add_argument("--verbose", required=False, help="Enable verbose logging", action="store_true")
+	parser.add_argument(
+		"--verbose", required=False, help="Enable verbose logging", action="store_true"
+	)
 
 	subparsers = parser.add_subparsers(dest="command")
 	subparsers.required = True  # This fixes a bug with older versions of python
@@ -521,6 +536,9 @@ def main():
 	)
 	backup = subparsers.add_parser(
 		"backup", help="Download remote files to local directory"
+	)
+	extract = subparsers.add_parser(
+		"extract", help="Extract the specified version firmware file"
 	)
 	subparsers.add_parser(
 		"status", help="Get the current version of the device and other information"
@@ -540,6 +558,9 @@ def main():
 
 	download.add_argument("version", help="Version to download")
 	download.add_argument("--out", help="Folder to download to", default=None)
+
+	extract.add_argument("file", help="Path to update file to extract", default=None)
+	extract.add_argument("--out", help="Folder to extract to", default=None)
 
 	backup.add_argument(
 		"-r",
@@ -566,17 +587,19 @@ def main():
 
 	args = parser.parse_args()
 	level = "ERROR"
-	
+
 	if args.verbose:
 		level = "DEBUG"
- 
+
 	logger.remove()
 	logger.add(sys.stderr, level=level)
-	logging.basicConfig(level=logging.DEBUG if args.verbose else logging.ERROR) # For paramioko
+	logging.basicConfig(
+		level=logging.DEBUG if args.verbose else logging.ERROR
+	)  # For paramioko
 
 	global updateman
 	updateman = UpdateManager(logger=logger)
- 
+
 	logger.debug(f"Remote deps met: {REMOTE_DEPS_MET}")
 
 	choice = args.command
@@ -606,6 +629,9 @@ def main():
 
 	elif choice == "backup":
 		do_backup(args)
+
+	elif choice == "extract":
+		do_extract(args)
 
 
 if __name__ == "__main__":
