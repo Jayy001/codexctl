@@ -513,6 +513,18 @@ def do_extract(args):
 		raise SystemExit(f"Error: {error}")
 
 
+def do_mount(args):
+	if args.out is None:
+		args.out = f"/opt/remarkable/"
+	
+	if not os.path.exists(args.out):
+		os.mkdir(args.out)
+
+	if not os.path.exists(args.filesystem):
+		raise SystemExit("Firmware file does not exist!")
+	
+	os.system(f'mount -o loop {args.filesystem} {args.out}')
+
 def main():
 	parser = argparse.ArgumentParser("Codexctl app")
 	parser.add_argument("--debug", action="store_true", help="Print debug info")
@@ -538,7 +550,10 @@ def main():
 		"backup", help="Download remote files to local directory"
 	)
 	extract = subparsers.add_parser(
-		"extract", help="Extract the specified version firmware file"
+		"extract", help="Extract the specified version update file"
+	)
+	mount = subparsers.add_parser(
+		"mount", help="Mount the specified version firmware filesystem"
 	)
 	subparsers.add_parser(
 		"status", help="Get the current version of the device and other information"
@@ -561,6 +576,9 @@ def main():
 
 	extract.add_argument("file", help="Path to update file to extract", default=None)
 	extract.add_argument("--out", help="Folder to extract to", default=None)
+
+	mount.add_argument("filesystem", help="Path to version firmware filesystem to extract", default=None)
+	mount.add_argument("--out", help="Folder to mount to", default=None)
 
 	backup.add_argument(
 		"-r",
@@ -633,6 +651,8 @@ def main():
 	elif choice == "extract":
 		do_extract(args)
 
+	elif choice == "mount":
+		do_mount(args)
 
 if __name__ == "__main__":
 	main()

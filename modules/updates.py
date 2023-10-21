@@ -16,7 +16,7 @@ class UpdateManager:
   
 		self.logger = logger
 		self.DOWNLOAD_FOLDER = Path.home() / 'Downloads'
-		self.device_version = device_version if device_version else "3.2.3.1595"
+		self.device_version = device_version if device_version else "3.2.3.1595" # Earliest 3.x.x version
   
 		self.logger.debug(f'Download folder is {self.DOWNLOAD_FOLDER}')
 
@@ -26,6 +26,7 @@ class UpdateManager:
 		self.id_lookups_rm2 = versions['remarkable2']
 
 		self.latest_toltec_version = versions['toltec']
+		self.latest_version = "3.7.0.1930"
 
 	def update_version_ids(self, location):
 		with open(location, 'w') as f:
@@ -120,27 +121,32 @@ class UpdateManager:
 
 		return m.group(1).strip()
 
-	def get_latest_version(self, device):
+	def get_latest_version(self, device): # Hardcoded for now
 		# This is problematic...either we get the latest version from the RM directly or from the currently installed ones
 		# The latter is more reliable, but the former is more accurate
 		# We'll use the latter for now
+		
+		return self.latest_version 
+	
 		if device == 2:
 			return max([item for item in list(self.id_lookups_rm2.keys())])
 		else:
 			return max([item for item in list(self.id_lookups_rm1.keys())])
-		
 		"""
+		
 		data = self._generate_xml_data()
 
 		response = self._make_request(data)
 
 		if response is None:  # or if not response
 			return
-
+		print(response)
 		file_version, file_uri, file_name = self._parse_response(response)
 
-		return file_version
+		return 'file_version'
 		"""
+		
+		
 
 	def _generate_xml_data(self): # TODO: Support for remarkable1
 		params = {
