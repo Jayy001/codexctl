@@ -46,26 +46,30 @@ class UpdateManager:
 			if os.name == 'nt':
 				folder_location = os.getenv('APPDATA') + '/codexctl'
 			elif os.name == 'posix':
-				folder_location = os.path.expanduser('~/.config')
+				folder_location = os.path.expanduser('~/.config/codexctl')
 			
 			self.logger.debug(f'Folder location is {folder_location}')
 			if not os.path.exists(folder_location):
 				os.mkdir(folder_location)
 				
-			file_location = folder_location + 'version-ids.json'
+			file_location = folder_location + '/version-ids.json'
 			
 			if not os.path.exists(file_location):
 				self.update_version_ids(file_location)
 		
-		with open(file_location, 'r') as f:
-			contents = json.load(f)
-			self.logger.debug(f'Contents are {contents}')
-
-			if contents['last-updated'] - int(datetime.now().timestamp()) > 2628000: # 1 month
-				self.update_version_ids(file_location)
+		try:
+			with open(file_location) as f:
+				contents = json.load(f)
+		except ValueError:
+			raise SystemExit(f'Error: version-ids.json @ {file_location} is corrupted! Please delete it and try again.')
+		
+		if int(datetime.now().timestamp()) - contents['last-updated'] > 2628000: # 1 month
+			self.update_version_ids(file_location)
+			with open(file_location) as f:
 				contents = json.load(f)
 
-			return contents
+		self.logger.debug(f'Contents are {contents}')
+		return contents
 		
 	def get_version(self, device=2, version=None, download_folder=None):
 		if download_folder is None:
