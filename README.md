@@ -16,7 +16,7 @@ Thanks to @Eeems, you can directly download the compiled binary from the [releas
 ```
 git clone https://github.com/Jayy001/codexctl.git
 cd codexctl
-pip install requests
+pip install requests loguru
 ```
 
 Thats it for running it directly on the remarkable. If you are running on a remote device you will need to use Python 3.8 or higher and run the following,
@@ -33,13 +33,15 @@ The script is designed to have as little interactivity as possible, meaning argu
 
 ```
 ❯ python codexctl.py --help
-usage: Codexctl app [-h] [--debug] [--rm1] [--auth AUTH] [--verbose] {install,download,backup,status,restore,list} ...
+usage: Codexctl app [-h] [--debug] [--rm1] [--auth AUTH] [--verbose] {install,download,backup,extract,mount,status,restore,list} ...
 
 positional arguments:
-  {install,download,backup,status,restore,list}
+  {install,download,backup,extract,mount,status,restore,list}
     install             Install the specified version (will download if not available on the device)
     download            Download the specified version firmware file
     backup              Download remote files to local directory
+    extract             Extract the specified version update file
+    mount               Mount the specified version firmware filesystem
     status              Get the current version of the device and other information
     restore             Restores to previous version installed on device
     list                List all versions available for use
@@ -63,4 +65,6 @@ python codexctl.py restore # Restores previous version
 python codexctl.py --verbose # Enables logging
 python codexctl.py --backup # Exports all files to local directory
 python codexctl.py --backup -l root -r FM --no-recursion --no-overwrite # Exports all files from FM directory to root folder on localhost
+python codexctl.py extract 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed # Extracts contents to filesystem named "extracted"
+python codexctl.py mount extracted /opt/remarkable # Mounts extracted filesystem to /opt/remarkable
 ```
