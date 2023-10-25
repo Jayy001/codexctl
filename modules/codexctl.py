@@ -487,12 +487,26 @@ def do_list():
     [print(codexID) for codexID in updateman.id_lookups_rm1]
 
 
+def do_upload(args):
+    print(
+        "Please make sure the web-interface is enabled in the remarkable settings!\nStarting upload..."
+    )
+
+    rmWeb = RmWebInterfaceAPI(BASE="http://10.11.99.1/", logger=logger)
+
+    rmWeb.upload(
+        input_paths=args.paths,
+        remoteFolder=args.remote,
+    )
+
+
 def do_backup(args):
     print(
         "Please make sure the web-interface is enabled in the remarkable settings!\nStarting backup..."
     )
 
     rmWeb = RmWebInterfaceAPI(BASE="http://10.11.99.1/", logger=logger)
+
     rmWeb.sync(
         localFolder=args.local,
         remoteFolder=args.remote,
@@ -556,12 +570,16 @@ def main():
     mount = subparsers.add_parser(
         "mount", help="Mount the specified version firmware filesystem"
     )
+    upload = subparsers.add_parser(
+        "upload", help="Upload folder/files to device (pdf only)"
+    )
     subparsers.add_parser(
         "status", help="Get the current version of the device and other information"
     )
     subparsers.add_parser(
         "restore", help="Restores to previous version installed on device"
     )
+    
     subparsers.add_parser("list", help="List all versions available for use")
 
     install.add_argument("version", help="Version to install")
@@ -585,6 +603,15 @@ def main():
     )
     mount.add_argument("--out", help="Folder to mount to", default=None)
 
+    upload.add_argument(
+        "paths", help="Path to file(s)/folder to upload", default=None, nargs="+"
+    )
+    upload.add_argument(
+        "-r",
+        "--remote",
+        help="Remote directory to upload to. Defaults to root folder",
+        default=""
+    )
     backup.add_argument(
         "-r",
         "--remote",
@@ -652,6 +679,9 @@ def main():
 
     elif choice == "backup":
         do_backup(args)
+    
+    elif choice == "upload":
+        do_upload(args)
 
     elif choice == "extract":
         do_extract(args)
