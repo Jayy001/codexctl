@@ -4,7 +4,6 @@ import re
 import threading
 import os.path
 import socket
-import psutil
 import sys
 import tempfile
 import shutil
@@ -47,6 +46,9 @@ fw_setenv "active_partition" "${NEWPART}"
 def get_host_ip():
 	possible_ips = []
 	try:
+		if "psutil" not in sys.modules:
+			import psutil
+
 		for interface, snics in psutil.net_if_addrs().items():
 			logger.debug(f"New interface found: {interface}")
 			for snic in snics:
