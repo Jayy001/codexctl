@@ -39,7 +39,7 @@ ln -s /opt/lib/libffi.so.8 /opt/lib/libffi.so
 python3 -m pip install -U pip setuptools
 git clone https://github.com/Jayy001/codexctl.git
 cd codexctl
-python3 -m pip install --extra-index-url extra-index-url=https://www.piwheels.org/simple -r requirements.txt nuitka
+python3 -m pip install --extra-index-url=https://www.piwheels.org/simple -r requirements.txt nuitka
 
 echo "Building codexctl"
 python3 -m nuitka \
