@@ -247,6 +247,9 @@ def do_status(args):
             with open("/etc/remarkable.conf") as file:
                 config_contents = file.read()
 
+        else:
+            config_contents = ""
+
         with open("/etc/version") as file:
             version_id = file.read().rstrip()
         with open("/usr/share/remarkable/update.conf") as file:
@@ -281,7 +284,8 @@ def do_status(args):
             version_contents = file.read().decode("utf-8")
 
     beta = re.search("(?<=BetaProgram=).*", config_contents)
-    prev = re.search("(?<=[Pp]reviousVersion=).*", config_contents).group()
+    m = re.search("(?<=[Pp]reviousVersion=).*", config_contents)
+    prev = m.group() if m is not None else "unknown"
     current = re.search("(?<=REMARKABLE_RELEASE_VERSION=).*", version_contents).group()
 
     print(
