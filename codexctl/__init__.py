@@ -234,26 +234,33 @@ def do_download(args, device_type):
     print(f"Done! ({filename})")
 
 
+def is_rm():
+    if not os.path.exists("/sys/devices/soc0/machine"):
+        return False
+
+    with open("/sys/devices/soc0/machine") as f:
+        return f.read.strip().startswith("reMarkable")
+
+
 def do_status(args):
-    if (
-        (
-            os.path.exists("/etc/remarkable.conf")
-            or os.path.islink("/etc/remarkable.conf")
-        )
-        and os.path.exists("/etc/version")
-        and os.path.exists("/usr/share/remarkable/update.conf")
-    ):
+    if is_rm():
         if os.path.exists("/etc/remarkable.conf"):
             with open("/etc/remarkable.conf") as file:
                 config_contents = file.read()
-
         else:
             config_contents = ""
 
-        with open("/etc/version") as file:
-            version_id = file.read().rstrip()
-        with open("/usr/share/remarkable/update.conf") as file:
-            version_contents = file.read().rstrip()
+        if os.path.exists("/etc/version"):
+            with open("/etc/version") as file:
+                version_id = file.read().rstrip()
+        else:
+            version_id = ""
+
+        if os.path.exists("/usr/share/remarkable/update.conf"):
+            with open("/usr/share/remarkable/update.conf") as file:
+                version_contents = file.read().rstrip()
+        else:
+            version_contents = ""
 
     elif not REMOTE_DEPS_MET:
         raise SystemExit(
@@ -262,11 +269,7 @@ def do_status(args):
         )
 
     else:
-        if len(get_host_ip()) == 1:
-            ip = "10.11.99.1"
-        else:
-            ip = get_remarkable_ip()
-
+        ip = "10.11.99.1" if len(get_host_ip()) == 1 else get_remarkable_ip()
         logger.debug(f"IP of remarkable is {ip}")
         remarkable_remote = connect_to_rm(args, ip=ip)
 
@@ -349,7 +352,7 @@ def do_install(args, device_type):
     server_host = "0.0.0.0"
     remarkable_remote = None
 
-    if not os.path.isfile("/usr/share/remarkable/update.conf") and not REMOTE_DEPS_MET:
+    if not is_rm() and not REMOTE_DEPS_MET:
         raise SystemExit(
             "Error: Detected as running on the remote device, but could not resolve dependencies. "
             'Please install them with "pip install -r requirements.txt'
