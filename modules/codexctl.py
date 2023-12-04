@@ -12,9 +12,9 @@ import logging
 from pathlib import Path
 from loguru import logger
 
-from modules.sync import RmWebInterfaceAPI
-from modules.updates import UpdateManager
-from modules.server import startUpdate, scanUpdates
+from .sync import RmWebInterfaceAPI
+from .updates import UpdateManager
+from .server import startUpdate, scanUpdates
 
 REMOTE_DEPS_MET = True
 
