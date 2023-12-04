@@ -39,7 +39,7 @@ ln -s /opt/lib/libffi.so.8 /opt/lib/libffi.so
 python3 -m pip install -U pip setuptools
 git clone https://github.com/Jayy001/codexctl.git
 cd codexctl
-python3 -m pip install -r requirements.device.txt pyinstaller
+python3 -m pip install -r requirements.txt pyinstaller
 
 echo "Building codexctl"
 pyinstaller \
