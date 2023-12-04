@@ -32,9 +32,9 @@ fw_setenv "bootcount" "0"
 
 OLDPART=$(fw_printenv -n active_partition)
 if [ $OLDPART  ==  "2" ]; then
-	NEWPART="3"
+    NEWPART="3"
 else
-	NEWPART="2"
+    NEWPART="2"
 fi
 echo "new: ${NEWPART}"
 echo "fallback: ${OLDPART}"
@@ -167,16 +167,16 @@ def set_server_config(contents, server_host_name):
 This works as intended, but the remarkable device seems to ignore it...
 
 def enable_web_over_usb(remarkable_remote=None):
-	if remarkable_remote is None:
-		with open(r'/home/root/.config/remarkable/xochitl.conf', 'r') as file:
-			fileContents = file.read()
-			fileContents = re.sub("WebInterfaceEnabled=.*", "WebInterfaceEnabled=true", fileContents)
+    if remarkable_remote is None:
+        with open(r'/home/root/.config/remarkable/xochitl.conf', 'r') as file:
+            fileContents = file.read()
+            fileContents = re.sub("WebInterfaceEnabled=.*", "WebInterfaceEnabled=true", fileContents)
 
-		with open(r'/home/root/.config/remarkable/xochitl.conf', 'w') as file:
-			file.write(fileContents)
+        with open(r'/home/root/.config/remarkable/xochitl.conf', 'w') as file:
+            file.write(fileContents)
 
-	else:
-		remarkable_remote.exec_command("sed -i 's/WebInterfaceEnabled=.*/WebInterfaceEnabled=true/g' /home/root/.config/remarkable/xochitl.conf")
+    else:
+        remarkable_remote.exec_command("sed -i 's/WebInterfaceEnabled=.*/WebInterfaceEnabled=true/g' /home/root/.config/remarkable/xochitl.conf")
 """
 
 
@@ -235,19 +235,30 @@ def do_download(args, device_type):
 
 
 def do_status(args):
-    try:
-        with open("/etc/remarkable.conf") as file:
-            config_contents = file.read()
+    if (
+        (
+            os.path.exists("/etc/remarkable.conf")
+            or os.path.islink("/etc/remarkable.conf")
+        )
+        and os.path.exists("/etc/version")
+        and os.path.exists("/usr/share/remarkable/update.conf")
+    ):
+        if os.path.exists("/etc/remarkable.conf"):
+            with open("/etc/remarkable.conf") as file:
+                config_contents = file.read()
+
         with open("/etc/version") as file:
             version_id = file.read().rstrip()
         with open("/usr/share/remarkable/update.conf") as file:
             version_contents = file.read().rstrip()
-    except FileNotFoundError:
-        if not REMOTE_DEPS_MET:
-            raise SystemExit(
-                "Error: Detected as running on the remote device, but could not resolve dependencies. "
-                'Please install them with "pip install -r requirements.txt'
-            )
+
+    elif not REMOTE_DEPS_MET:
+        raise SystemExit(
+            "Error: Detected as running on the remote device, but could not resolve dependencies. "
+            'Please install them with "pip install -r requirements.txt'
+        )
+
+    else:
         if len(get_host_ip()) == 1:
             ip = "10.11.99.1"
         else:

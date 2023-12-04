@@ -34,7 +34,7 @@ opkg install --force-overwrite --force-reinstall libncurses-dev libxml2-dev pyth
 #source "$HOME/.cargo/env"
 
 echo "Installing python dependencies"
-opkg install python3-cryptography python3-bcrypt python3-requests
+opkg install python3-cryptography python3-bcrypt python3-requests python3-psutil
 ln -s /opt/lib/libffi.so.8 /opt/lib/libffi.so
 python3 -m pip install -U pip setuptools
 git clone https://github.com/Jayy001/codexctl.git
