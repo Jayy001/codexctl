@@ -23,7 +23,7 @@ Thats it for running it directly on the remarkable. If you are running on a remo
 
 ```
 pip install wheel
-pip install -r requirements.txt
+pip install -r requirements.full.txt
 ```
 
 
