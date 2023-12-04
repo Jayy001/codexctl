@@ -1,0 +1,15 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+paramiko = "==3.3.1"
+psutil = "==5.9.5"
+requests = "==2.31.0"
+loguru = "==0.7.2"
+
+[dev-packages]
+
+[requires]
+python_version = "3.11"
