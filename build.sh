@@ -28,10 +28,10 @@ opkg install --force-overwrite --force-reinstall libncurses-dev libxml2-dev pyth
   's|^src/gz[[:space:]]entware[[:space:]]https?([[:graph:]]+)|http\1/include/include.tar.gz|p' \
   /opt/etc/opkg.conf)" | /opt/bin/busybox tar x -vzC /opt/include
 
-source /opt/bin/gcc_env.sh
-echo "Installing rust"
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source "$HOME/.cargo/env"
+#echo "Installing rust"
+#source /opt/bin/gcc_env.sh
+#curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+#source "$HOME/.cargo/env"
 
 echo "Installing python dependencies"
 opkg install python3-cryptography python3-bcrypt python3-requests
