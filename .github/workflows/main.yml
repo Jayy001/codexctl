@@ -38,7 +38,7 @@ jobs:
             --assume-yes-for-downloads \
             --remove-output \
             --output-dir=dist \
-            codexctl/codexctl.py
+            codexctl.py
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}

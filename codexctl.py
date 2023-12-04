@@ -1,5 +1,5 @@
-#!/opt/bin/python
-from codexctl.codexctl import main
+#!/usr/bin/env python
+from codexctl import main
 
 if __name__ == "__main__":
     main()
