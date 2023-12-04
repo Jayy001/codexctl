@@ -42,4 +42,4 @@ cd codexctl
 python3 -m pip install --extra-index-url=https://www.piwheels.org/simple -r requirements.txt pyinstaller
 
 echo "Building codexctl"
-pyinstaller --onefile --strip codexctl.py
+pyinstaller --onefile --strip --hidden-import paramiko codexctl.py
