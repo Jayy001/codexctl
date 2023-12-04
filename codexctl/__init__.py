@@ -228,6 +228,9 @@ def do_download(args, device_type):
     if filename is None:
         raise SystemExit("Error: Was not able to download firmware file!")
 
+    if filename == "Download folder does not exist":
+        raise SystemExit("Error: Download folder does not exist!")
+
     if filename == "Not in version list":
         raise SystemExit("Error: This version is not currently supported!")
 
@@ -239,7 +242,7 @@ def is_rm():
         return False
 
     with open("/sys/devices/soc0/machine") as f:
-        return f.read.strip().startswith("reMarkable")
+        return f.read().strip().startswith("reMarkable")
 
 
 def do_status(args):

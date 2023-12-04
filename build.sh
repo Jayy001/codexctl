@@ -42,4 +42,10 @@ cd codexctl
 python3 -m pip install -r requirements.device.txt pyinstaller
 
 echo "Building codexctl"
-pyinstaller --onefile --strip --hidden-import paramiko codexctl.py
+pyinstaller \
+  --noconfirm \
+  --runtime-tmpdir /tmp \
+  --onefile \
+  --strip \
+  --hidden-import paramiko \
+  codexctl.py
