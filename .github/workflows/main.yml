@@ -28,7 +28,7 @@ jobs:
       - name: Build codexctl
         run: |
           pip install wheel
-          pip install -r requirements.full.txt
+          pip install -r requirements.txt
           pip install nuitka
           mkdir -p dist
           python -m nuitka \
