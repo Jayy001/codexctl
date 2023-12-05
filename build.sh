@@ -48,6 +48,4 @@ pyinstaller \
   --runtime-tmpdir /tmp \
   --onefile \
   --strip \
-  --exclude-module paramiko \
-  --exclude-module psutil \
   codexctl.py

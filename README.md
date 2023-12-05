@@ -16,14 +16,14 @@ You can directly download the compiled binary from the [releases](https://github
 ```
 git clone https://github.com/Jayy001/codexctl.git
 cd codexctl
-pip install requests loguru
+pip install -r requirements.txt
 ```
 
 Thats it for running it directly on the remarkable. If you are running on a remote device you will need to use Python 3.8 or higher and run the following,
 
 ```
 pip install wheel
-pip install -r requirements.full.txt
+pip install -r requirements.remote.txt
 ```
 
 
