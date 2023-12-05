@@ -37,6 +37,7 @@ echo "Installing python dependencies"
 opkg install python3-cryptography python3-bcrypt python3-requests python3-psutil
 ln -s /opt/lib/libffi.so.8 /opt/lib/libffi.so
 python3 -m pip install -U pip setuptools
+# TODO inject current source instead of download with git
 git clone https://github.com/Jayy001/codexctl.git
 cd codexctl
 python3 -m pip install -r requirements.txt pyinstaller
@@ -47,5 +48,6 @@ pyinstaller \
   --runtime-tmpdir /tmp \
   --onefile \
   --strip \
-  --hidden-import paramiko \
+  --exclude-module paramiko \
+  --exclude-module psutil \
   codexctl.py
