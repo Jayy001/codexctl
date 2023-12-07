@@ -65,7 +65,9 @@ jobs:
           context: rM-docker
           target: qemu-toltec
           load: true
-          cache-from: type=gha
+          cache-from:
+            - type=gha
+            - type=docker
           cache-to: type=gha,mode=max
           build-args: |
             fw_version=2.15.1
@@ -74,7 +76,9 @@ jobs:
         with:
           context: codexctl
           load: true
-          cache-from: type=gha
+          cache-from:
+            - type=gha
+            - type=docker
           cache-to: type=gha,mode=max
           build-args: |
             fw_version=2.15.1
