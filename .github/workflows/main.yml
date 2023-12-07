@@ -68,7 +68,7 @@ jobs:
           cache-from:
             - type=gha
             - type=docker
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
           build-args: |
             fw_version=2.15.1
       - name: Build
@@ -79,7 +79,7 @@ jobs:
           cache-from:
             - type=gha
             - type=docker
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
           build-args: |
             fw_version=2.15.1
       - name: Build codexctl
