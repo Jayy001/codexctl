@@ -51,11 +51,11 @@ jobs:
       contents: read
       packages: read
     steps:
-      - name: Checkout the Git repository
+      - name: Checkout the rM-docker repository
         uses: actions/checkout@v4
         with:
           path: codexctl
-      - name: Checkout the Git repository
+      - name: Checkout the codexctl repository
         uses: actions/checkout@v4
         with:
           repository: timower/rM-docker
@@ -68,13 +68,18 @@ jobs:
             --target=qemu-toltec \
             --cache-from type=gha \
             --cache-to type=gha \
+            --load \
+            --tag qemu-toltec:latest \
+            --build-arg fw_version=2.15.1 \
             rM-docker
           docker buildx build \
             --target=qemu-toltec-codexctl \
             --cache-from type=gha \
             --cache-to type=gha \
+            --load \
+            --tag qemu-toltec-codexctl:latest
             codexctl
-          docker run --rm -v ./codexctl:/src qemu-toltec-codexctl
+          docker run --rm -v ./codexctl:/src qemu-toltec-codexctl:latest
       - uses: actions/upload-artifact@v3
         with:
           name: remarkable
