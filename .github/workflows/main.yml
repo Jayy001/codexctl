@@ -47,6 +47,9 @@ jobs:
   device:
     name: Build for remarkable
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: Checkout the Git repository
         uses: actions/checkout@v4
