@@ -12,7 +12,7 @@ defaults:
     shell: bash
 
 jobs:
-  repos:
+  remote:
     name: Build for ${{ matrix.os }}
     strategy:
       matrix:
@@ -20,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout the Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
@@ -44,9 +44,48 @@ jobs:
           name: ${{ matrix.os }}
           path: dist
           if-no-files-found: error
+  device:
+    name: Build for remarkable
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the Git repository
+        uses: actions/checkout@v4
+        with:
+          path: codexctl
+      - name: Checkout the Git repository
+        uses: actions/checkout@v4
+        with:
+          repository: timower/rM-docker
+          path: rM-docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build
+        uses: docker/build-push-action@v5
+        with:
+          context: rM-docker
+          target: qemu-toltec
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            fw_version=2.15.1
+      - name: Build
+        uses: docker/build-push-action@v5
+        with:
+          context: codexctl
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            fw_version=2.15.1
+      - name: Build codexctl
+        run: docker run --rm -v ./codexctl:/src qemu-toltec
+      - uses: actions/upload-artifact@v3
+        with:
+          name: remarkable
+          path: codexctl/dist
+          if-no-files-found: error
   release:
     name: Release
-    needs: [repos]
+    needs: [remote,device]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     permissions:
