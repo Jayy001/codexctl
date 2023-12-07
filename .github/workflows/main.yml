@@ -68,6 +68,8 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha
+          build-args: |
+            fw_version: 2.15.1
       - name: Build qemu-toltec-codexctl
         uses: docker/build-push-action@v5
         with:
