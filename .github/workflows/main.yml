@@ -47,39 +47,35 @@ jobs:
   device:
     name: Build for remarkable
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
     steps:
-      - name: Checkout the rM-docker repository
+      - name: Checkout the Git repository
         uses: actions/checkout@v4
-        with:
-          path: codexctl
-      - name: Checkout the codexctl repository
-        uses: actions/checkout@v4
-        with:
-          repository: timower/rM-docker
-          path: rM-docker
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+      - name: Build qemu-toltec
+        uses: docker/build-push-action@v5
+        with:
+          context: https://github.com/timower/rM-docker.git
+          target: qemu-toltec
+          tags: localhost:5000/rm-docker:qemu-toltec
+          push: true
+      - name: Build qemu-toltec-codexctl
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          build-contexts: |
+            alpine=docker-image://localhost:5000/rm-docker:qemu-toltec
+          tags: rm-docker:qemu-toltec-codexctl
       - name: Build codexctl
         run: |
-          docker buildx build \
-            --target=qemu-toltec \
-            --cache-from type=gha \
-            --cache-to type=gha \
-            --load \
-            --tag qemu-toltec:latest \
-            --build-arg fw_version=2.15.1 \
-            rM-docker
-          docker buildx build \
-            --target=qemu-toltec-codexctl \
-            --cache-from type=gha \
-            --cache-to type=gha \
-            --load \
-            --tag qemu-toltec-codexctl:latest
-            codexctl
-          docker run --rm -v ./codexctl:/src qemu-toltec-codexctl:latest
+          docker run --rm -v ./codexctl:/src rm-docker:qemu-toltec-codexctl
       - uses: actions/upload-artifact@v3
         with:
           name: remarkable

@@ -1,4 +1,5 @@
-FROM qemu-toltec as qemu-toltec-codexctl
+#syntax=docker/dockerfile:1.4
+FROM rm-docker as qemu-toltec-codexctl
 
 ADD scripts/build.sh /opt/build.sh
 ADD scripts/install_build_tools.sh /opt/install_build_tools.sh
