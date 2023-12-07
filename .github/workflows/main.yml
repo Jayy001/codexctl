@@ -62,33 +62,19 @@ jobs:
           path: rM-docker
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build qemu-toltec
-        uses: docker/build-push-action@v5
-        with:
-          context: rM-docker
-          target: qemu-toltec
-          load: true
-          cache-from: |
-            type=gha
-            type=docker
-          cache-to: type=gha,mode=max,ignore-error=true
-          tags: qemu-toltec:latest
-          build-args: |
-            fw_version=2.15.1
-      - name: Build qemu-toltec-codexctl
-        uses: docker/build-push-action@v5
-        with:
-          context: codexctl
-          load: true
-          cache-from: |
-            type=gha
-            type=docker
-          cache-to: type=gha,mode=max,ignore-error=true
-          tags: qemu-toltec-codexctl:latest
-          build-args: |
-            fw_version=2.15.1
       - name: Build codexctl
-        run: docker run --rm -v ./codexctl:/src qemu-toltec-codexctl
+        run: |
+          docker buildx build \
+            --target=qemu-toltec \
+            --cache-from type=gha \
+            --cache-to type=gha \
+            rM-docker
+          docker buildx build \
+            --target=qemu-toltec-codexctl \
+            --cache-from type=gha \
+            --cache-to type=gha \
+            codexctl
+          docker run --rm -v ./codexctl:/src qemu-toltec-codexctl
       - uses: actions/upload-artifact@v3
         with:
           name: remarkable
