@@ -64,6 +64,7 @@ jobs:
         with:
           context: rM-docker
           target: qemu-toltec
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -72,6 +73,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: codexctl
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
