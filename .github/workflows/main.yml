@@ -68,8 +68,8 @@ jobs:
           add-hosts: |
             host.docker.internal:host-gateway
           push: true
-          cache-from: type=gha
-          cache-to: type=gha
+          # cache-from: type=gha
+          # cache-to: type=gha
           build-args: |
             fw_version: 2.15.1
       - name: Build qemu-toltec-codexctl
@@ -81,8 +81,8 @@ jobs:
           tags: rm-docker:qemu-toltec-codexctl
           add-hosts: |
             host.docker.internal:host-gateway
-          cache-from: type=gha
-          cache-to: type=gha
+          # cache-from: type=gha
+          # cache-to: type=gha
       - name: Build codexctl
         run: |
           docker run --rm -v ./codexctl:/src rm-docker:qemu-toltec-codexctl
