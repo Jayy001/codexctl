@@ -63,6 +63,8 @@ jobs:
           context: https://github.com/timower/rM-docker.git
           target: qemu-toltec
           tags: host.docker.internal:5000/rm-docker:qemu-toltec
+          add-hosts: |
+            host.docker.internal:host-gateway
           push: true
           cache-from: type=gha
           cache-to: type=gha
@@ -75,6 +77,8 @@ jobs:
           build-contexts: |
             rm-docker=docker-image://host.docker.internal:5000/rm-docker:qemu-toltec
           tags: rm-docker:qemu-toltec-codexctl
+          add-hosts: |
+            host.docker.internal:host-gateway
           cache-from: type=gha
           cache-to: type=gha
       - name: Build codexctl
