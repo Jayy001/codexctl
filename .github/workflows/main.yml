@@ -66,8 +66,8 @@ jobs:
           target: qemu-toltec
           tags: localhost:5000/rm-docker:qemu-toltec
           push: true
-          #cache-from: type=gha
-          #cache-to: type=gha
+          cache-from: type=gha
+          cache-to: type=gha
           build-args: |
             fw_version: 2.15.1
       - name: Build qemu-toltec-codexctl
@@ -77,8 +77,8 @@ jobs:
           build-contexts: |
             rm-docker=docker-image://localhost:5000/rm-docker:qemu-toltec
           tags: rm-docker:qemu-toltec-codexctl
-          #cache-from: type=gha
-          #cache-to: type=gha
+          cache-from: type=gha
+          cache-to: type=gha
       - name: Build codexctl
         run: |
           docker run --rm -v ./codexctl:/src rm-docker:qemu-toltec-codexctl
