@@ -47,20 +47,23 @@ jobs:
   device:
     name: Build for remarkable
     runs-on: ubuntu-latest
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
     steps:
       - name: Checkout the Git repository
         uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: network=host
       - name: Build qemu-toltec
         uses: docker/build-push-action@v5
         with:
           context: https://github.com/timower/rM-docker.git
           target: qemu-toltec
-          tags: rm-docker:qemu-toltec
-          load: true
+          tags: host.docker.internal:5000/rm-docker:qemu-toltec
+          push: true
           cache-from: type=gha
           cache-to: type=gha
           build-args: |
@@ -70,7 +73,7 @@ jobs:
         with:
           context: .
           build-contexts: |
-            rm-docker=docker-image://rm-docker:qemu-toltec
+            rm-docker=docker-image://host.docker.internal:5000/rm-docker:qemu-toltec
           tags: rm-docker:qemu-toltec-codexctl
           cache-from: type=gha
           cache-to: type=gha
