@@ -58,7 +58,7 @@ jobs:
           fetch-depth: 1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build rm-docker:qemu-toltec-codexctl image
+      - name: Prep build
         run: |
           cp -lr scripts rm-docker
           mv rm-docker/Dockerfile rm-docker/Dockerfile.in
@@ -66,14 +66,17 @@ jobs:
             /#insert=rm-docker\/Dockerfile/r rm-docker/Dockerfile.in
             /#insert=rm-docker\/Dockerfile/d
           ' Dockerfile.in > rm-docker/Dockerfile
-          docker buildx build \
-            --tag rm-docker:qemu-toltec-codexctl \
-            --target qemu-toltec-codexctl \
-            --cache-from type=gha \
-            --cache-to type=gha \
-            --load \
-            --build-arg fw_version=2.15.1 \
-            rm-docker
+      - name: Build rm-docker:qemu-toltec-codexctl image
+        uses: docker/build-push-action@v5
+        with:
+          tag: rm-docker:qemu-toltec-codexctl
+          target: qemu-toltec-codexctl
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            fw_version=2.15.1
+          context: rm-docker
       - name: Build codexctl
         run: |
           docker run --rm -v .:/src rm-docker:qemu-toltec-codexctl
