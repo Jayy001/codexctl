@@ -9,13 +9,20 @@ RUN <<EOT
 set -ex
 run_vm.sh -serial null -daemonize
 wait_ssh.sh
-scp /opt/build.sh root@localhost:/opt/bin
 scp /opt/install_build_tools.sh root@localhost:/opt/bin
 ssh root@localhost 'bash -l -c install_build_tools.sh'
 save_vm.sh
 EOT
 
 ADD scripts/build.sh /opt/build.sh
-ADD scripts/run_build.sh /opt/bin/run_build.sh
 
+RUN <<EOT
+set -ex
+run_vm.sh -serial null -daemonize
+wait_ssh.sh
+scp /opt/build.sh root@localhost:/opt/bin
+save_vm.sh
+EOT
+
+ADD scripts/run_build.sh /opt/bin/run_build.sh
 CMD run_build.sh
