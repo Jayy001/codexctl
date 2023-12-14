@@ -3,9 +3,7 @@
 
 FROM qemu-toltec as qemu-toltec-codexctl
 
-ADD scripts/build.sh /opt/build.sh
 ADD scripts/install_build_tools.sh /opt/install_build_tools.sh
-ADD scripts/run_build.sh /opt/bin/run_build.sh
 
 RUN <<EOT
 set -ex
@@ -16,5 +14,8 @@ scp /opt/install_build_tools.sh root@localhost:/opt/bin
 ssh root@localhost 'bash -l -c install_build_tools.sh'
 save_vm.sh
 EOT
+
+ADD scripts/build.sh /opt/build.sh
+ADD scripts/run_build.sh /opt/bin/run_build.sh
 
 CMD run_build.sh
