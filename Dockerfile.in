@@ -3,6 +3,14 @@
 
 FROM qemu-toltec as qemu-toltec-codexctl
 
+RUN <<EOT
+    set -ex
+    export DEBIAN_FRONTEND="noninteractive"
+    apt-get update
+    apt-get install -y rsync
+    rm -rf /var/lib/apt/lists/*
+EOT
+
 ADD scripts/install_build_tools.sh /opt/install_build_tools.sh
 
 RUN <<EOT
@@ -21,6 +29,7 @@ set -ex
 run_vm.sh -serial null -daemonize
 wait_ssh.sh
 scp /opt/build.sh root@localhost:/opt/bin
+rm /opt/build.sh
 save_vm.sh
 EOT
 

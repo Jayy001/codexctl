@@ -76,7 +76,7 @@ jobs:
             rm-docker
       - name: Build codexctl
         run: |
-          docker run --rm -v ./codexctl:/src rm-docker:qemu-toltec-codexctl
+          docker run --rm -v .:/src rm-docker:qemu-toltec-codexctl
       - uses: actions/upload-artifact@v3
         with:
           name: remarkable
