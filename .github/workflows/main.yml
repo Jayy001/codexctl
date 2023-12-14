@@ -55,7 +55,6 @@ jobs:
         with:
           run: |
               set -eu
-              cd /src
               echo "Installing dependencies"
               python -m pip install -r requirements.txt
               echo "Building codexctl"
