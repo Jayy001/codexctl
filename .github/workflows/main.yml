@@ -79,6 +79,8 @@ jobs:
           context: rm-docker
       - name: Build codexctl
         run: |
+          df -h /var/lib/docker
+          docker buildx du
           docker run --rm -v .:/src rm-docker:qemu-toltec-codexctl
       - uses: actions/upload-artifact@v3
         with:
