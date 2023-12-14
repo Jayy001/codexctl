@@ -47,46 +47,33 @@ jobs:
   device:
     name: Build for remarkable
     runs-on: ubuntu-latest
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
     steps:
-      - name: Checkout the Git repository
+      - name: Checkout the codexctl repository
         uses: actions/checkout@v4
-      - name: Get docker host IP
-        run: |
-          docker_host=$(ip a s docker0 | awk '/inet /{print $2}' | cut -d'/' -f1)
-          echo "docker_host=$docker_host" >> $GITHUB_ENV
+      - name: Checkout the rM-docker repository
+        uses: actions/checkout@v4
+        with:
+          repository: timower/rM-docker
+          path: rm-docker
+          fetch-depth: 1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          config-inline: |
-            [registry."${{ env.docker_host }}:5000"]
-            http = true
-      - name: Build qemu-toltec
+      - name: Build rm-docker:qemu-toltec-codexctl image
         run: |
+          cp -lr scripts rm-docker
+          mv rm-docker/Dockerfile rm-docker/Dockerfile.in
+          sed '
+            /#insert=rm-docker\/Dockerfile/r rm-docker/Dockerfile.in
+            /#insert=rm-docker\/Dockerfile/d
+          ' Dockerfile.in > rm-docker/Dockerfile
           docker buildx build \
-            --tag $docker_host:5000/rm-docker:qemu-toltec \
+            --tag rm-docker:qemu-toltec \
+            --target qemu-toltec-codexctl \
             --cache-from type=gha \
             --cache-to type=gha \
-            --push \
-            --build-arg fw_version=2.15.1 \
-            https://github.com/timower/rM-docker.git
-        env:
-          docker_host: ${{ env.docker_host }}
-      - name: Build qemu-toltec-codexctl
-        run: |
-          docker buildx build \
-            --tag rm-docker:qemu-toltec-codexctl \
             --load \
-            --cache-from type=gha \
-            --cache-to type=gha \
-            --build-arg from=$docker_host:5000/rm-docker:qemu-toltec \
-            .
-        env:
-          docker_host: ${{ env.docker_host }}
+            --build-arg fw_version=2.15.1 \
+            rm-docker
       - name: Build codexctl
         run: |
           docker run --rm -v ./codexctl:/src rm-docker:qemu-toltec-codexctl
