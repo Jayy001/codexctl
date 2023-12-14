@@ -67,7 +67,7 @@ jobs:
             /#insert=rm-docker\/Dockerfile/d
           ' Dockerfile.in > rm-docker/Dockerfile
           docker buildx build \
-            --tag rm-docker:qemu-toltec \
+            --tag rm-docker:qemu-toltec-codexctl \
             --target qemu-toltec-codexctl \
             --cache-from type=gha \
             --cache-to type=gha \
