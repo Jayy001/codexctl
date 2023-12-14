@@ -14,23 +14,23 @@ EOT
 ADD scripts/install_build_tools.sh /opt/install_build_tools.sh
 
 RUN <<EOT
-set -ex
-run_vm.sh -serial null -daemonize
-wait_ssh.sh
-scp /opt/install_build_tools.sh root@localhost:/opt/bin
-ssh root@localhost 'bash -l -c install_build_tools.sh'
-save_vm.sh
+    set -ex
+    run_vm.sh -serial null -daemonize
+    wait_ssh.sh
+    scp /opt/install_build_tools.sh root@localhost:/opt/bin
+    ssh root@localhost 'bash -l -c install_build_tools.sh'
+    save_vm.sh
 EOT
 
 ADD scripts/build.sh /opt/build.sh
 
 RUN <<EOT
-set -ex
-run_vm.sh -serial null -daemonize
-wait_ssh.sh
-scp /opt/build.sh root@localhost:/opt/bin
-rm /opt/build.sh
-save_vm.sh
+    set -ex
+    run_vm.sh -serial null -daemonize
+    wait_ssh.sh
+    scp /opt/build.sh root@localhost:/opt/bin
+    rm /opt/build.sh
+    save_vm.sh
 EOT
 
 ADD scripts/run_build.sh /opt/bin/run_build.sh
