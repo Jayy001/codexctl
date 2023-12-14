@@ -7,7 +7,7 @@ echo "Installing dependencies"
 python -m pip install -r requirements.txt
 
 echo "Building codexctl"
-pyinstaller \
+python -m PyInstaller \
   --noconfirm \
   --runtime-tmpdir /tmp \
   --onefile \
