@@ -355,46 +355,47 @@ def do_install(args, device_type):
     server_host = "0.0.0.0"
     remarkable_remote = None
 
-    if not is_rm() and not REMOTE_DEPS_MET:
-        raise SystemExit(
-            "Error: Detected as running on the remote device, but could not resolve dependencies. "
-            'Please install them with "pip install -r requirements.txt'
-        )
-
-    server_host = get_host_ip()
-
-    logger.debug(f"Server host is {server_host}")
-
-    if server_host is None:
-        raise SystemExit(
-            "Error: This device does not seem to have a network connection."
-        )
-
-    if len(server_host) == 1:  # This means its found the USB interface
-        server_host = server_host[0]
-        remarkable_remote = connect_to_rm(args)
-    else:
-        host_interfaces = "\n".join(server_host)
-
-        print(
-            f"\n{host_interfaces}\nCould not find USB interface, assuming connected over WiFi (interfaces list above)"
-        )
-        while True:
-            server_host = input(
-                "\nPlease enter your IP for the network the device is connected to: "
+    if not is_rm():
+        if not REMOTE_DEPS_MET:
+            raise SystemExit(
+                "Error: Detected as running on the remote device, but could not resolve dependencies. "
+                'Please install them with "pip install -r requirements.txt'
             )
 
-            if server_host not in host_interfaces.split("\n"):  # Really...? This co
-                print("Error: Invalid IP given")
-                continue
-            if "n" in input("Are you sure? (Y/n) ").lower():
-                continue
+        server_host = get_host_ip()
+    
+        logger.debug(f"Server host is {server_host}")
+    
+        if server_host is None:
+            raise SystemExit(
+                "Error: This device does not seem to have a network connection."
+            )
 
-            break
-
-        remote_ip = get_remarkable_ip()
-
-        remarkable_remote = connect_to_rm(args, remote_ip)
+        if len(server_host) == 1:  # This means its found the USB interface
+            server_host = server_host[0]
+            remarkable_remote = connect_to_rm(args)
+        else:
+            host_interfaces = "\n".join(server_host)
+    
+            print(
+                f"\n{host_interfaces}\nCould not find USB interface, assuming connected over WiFi (interfaces list above)"
+            )
+            while True:
+                server_host = input(
+                    "\nPlease enter your IP for the network the device is connected to: "
+                )
+    
+                if server_host not in host_interfaces.split("\n"):  # Really...? This co
+                    print("Error: Invalid IP given")
+                    continue
+                if "n" in input("Are you sure? (Y/n) ").lower():
+                    continue
+    
+                break
+    
+            remote_ip = get_remarkable_ip()
+    
+            remarkable_remote = connect_to_rm(args, remote_ip)
 
     logger.debug("Editing config file")
     edit_config(remarkable_remote=remarkable_remote, server_ip=server_host, port=8080)
