@@ -413,27 +413,35 @@ def do_install(args, device_type):
     # Is it worth mapping the messages to a variable?
     if remarkable_remote is None:
         print("Enabling update service")
-        subprocess.run("systemctl start update-engine", shell=True, text=True)
+        subprocess.run(
+            ["/bin/systemctl", "start", "update-engine"],
+            text=True,
+            check=True,
+            env={"PATH": "/bin:/usr/bin:/sbin"},
+        )
 
-        process = subprocess.Popen(
-            "update_engine_client -update",
+        with subprocess.Popen(
+            ["/usr/bin/update_engine_client", "-update"],
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            shell=True,
-        )
+            env={"PATH": "/bin:/usr/bin:/sbin"},
+        ) as process:
+            if process.wait() != 0:
+                print("".join(process.stderr.readlines()))
 
-        if process.wait() != 0:
-            print("".join(process.stderr.readlines()))
+                raise SystemExit("There was an error updating :(")
 
-            raise SystemExit("There was an error updating :(")
-
-        logger.debug(
-            f'Stdout of update checking service is {"".join(process.stderr.readlines())}'
-        )
+            logger.debug(
+                f'Stdout of update checking service is {"".join(process.stderr.readlines())}'
+            )
 
         if "y" in input("Done! Would you like to shutdown?: ").lower():
-            subprocess.run(["shutdown", "now"])
+            subprocess.run(
+                ["/sbin/shutdown", "now"],
+                check=True,
+                env={"PATH": "/bin:/usr/bin:/sbin"},
+            )
     else:
         print("Checking if device can reach server")
         _stdin, stdout, _stderr = remarkable_remote.exec_command(
@@ -475,10 +483,19 @@ def do_restore(args):
         raise SystemExit("Aborted!!!")
 
     if os.path.isfile("/usr/share/remarkable/update.conf"):
-        subprocess.run(RESTORE_CODE, shell=True, text=True)
+        subprocess.run(
+            ["/bin/bash", "-l", "-c", RESTORE_CODE],
+            text=True,
+            check=True,
+            env={"PATH": "/bin:/usr/bin:/sbin"},
+        )
 
         if "y" in input("Done! Would you like to shutdown?: ").lower():
-            subprocess.run(["shutdown", "now"])
+            subprocess.run(
+                ["shutdown", "now"],
+                check=True,
+                env={"PATH": "/bin:/usr/bin:/sbin"},
+            )
 
     elif not REMOTE_DEPS_MET:
         raise SystemExit(
