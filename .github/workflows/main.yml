@@ -72,14 +72,18 @@ jobs:
           path: dist
           if-no-files-found: error
   device:
-    name: Build for remarkable
+    name: Build for remarkable ${{ matrix.fw_version }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        fw_version: ['2.15.1']
     steps:
       - name: Checkout the codexctl repository
         uses: actions/checkout@v4
       - uses: Eeems-Org/run-in-remarkable-action@v1
         with:
           clean_cache: true
+          fw_version: ${{ matrix.fw_version }}
           run: |
               set -eu
               echo "Installing dependencies"
@@ -162,7 +166,7 @@ jobs:
                 pyinstaller
       - uses: actions/upload-artifact@v3
         with:
-          name: remarkable
+          name: remarkable-${{ matrix.fw_version }}
           path: dist/codexctl
           if-no-files-found: error
   release:

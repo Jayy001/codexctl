@@ -131,3 +131,4 @@ dmypy.json
 # Updates folder from running the application
 updates/
 rm-docker/
+nuitka-crash-report.xml
