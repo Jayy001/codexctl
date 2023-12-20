@@ -134,7 +134,6 @@ jobs:
                 pip \
                 setuptools \
                 pyinstaller
-      - run: chmod +x dist/codexctl
       - uses: actions/upload-artifact@v3
         with:
           name: remarkable
