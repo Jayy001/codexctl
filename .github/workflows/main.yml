@@ -26,6 +26,13 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ github.job }}-${{ matrix.os }}
+      - name: Link ccache
+        shell: bash
+        run: |
+          mkdir -p "$nuitka_cache" .ccache
+          ln -s .ccache "$nuitka_cache/ccache"
+        env:
+          nuitka_cache: ${{ github.workspace }}/.nuitka
       - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
@@ -39,6 +46,7 @@ jobs:
           pip install -r requirements.remote.txt
           pip install nuitka
           mkdir -p dist
+          NUITKA_CACHE_DIR="$nuitka_cache" \
           python -m nuitka \
             --enable-plugin=pylint-warnings \
             --onefile \
@@ -47,6 +55,8 @@ jobs:
             --remove-output \
             --output-dir=dist \
             codexctl.py
+        env:
+          nuitka_cache: ${{ github.workspace }}/.nuitka
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}
