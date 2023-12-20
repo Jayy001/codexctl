@@ -22,11 +22,18 @@ jobs:
     steps:
       - name: Checkout the Git repository
         uses: actions/checkout@v4
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ github.job }}-${{ matrix.os }}
       - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
           cache: 'pip'
-      - name: Build codexctl
+          cache-dependency-path: |
+            **/requirements*.txt
+      - name: Install dependencies
+        shell: bash
         run: |
           pip install wheel
           pip install -r requirements.remote.txt
