@@ -26,11 +26,11 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ github.job }}-${{ matrix.os }}
-      - name: Link ccache
+      - name: Move .ccache
         shell: bash
         run: |
           mkdir -p "$nuitka_cache" .ccache
-          ln -s .ccache "$nuitka_cache/ccache"
+          mv .ccache "$nuitka_cache/ccache"
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - uses: actions/setup-python@v4
@@ -55,6 +55,12 @@ jobs:
             --remove-output \
             --output-dir=dist \
             codexctl.py
+        env:
+          nuitka_cache: ${{ github.workspace }}/.nuitka
+      - name: Move .ccache
+        shell: bash
+        run: |
+          mv "$nuitka_cache/ccache" .ccache
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - uses: actions/upload-artifact@v3
