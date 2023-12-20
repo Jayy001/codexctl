@@ -51,7 +51,7 @@ jobs:
     steps:
       - name: Checkout the codexctl repository
         uses: actions/checkout@v4
-      - uses: Eeems-Org/run-in-remarkable-action@v1.1
+      - uses: Eeems-Org/run-in-remarkable-action@v1
         with:
           clean_cache: true
           run: |
