@@ -106,7 +106,7 @@ def connect_to_rm(args, ip="10.11.99.1"):
         except paramiko.ssh_exception.AuthenticationException:
             print("Incorrect password or ssh path given in arguments!")
 
-    if "n" in input("Would you like to use a password to connect? (Y/n) ").lower():
+    if "n" in input("Would you like to use a password to connect? (Y/n): ").lower():
         while True:
             key_path = input("Enter path to SSH key: ")
 
@@ -363,9 +363,9 @@ def do_install(args, device_type):
             )
 
         server_host = get_host_ip()
-    
+
         logger.debug(f"Server host is {server_host}")
-    
+
         if server_host is None:
             raise SystemExit(
                 "Error: This device does not seem to have a network connection."
@@ -376,7 +376,7 @@ def do_install(args, device_type):
             remarkable_remote = connect_to_rm(args)
         else:
             host_interfaces = "\n".join(server_host)
-    
+
             print(
                 f"\n{host_interfaces}\nCould not find USB interface, assuming connected over WiFi (interfaces list above)"
             )
@@ -384,17 +384,17 @@ def do_install(args, device_type):
                 server_host = input(
                     "\nPlease enter your IP for the network the device is connected to: "
                 )
-    
+
                 if server_host not in host_interfaces.split("\n"):  # Really...? This co
                     print("Error: Invalid IP given")
                     continue
-                if "n" in input("Are you sure? (Y/n) ").lower():
+                if "n" in input("Are you sure? (Y/n): ").lower():
                     continue
-    
+
                 break
-    
+
             remote_ip = get_remarkable_ip()
-    
+
             remarkable_remote = connect_to_rm(args, remote_ip)
 
     logger.debug("Editing config file")
@@ -436,7 +436,7 @@ def do_install(args, device_type):
                 f'Stdout of update checking service is {"".join(process.stderr.readlines())}'
             )
 
-        if "y" in input("Done! Would you like to shutdown?: ").lower():
+        if "y" in input("Done! Would you like to shutdown? (y/N): ").lower():
             subprocess.run(
                 ["/sbin/shutdown", "now"],
                 check=True,
@@ -479,7 +479,7 @@ def do_install(args, device_type):
 
 
 def do_restore(args):
-    if "y" not in input("Are you sure you want to restore? (y/N) ").lower():
+    if "y" not in input("Are you sure you want to restore? (y/N): ").lower():
         raise SystemExit("Aborted!!!")
 
     if os.path.isfile("/usr/share/remarkable/update.conf"):
@@ -490,7 +490,7 @@ def do_restore(args):
             env={"PATH": "/bin:/usr/bin:/sbin"},
         )
 
-        if "y" in input("Done! Would you like to shutdown?: ").lower():
+        if "y" in input("Done! Would you like to shutdown? (y/N): ").lower():
             subprocess.run(
                 ["shutdown", "now"],
                 check=True,
