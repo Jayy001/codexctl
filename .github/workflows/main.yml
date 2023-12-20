@@ -45,6 +45,9 @@ jobs:
           pip install wheel
           pip install -r requirements.remote.txt
           pip install nuitka
+      - name: Build codexctl
+        shell: bash
+        run: |
           mkdir -p dist
           NUITKA_CACHE_DIR="$nuitka_cache" \
           python -m nuitka \
