@@ -105,7 +105,12 @@ jobs:
                 "${debootstrap_path}/debootstrap-master/debootstrap" \
                   --arch=armhf \
                   --variant=minbase \
+                  --foreign \
                   bullseye "$src_path"; then
+                cat "${src_path}/debootstrap/debootstrap.log"
+                exit 1
+              fi
+              if ! chroot "$src_path" /debootstrap/debootstrap --second-stage; then
                 cat "${src_path}/debootstrap/debootstrap.log"
                 exit 1
               fi
