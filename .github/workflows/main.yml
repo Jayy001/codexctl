@@ -100,8 +100,7 @@ jobs:
               "${debootstrap_path}/debootstrap-master/debootstrap" \
                 --arch=armhf \
                 --variant=minbase \
-                bullseye \
-                "$src_path" || true
+                bullseye "$src_path"
               mkdir -p "${src_path}/usr/sbin"
               cat > "${src_path}/usr/sbin/policy-rc.d" << EOF
               #!/bin/sh
