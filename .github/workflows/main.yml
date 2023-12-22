@@ -96,12 +96,19 @@ jobs:
               mkdir -p "$debootstrap_path"
               tar -xf /tmp/debootstrap.tar.gz -C "$debootstrap_path"
               rm /tmp/debootstrap.tar.gz
-              DEBOOTSTRAP_DIR="${debootstrap_path}/debootstrap-master" \
-              "${debootstrap_path}/debootstrap-master/debootstrap" \
-                --arch=armhf \
-                --variant=minbase \
-                --foreign \
-                bullseye "$src_path"
+              if ! DEBOOTSTRAP_DIR="${debootstrap_path}/debootstrap-master" \
+                "${debootstrap_path}/debootstrap-master/debootstrap" \
+                  --arch=armhf \
+                  --variant=minbase \
+                  --foreign \
+                  bullseye "$src_path"; then
+                cat "${src_path}/debootstrap/debootstrap.log"
+                exit 1
+              fi
+              if ! chroot "$src_path" /debootstrap/debootstrap --second-stage; then
+                cat "${src_path}/debootstrap/debootstrap.log"
+                exit 1
+              fi
               mkdir -p "${src_path}/usr/sbin"
               cat > "${src_path}/usr/sbin/policy-rc.d" << EOF
               #!/bin/sh
@@ -121,7 +128,7 @@ jobs:
               mount --bind / "${src_path}/mnt/remarkable"
               mount --bind /home "${src_path}/mnt/remarkable/home"
               chroot "$src_path" bash -x <<'EOF'
-                /debootstrap/debootstrap --second-stage
+                set -e
                 apt install -y ca-certificates
                 apt install -y \
                   python3-dev \
@@ -136,6 +143,7 @@ jobs:
               set -eu
               src_path=/home/root/.local/share/debian
               chroot "$src_path" bash -x <<'EOF'
+                set -e
                 source /opt/lib/nuitka/bin/activate
                 pip install -r requirements.txt
                 nuitka3 \
