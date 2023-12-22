@@ -87,7 +87,7 @@ jobs:
           setup: |
               set -e
               opkg update
-              opkg install perl
+              opkg install perl ar
               src_path=/home/root/.local/share/debian
               debootstrap_path=/home/root/.local/share/debootstrap
               wget \
@@ -125,8 +125,6 @@ jobs:
               mount --bind /sys "${src_path}/sys"
               mount --bind /run "${src_path}/run"
               mount -t tmpfs tmpfs "${src_path}/tmp"
-              mount --bind / "${src_path}/mnt/remarkable"
-              mount --bind /home "${src_path}/mnt/remarkable/home"
               chroot "$src_path" bash -x <<'EOF'
                 set -e
                 apt install -y ca-certificates
@@ -143,9 +141,11 @@ jobs:
           run: |
               set -eu
               src_path=/home/root/.local/share/debian
+              mount --bind . "${src_path}/mnt"
               chroot "$src_path" bash -x <<'EOF'
                 set -e
                 source /opt/lib/nuitka/bin/activate
+                cd /mnt
                 pip install -r requirements.txt
                 nuitka3 \
                   --onefile \
