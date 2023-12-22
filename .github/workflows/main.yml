@@ -100,6 +100,7 @@ jobs:
               "${debootstrap_path}/debootstrap-master/debootstrap" \
                 --arch=armhf \
                 --variant=minbase \
+                --foreign \
                 bullseye "$src_path"
               mkdir -p "${src_path}/usr/sbin"
               cat > "${src_path}/usr/sbin/policy-rc.d" << EOF
@@ -107,7 +108,7 @@ jobs:
               exit 101
               EOF
               chmod a+x "${src_path}/usr/sbin/policy-rc.d"
-              cp "${src_path}/bin/true" "${src_path}/usr/bin/ischroot"
+              ln -sf /bin/true "${src_path}/usr/bin/ischroot"
               cp /etc/hosts "${src_path}/etc/hosts"
               cp /etc/resolv.conf "${src_path}/etc/resolv.conf"
               ln -sf /root "${src_path}/home/root"
@@ -120,6 +121,7 @@ jobs:
               mount --bind / "${src_path}/mnt/remarkable"
               mount --bind /home "${src_path}/mnt/remarkable/home"
               chroot "$src_path" bash -x <<'EOF'
+                /debootstrap/debootstrap --second-stage
                 apt install -y ca-certificates
                 apt install -y \
                   python3-dev \
@@ -127,14 +129,14 @@ jobs:
                   python3-pip \
                   python3-venv
                 python3 -m venv /opt/lib/nuitka
-                /opt/lib/nuitka/bin/activate
+                source /opt/lib/nuitka/bin/activate
                 pip install nuitka
               EOF
           run: |
               set -eu
               src_path=/home/root/.local/share/debian
               chroot "$src_path" bash -x <<'EOF'
-                /opt/lib/nuitka/bin/activate
+                source /opt/lib/nuitka/bin/activate
                 pip install -r requirements.txt
                 nuitka3 \
                   --onefile \
