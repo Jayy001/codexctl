@@ -84,86 +84,67 @@ jobs:
         with:
           clean_cache: true
           fw_version: ${{ matrix.fw_version }}
+          setup: |
+              set -e
+              opkg update
+              opkg install perl
+              src_path=/home/root/.local/share/debian
+              debootstrap_path=/home/root/.local/share/debootstrap
+              wget \
+                https://salsa.debian.org/installer-team/debootstrap/-/archive/master/debootstrap-master.tar.gz \
+                --output-document=/tmp/debootstrap.tar.gz
+              mkdir -p "$debootstrap_path"
+              tar -xf /tmp/debootstrap.tar.gz -C "$debootstrap_path"
+              rm /tmp/debootstrap.tar.gz
+              DEBOOTSTRAP_DIR="${debootstrap_path}/debootstrap-master" \
+              "${debootstrap_path}/debootstrap-master/debootstrap" \
+                --arch=armhf \
+                --variant=minbase \
+                bullseye \
+                "$src_path" || true
+              mkdir -p "${src_path}/usr/sbin"
+              cat > "${src_path}/usr/sbin/policy-rc.d" << EOF
+              #!/bin/sh
+              exit 101
+              EOF
+              chmod a+x "${src_path}/usr/sbin/policy-rc.d"
+              cp "${src_path}/bin/true" "${src_path}/usr/bin/ischroot"
+              cp /etc/hosts "${src_path}/etc/hosts"
+              cp /etc/resolv.conf "${src_path}/etc/resolv.conf"
+              ln -sf /root "${src_path}/home/root"
+              mount --bind /dev "${src_path}/dev"
+              mount --bind /dev/pts "${src_path}/dev/pts"
+              mount --bind /proc "${src_path}/proc"
+              mount --bind /sys "${src_path}/sys"
+              mount --bind /run "${src_path}/run"
+              mount -t tmpfs tmpfs "${src_path}/tmp"
+              mount --bind / "${src_path}/mnt/remarkable"
+              mount --bind /home "${src_path}/mnt/remarkable/home"
+              chroot "$src_path" bash -x <<'EOF'
+                apt install -y ca-certificates
+                apt install -y \
+                  python3-dev \
+                  libffi-dev \
+                  python3-pip \
+                  python3-venv
+                python3 -m venv /opt/lib/nuitka
+                /opt/lib/nuitka/bin/activate
+                pip install nuitka
+              EOF
           run: |
               set -eu
-              echo "Installing dependencies"
-              python -m pip install -r requirements.txt
-              echo "Building codexctl"
-              python -m PyInstaller \
-                --noconfirm \
-                --runtime-tmpdir /tmp \
-                --onefile \
-                --strip \
-                codexctl.py
-          setup: |
-              set -eu
-              opkg update
-              echo "Installing basic build tools"
-              opkg install \
-                gcc \
-                binutils \
-                busybox \
-                gawk \
-                ldd \
-                make \
-                sed \
-                tar \
-                patchelf
-              echo "Installing recommended build tools"
-              opkg --force-overwrite \
-                install \
-                coreutils-install \
-                diffutils \
-                ldconfig \
-                patch \
-                pkg-config
-              echo "Installing automake, cmake, meson, and ninja"
-              opkg install \
-                automake \
-                libintl-full \
-                libtool-bin \
-                cmake \
-                icu \
-                libopenssl \
-                bash \
-                git \
-                git-http python3-pip \
-                python3-setuptools \
-                coreutils-od \
-                python3-psutil \
-                python3-bcrypt \
-                python3-cryptography
-              python3 -m pip install -U wheel
-              cd /opt/tmp
-              git clone https://github.com/ninja-build/ninja.git
-              cd ./ninja
-              git checkout release
-              CONFIG_SHELL=/opt/bin/bash python3 ./configure.py --bootstrap
-              install -Dm0755 -t /opt/bin ./ninja
-              cd /opt/tmp
-              rm -Rf /opt/tmp/ninja
-              python3 -m pip install -U meson
-              echo "Installing header files"
-              opkg install --force-overwrite --force-reinstall \
-                libncurses-dev \
-                libxml2-dev \
-                python3-dev \
-                ruby-dev \
-                zlib-dev
-              /opt/bin/busybox wget -qO- "$(/opt/bin/busybox sed -Ene \
-                's|^src/gz[[:space:]]entware[[:space:]]https?([[:graph:]]+)|http\1/include/include.tar.gz|p' \
-                /opt/etc/opkg.conf)" | /opt/bin/busybox tar x -vzC /opt/include
-              echo "Installing python dependencies"
-              opkg install \
-                python3-cryptography \
-                python3-bcrypt \
-                python3-requests \
-                python3-psutil
-              ln -s /opt/lib/libffi.so.8 /opt/lib/libffi.so
-              python3 -m pip install -U \
-                pip \
-                setuptools \
-                pyinstaller
+              src_path=/home/root/.local/share/debian
+              chroot "$src_path" bash -x <<'EOF'
+                /opt/lib/nuitka/bin/activate
+                pip install -r requirements.txt
+                nuitka3 \
+                  --onefile \
+                  --lto=yes \
+                  --jobs=2 \
+                  --output-filename=codexctl \
+                  --output-dir=dist \
+                  codexctl.py
+              EOF
       - uses: actions/upload-artifact@v3
         with:
           name: remarkable-${{ matrix.fw_version }}
