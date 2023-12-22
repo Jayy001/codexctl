@@ -80,6 +80,11 @@ jobs:
     steps:
       - name: Checkout the codexctl repository
         uses: actions/checkout@v4
+      - name: Nuitka ccache
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/.nuitka
+          key: ${{ github.job }}-remarkable-${{ matrix.fw_version }}
       - uses: Eeems-Org/run-in-remarkable-action@v1
         with:
           clean_cache: true
@@ -100,12 +105,7 @@ jobs:
                 "${debootstrap_path}/debootstrap-master/debootstrap" \
                   --arch=armhf \
                   --variant=minbase \
-                  --foreign \
                   bullseye "$src_path"; then
-                cat "${src_path}/debootstrap/debootstrap.log"
-                exit 1
-              fi
-              if ! chroot "$src_path" /debootstrap/debootstrap --second-stage; then
                 cat "${src_path}/debootstrap/debootstrap.log"
                 exit 1
               fi
@@ -133,7 +133,8 @@ jobs:
                   libffi-dev \
                   python3-pip \
                   python3-venv \
-                  patchelf
+                  patchelf \
+                  ccache
                 python3 -m venv /opt/lib/nuitka
                 source /opt/lib/nuitka/bin/activate
                 pip install nuitka
@@ -147,18 +148,20 @@ jobs:
                 source /opt/lib/nuitka/bin/activate
                 cd /mnt
                 pip install -r requirements.txt
+                NUITKA_CACHE_DIR="/mnt/.nuitka" \
                 nuitka3 \
+                  --enable-plugin=pylint-warnings \
                   --onefile \
                   --lto=yes \
-                  --jobs=2 \
-                  --output-filename=codexctl \
+                  --assume-yes-for-downloads \
+                  --remove-output \
                   --output-dir=dist \
                   codexctl.py
               EOF
       - uses: actions/upload-artifact@v3
         with:
           name: remarkable-${{ matrix.fw_version }}
-          path: dist/codexctl
+          path: dist
           if-no-files-found: error
   release:
     name: Release
