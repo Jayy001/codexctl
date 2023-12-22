@@ -134,7 +134,8 @@ jobs:
                   python3-dev \
                   libffi-dev \
                   python3-pip \
-                  python3-venv
+                  python3-venv \
+                  patchelf
                 python3 -m venv /opt/lib/nuitka
                 source /opt/lib/nuitka/bin/activate
                 pip install nuitka
