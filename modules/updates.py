@@ -13,7 +13,7 @@ class UpdateManager:
         )
 
         self.logger = logger
-        self.DOWNLOAD_FOLDER = Path.home() / "Downloads"
+        self.DOWNLOAD_FOLDER = Path(os.environ["XDG_DOWNLOAD_DIR"] if ("XDG_DOWNLOAD_DIR" in os.environ and os.path.exists(os.environ["XDG_DOWNLOAD_DIR"])) else Path.home() / "Downloads")
         self.device_version = (
             device_version if device_version else "3.2.3.1595"
         )  # Earliest 3.x.x version
