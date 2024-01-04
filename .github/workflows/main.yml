@@ -35,7 +35,7 @@ jobs:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.11'
           cache: 'pip'
           cache-dependency-path: |
             **/requirements*.txt
@@ -64,11 +64,8 @@ jobs:
           path: dist
           if-no-files-found: error
   device:
-    name: Build for remarkable ${{ matrix.fw_version }}
+    name: Build for remarkable
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        fw_version: ['2.15.1']
     steps:
       - name: Checkout the codexctl repository
         uses: actions/checkout@v4
@@ -76,76 +73,40 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/.nuitka
-          key: ${{ github.job }}-remarkable-${{ matrix.fw_version }}
-      - uses: Eeems-Org/run-in-remarkable-action@v1
-        with:
-          clean_cache: true
-          fw_version: ${{ matrix.fw_version }}
-          setup: |
-              set -e
-              opkg update
-              opkg install perl ar
-              src_path=/home/root/.local/share/debian
-              debootstrap_path=/home/root/.local/share/debootstrap
-              wget \
-                https://salsa.debian.org/installer-team/debootstrap/-/archive/master/debootstrap-master.tar.gz \
-                --output-document=/tmp/debootstrap.tar.gz
-              mkdir -p "$debootstrap_path"
-              tar -xf /tmp/debootstrap.tar.gz -C "$debootstrap_path"
-              rm /tmp/debootstrap.tar.gz
-              if ! DEBOOTSTRAP_DIR="${debootstrap_path}/debootstrap-master" \
-                "${debootstrap_path}/debootstrap-master/debootstrap" \
-                  --arch=armhf \
-                  --variant=minbase \
-                  --foreign \
-                  bullseye "$src_path"; then
-                cat "${src_path}/debootstrap/debootstrap.log"
-                exit 1
-              fi
-              if ! chroot "$src_path" /debootstrap/debootstrap --second-stage; then
-                cat "${src_path}/debootstrap/debootstrap.log"
-                exit 1
-              fi
-              mkdir -p "${src_path}/usr/sbin"
-              cat > "${src_path}/usr/sbin/policy-rc.d" << EOF
-              #!/bin/sh
-              exit 101
-              EOF
-              chmod a+x "${src_path}/usr/sbin/policy-rc.d"
-              ln -sf /bin/true "${src_path}/usr/bin/ischroot"
-              cp /etc/hosts "${src_path}/etc/hosts"
-              cp /etc/resolv.conf "${src_path}/etc/resolv.conf"
-              ln -sf /root "${src_path}/home/root"
-              mount --bind /dev "${src_path}/dev"
-              mount --bind /dev/pts "${src_path}/dev/pts"
-              mount --bind /proc "${src_path}/proc"
-              mount --bind /sys "${src_path}/sys"
-              mount --bind /run "${src_path}/run"
-              mount -t tmpfs tmpfs "${src_path}/tmp"
-              chroot "$src_path" bash -x <<'EOF'
-                set -e
-                apt install -y ca-certificates
-                apt install -y \
-                  python3-dev \
-                  libffi-dev \
-                  python3-pip \
-                  python3-venv \
-                  patchelf \
-                  ccache
-              EOF
-          run: |
-              set -eu
-              src_path=/home/root/.local/share/debian
-              mount --bind . "${src_path}/mnt"
-              chroot "$src_path" bash -x <<'EOF'
-                set -e
-                cd /mnt
-                make test
-                make executable
-              EOF
+          key: ${{ github.job }}-remarkable-2.15.1
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build executable
+        shell: bash
+        run: |
+          docker run \
+            --rm \
+            --platform=linux/arm/v7 \
+            -v "${src_path}":/src \
+            eeems/nuitka-arm-builder:bullseye-11 \
+            bash -ec "$script" 2>&1 \
+          | while read -r line; do
+            if [[ "$line" == 'Nuitka'*':ERROR:'* ]]; then
+              echo "::error file=${{ steps.args.outputs.main_file }},title=Nuitka Error::$line"
+            elif [[ "$line" == 'Nuitka'*':WARNING:'* ]]; then
+              echo "::warning file=${{ steps.args.outputs.main_file }},title=Nuitka Warning::$line"
+            elif [[ "$line" == 'Nuitka:INFO:'* ]]; then
+              echo "$line"
+            else
+              echo "::debug::$line"
+            fi
+          done
+        env:
+          src_path: ${{ github.workspace }}
+          script: |
+            cd /src
+            make test
+            make executable
       - uses: actions/upload-artifact@v3
         with:
-          name: remarkable-${{ matrix.fw_version }}
+          name: remarkable-2.15.1
           path: dist
           if-no-files-found: error
   release:

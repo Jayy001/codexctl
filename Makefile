@@ -45,6 +45,7 @@ executable: .venv/bin/activate
 	    --output-dir=dist \
 	    --python-arg=-m \
 	    codexctl
+	dist/codexctl.* --help
 
 all: executable
 
