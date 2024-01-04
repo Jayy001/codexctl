@@ -93,23 +93,24 @@ jobs:
             --platform=linux/arm/v7 \
             -v "${src_path}":/src \
             eeems/nuitka-arm-builder:bullseye-11 \
-            bash -ec "$script" 2>&1 \
-          | while read -r line; do
-            if [[ "$line" == 'Nuitka'*':ERROR:'* ]]; then
-              echo "::error file=${{ steps.args.outputs.main_file }},title=Nuitka Error::$line"
-            elif [[ "$line" == 'Nuitka'*':WARNING:'* ]]; then
-              echo "::warning file=${{ steps.args.outputs.main_file }},title=Nuitka Warning::$line"
-            elif [[ "$line" == 'Nuitka:INFO:'* ]]; then
-              echo "$line"
-            else
-              echo "::debug::$line"
-            fi
+            bash -ec "$script" # 2>&1 \
+          # | while read -r line; do
+          #   if [[ "$line" == 'Nuitka'*':ERROR:'* ]]; then
+          #     echo "::error file=${{ steps.args.outputs.main_file }},title=Nuitka Error::$line"
+          #   elif [[ "$line" == 'Nuitka'*':WARNING:'* ]]; then
+          #     echo "::warning file=${{ steps.args.outputs.main_file }},title=Nuitka Warning::$line"
+          #   elif [[ "$line" == 'Nuitka:INFO:'* ]]; then
+          #     echo "$line"
+          #   else
+          #     echo "::debug::$line"
+          #   fi
           done
         env:
           src_path: ${{ github.workspace }}
           script: |
             apt update
-            apt install -y libfuse-dev
+            apt install -y \
+              libfuse-dev
             cd /src
             make test
             make executable
