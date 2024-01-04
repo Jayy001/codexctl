@@ -93,7 +93,7 @@ jobs:
             --rm \
             --platform=linux/arm/v7 \
             -v "${src_path}":/src \
-            eeems/nuitka-arm-builder:bullseye-11 \
+            eeems/nuitka-arm-builder:bullseye-3.11 \
             bash -ec "$script" # 2>&1 \
           # | while read -r line; do
           #   if [[ "$line" == 'Nuitka'*':ERROR:'* ]]; then
