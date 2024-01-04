@@ -10,7 +10,9 @@ OBJ += README.md
 	@echo "Setting up development virtual env in .venv"
 	python -m venv .venv
 	. .venv/bin/activate; \
-	python -m pip install --extra-index-url=https://wheels.eeems.codes/ -r requirements.remote.txt
+	python -m pip install \
+	    --extra-index-url=https://wheels.eeems.codes/ \
+	    -r requirements.remote.txt
 
 .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed: .venv/bin/activate $(OBJ)
 	. .venv/bin/activate; \

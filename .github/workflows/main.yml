@@ -21,6 +21,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install Apt packages
+        if: matrix.os == 'ubuntu-latest'
         id: cache-apt
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
