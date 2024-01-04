@@ -115,6 +115,7 @@ jobs:
             apt install -y \
               libfuse-dev
             cd /src
+            source /opt/lib/nuitka/bin/activate
             make test
             make executable
       - uses: actions/upload-artifact@v3
