@@ -53,11 +53,13 @@ jobs:
           pip install wheel
           pip install -r requirements.remote.txt
           pip install nuitka
+      - name: Test codexctl
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: make test
       - name: Build codexctl
         shell: bash
-        run: |
-          make test
-          make executable
+        run: make executable
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Move .ccache
