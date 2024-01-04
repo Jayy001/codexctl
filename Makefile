@@ -39,15 +39,16 @@ executable: .venv/bin/activate
 	. .venv/bin/activate; \
 	python -m pip install --extra-index-url=https://wheels.eeems.codes/ wheel nuitka; \
 	NUITKA_CACHE_DIR="$(realpath .)/.nuitka" \
-	python -m nuitka \
+	nuitka3 \
 	    --enable-plugin=pylint-warnings \
+	    --enable-plugin=upx \
+	    --warn-implicit-exceptions \
 	    --onefile \
 	    --lto=yes \
 	    --assume-yes-for-downloads \
 	    --remove-output \
 	    --output-dir=dist \
-	    --python-arg=-m \
-	    codexctl
+	    codexctl.py
 	dist/codexctl.* --help
 
 all: executable
