@@ -20,6 +20,13 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Install Apt packages
+        id: cache-apt
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          execute_install_scripts: true
+          packages: libfuse-dev
+          version: 1.0
       - name: Checkout the Git repository
         uses: actions/checkout@v4
       - name: ccache
@@ -101,6 +108,8 @@ jobs:
         env:
           src_path: ${{ github.workspace }}
           script: |
+            apt update
+            apt install -y libfuse-dev
             cd /src
             make test
             make executable
