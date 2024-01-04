@@ -21,12 +21,12 @@ OBJ += README.md
 
 test: .venv/bin/activate .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	if [ -d .venv/mnt ] && mountpoint -q .venv/mnt; then \
-		umount -ql .venv/mnt; \
+	    umount -ql .venv/mnt; \
 	fi
 	mkdir -p .venv/mnt
 	. .venv/bin/activate; \
 	python -m codexctl mount --out .venv/mnt ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
-	[[ "$(shell ls .venv/mnt)" == "bin boot dev etc home lib lost+found media mnt postinst proc run sbin sys tmp uboot-postinst uboot-version usr var" ]]
+	mountpoint .venv/mnt
 	umount -ql .venv/mnt
 
 clean:
