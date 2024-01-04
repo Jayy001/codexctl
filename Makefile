@@ -3,28 +3,32 @@ FW_VERSION := 2.15.1.1189
 FW_DATA := wVbHkgKisg-
 SHELL := /bin/bash
 
+ifeq ($(VENV_BIN_ACTIVATE),)
+VENV_BIN_ACTIVATE := .venv/bin/activate
+endif
+
 OBJ := $(shell find codexctl -type f)
 OBJ += $(shell find data -type f)
 OBJ += README.md
 
-.venv/bin/activate: requirements.remote.txt requirements.txt
+$(VENV_BIN_ACTIVATE): requirements.remote.txt requirements.txt
 	@echo "Setting up development virtual env in .venv"
 	python -m venv .venv
-	. .venv/bin/activate; \
+	. $(VENV_BIN_ACTIVATE); \
 	python -m pip install \
 	    --extra-index-url=https://wheels.eeems.codes/ \
 	    -r requirements.remote.txt
 
-.venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed: .venv/bin/activate $(OBJ)
-	. .venv/bin/activate; \
+.venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed: $(VENV_BIN_ACTIVATE) $(OBJ)
+	. $(VENV_BIN_ACTIVATE); \
 	python -m codexctl download --out .venv ${FW_VERSION}
 
-test: .venv/bin/activate .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
+test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	if [ -d .venv/mnt ] && mountpoint -q .venv/mnt; then \
 	    umount -ql .venv/mnt; \
 	fi
 	mkdir -p .venv/mnt
-	. .venv/bin/activate; \
+	. $(VENV_BIN_ACTIVATE); \
 	python -m codexctl mount --out .venv/mnt ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
 	mountpoint .venv/mnt
 	umount -ql .venv/mnt
@@ -35,8 +39,8 @@ clean:
 	fi
 	git clean --force -dX
 
-executable: .venv/bin/activate
-	. .venv/bin/activate; \
+executable: $(VENV_BIN_ACTIVATE)
+	. $(VENV_BIN_ACTIVATE); \
 	python -m pip install --extra-index-url=https://wheels.eeems.codes/ wheel nuitka; \
 	NUITKA_CACHE_DIR="$(realpath .)/.nuitka" \
 	nuitka3 \
