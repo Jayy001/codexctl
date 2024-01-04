@@ -48,16 +48,8 @@ jobs:
       - name: Build codexctl
         shell: bash
         run: |
-          mkdir -p dist
-          NUITKA_CACHE_DIR="$nuitka_cache" \
-          python -m nuitka \
-            --enable-plugin=pylint-warnings \
-            --onefile \
-            --lto=yes \
-            --assume-yes-for-downloads \
-            --remove-output \
-            --output-dir=dist \
-            codexctl.py
+          make test
+          make executable
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Move .ccache
@@ -140,9 +132,6 @@ jobs:
                   python3-venv \
                   patchelf \
                   ccache
-                python3 -m venv /opt/lib/nuitka
-                source /opt/lib/nuitka/bin/activate
-                pip install nuitka
               EOF
           run: |
               set -eu
@@ -150,18 +139,9 @@ jobs:
               mount --bind . "${src_path}/mnt"
               chroot "$src_path" bash -x <<'EOF'
                 set -e
-                source /opt/lib/nuitka/bin/activate
                 cd /mnt
-                pip install -r requirements.txt
-                NUITKA_CACHE_DIR="/mnt/.nuitka" \
-                nuitka3 \
-                  --enable-plugin=pylint-warnings \
-                  --onefile \
-                  --lto=yes \
-                  --assume-yes-for-downloads \
-                  --remove-output \
-                  --output-dir=dist \
-                  codexctl.py
+                make test
+                make executable
               EOF
       - uses: actions/upload-artifact@v3
         with:

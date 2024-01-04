@@ -15,7 +15,6 @@ from loguru import logger
 from .sync import RmWebInterfaceAPI
 from .updates import UpdateManager
 from .server import startUpdate, scanUpdates
-from .extractor import extract
 
 REMOTE_DEPS_MET = True
 
@@ -561,16 +560,16 @@ def do_extract(args):
         args.out = os.getcwd() + "/extracted"
 
     logger.debug(f"Extracting {args.file} to {args.out}")
+    from remarkable_update_fuse import UpdateImage
 
-    try:
-        extract(args.file, args.out)
-    except Exception as error:
-        raise SystemExit(f"Error: {error}")
+    image = UpdateImage(args.file)
+    with open(args.out, "wb") as f:
+        f.write(image.read())
 
 
 def do_mount(args):
     if args.out is None:
-        args.out = f"/opt/remarkable/"
+        args.out = "/opt/remarkable/"
 
     if not os.path.exists(args.out):
         os.mkdir(args.out)
@@ -578,7 +577,11 @@ def do_mount(args):
     if not os.path.exists(args.filesystem):
         raise SystemExit("Firmware file does not exist!")
 
-    os.system(f"mount -o loop {args.filesystem} {args.out}")
+    from remarkable_update_fuse import UpdateFS
+
+    server = UpdateFS()
+    server.parse(args=[args.filesystem, args.out], values=server, errex=1)
+    server.main()
 
 
 def main():
