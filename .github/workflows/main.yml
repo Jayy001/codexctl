@@ -115,6 +115,7 @@ jobs:
             ./github-make-executable.sh
       - uses: Eeems-Org/run-in-remarkable-action@v1
         with:
+          fw_version: 2.15.1
           run: |
             set -ex
             ./codexctl.bin download 2.15.1.1189

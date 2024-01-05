@@ -57,7 +57,7 @@ class UpdateManager:
 
             self.logger.debug(f"Folder location is {folder_location}")
             if not os.path.exists(folder_location):
-                os.mkdir(folder_location)
+                os.makedirs(folder_location, exist_ok=True)
 
             file_location = folder_location + "/version-ids.json"
 
@@ -144,18 +144,18 @@ class UpdateManager:
         else:
             return max([item for item in list(self.id_lookups_rm1.keys())])
         """
-		
-		data = self._generate_xml_data()
 
-		response = self._make_request(data)
+        data = self._generate_xml_data()
 
-		if response is None:  # or if not response
-			return
-		print(response)
-		file_version, file_uri, file_name = self._parse_response(response)
+        response = self._make_request(data)
 
-		return 'file_version'
-		"""
+        if response is None:  # or if not response
+            return
+        print(response)
+        file_version, file_uri, file_name = self._parse_response(response)
+
+        return 'file_version'
+        """
 
     def _generate_xml_data(self):  # TODO: Support for remarkable1
         params = {
@@ -173,10 +173,10 @@ class UpdateManager:
 
         return """<?xml version="1.0" encoding="UTF-8"?>
 <request protocol="3.0" version="{current}" requestid="{{{requestid}}}" sessionid="{{{sessionid}}}" updaterversion="0.4.2" installsource="{installsource}" ismachine="1">
-	<os version="zg" platform="{platform}" sp="{current}_armv7l" arch="armv7l"></os>
-	<app appid="{{{appid}}}" version="{current}" track="{group}" ap="{group}" bootid="{{{bootid}}}" oem="{oem}" oemversion="2.5.2" alephversion="{current}" machineid="{machineid}" lang="en-US" board="" hardware_class="" delta_okay="false" nextversion="" brand="" client="" >
-		<updatecheck/>
-	</app>
+    <os version="zg" platform="{platform}" sp="{current}_armv7l" arch="armv7l"></os>
+    <app appid="{{{appid}}}" version="{current}" track="{group}" ap="{group}" bootid="{{{bootid}}}" oem="{oem}" oemversion="2.5.2" alephversion="{current}" machineid="{machineid}" lang="en-US" board="" hardware_class="" delta_okay="false" nextversion="" brand="" client="" >
+        <updatecheck/>
+    </app>
 </request>""".format(
             **params
         )
