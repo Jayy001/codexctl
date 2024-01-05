@@ -118,7 +118,7 @@ jobs:
           fw_version: 2.15.1
           run: |
             set -ex
-            ./codexctl.bin download 2.15.1.1189
+            ./codexctl.bin download --out . 2.15.1.1189
           path: dist
       - uses: actions/upload-artifact@v3
         with:
