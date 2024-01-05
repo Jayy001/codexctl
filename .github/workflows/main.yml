@@ -113,6 +113,12 @@ jobs:
             cd /src
             source /opt/lib/nuitka/bin/activate
             ./github-make-executable.sh
+      - uses: Eeems-Org/run-in-remarkable-action@v1
+        with:
+          run: |
+            set -ex
+            ./codexctl.bin download 2.15.1.1189
+          path: dist
       - uses: actions/upload-artifact@v3
         with:
           name: remarkable-2.15.1
