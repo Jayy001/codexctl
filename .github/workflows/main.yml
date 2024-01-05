@@ -58,14 +58,42 @@ jobs:
       - name: Build codexctl
         if: matrix.os == 'windows-latest'
         shell: bash
-        run: make executable
+        run: |
+          make executable 2>&1 \
+          | while read -r line; do
+            readarray -t lines <<< "$line"
+            if [[ "$line" == 'Nuitka'*':ERROR:'* ]]; then
+              printf '::error file=codexctl.py,title=Nuitka Error::%s\n' "${lines[@]}"
+            elif [[ "$line" == 'Nuitka'*':WARNING:'* ]]; then
+              printf '::warning file=codexctl.py,title=Nuitka Warning::%s\n' "${lines[@]}"
+            elif [[ "$line" == 'Nuitka:INFO:'* ]] || [[ "$line" == '[info]'* ]]; then
+              echo "$line"
+            else
+              printf '::debug::%s\n' "${lines[@]}"
+              echo "::debug::$line"
+            fi
+          done
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
           VENV_BIN_ACTIVATE: .venv/Scripts/activate
       - name: Build codexctl
         if: matrix.os != 'windows-latest'
         shell: bash
-        run: make executable
+        run: |
+          make executable 2>&1 \
+          | while read -r line; do
+            readarray -t lines <<< "$line"
+            if [[ "$line" == 'Nuitka'*':ERROR:'* ]]; then
+              printf '::error file=codexctl.py,title=Nuitka Error::%s\n' "${lines[@]}"
+            elif [[ "$line" == 'Nuitka'*':WARNING:'* ]]; then
+              printf '::warning file=codexctl.py,title=Nuitka Warning::%s\n' "${lines[@]}"
+            elif [[ "$line" == 'Nuitka:INFO:'* ]] || [[ "$line" == '[info]'* ]]; then
+              echo "$line"
+            else
+              printf '::debug::%s\n' "${lines[@]}"
+              echo "::debug::$line"
+            fi
+          done
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Move .ccache
@@ -109,7 +137,7 @@ jobs:
               printf '::error file=codexctl.py,title=Nuitka Error::%s\n' "${lines[@]}"
             elif [[ "$line" == 'Nuitka'*':WARNING:'* ]]; then
               printf '::warning file=codexctl.py,title=Nuitka Warning::%s\n' "${lines[@]}"
-            elif [[ "$line" == 'Nuitka:INFO:'* ]]; then
+            elif [[ "$line" == 'Nuitka:INFO:'* ]] || [[ "$line" == '[info]'* ]]; then
               echo "$line"
             else
               printf '::debug::%s\n' "${lines[@]}"
@@ -119,6 +147,7 @@ jobs:
         env:
           src_path: ${{ github.workspace }}
           script: |
+            echo "[info] Installing build dependencies"
             apt update
             apt install -y \
               libfuse-dev
