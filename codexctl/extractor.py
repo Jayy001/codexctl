@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from modules.update_metadata_pb2 import DeltaArchiveManifest
+from .update_metadata_pb2 import DeltaArchiveManifest
 import sys, os, struct, bz2
 
 BLOCK_SIZE = 4096
