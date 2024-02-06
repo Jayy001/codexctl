@@ -91,7 +91,6 @@ jobs:
       - uses: Eeems-Org/remarkable-nuitka-build-action@v2
         with:
           main: codexctl.py
-          run: true
           python_version: '3.9'
       - uses: actions/upload-artifact@v3
         with:
