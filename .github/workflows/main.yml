@@ -72,11 +72,8 @@ jobs:
           path: dist
           if-no-files-found: error
   device:
-    name: Build for remarkable ${{ matrix.fw_version }}
+    name: Build for remarkable
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        fw_version: ['2.15.1']
     steps:
       - name: Checkout the codexctl repository
         uses: actions/checkout@v4
@@ -84,88 +81,15 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/.nuitka
-          key: ${{ github.job }}-remarkable-${{ matrix.fw_version }}
-      - uses: Eeems-Org/run-in-remarkable-action@v1
+          key: ${{ github.job }}-remarkable
+      - uses: Eeems-Org/remarkable-nuitka-build-action@v2
         with:
-          clean_cache: true
-          fw_version: ${{ matrix.fw_version }}
-          setup: |
-              set -e
-              opkg update
-              opkg install perl ar
-              src_path=/home/root/.local/share/debian
-              debootstrap_path=/home/root/.local/share/debootstrap
-              wget \
-                https://salsa.debian.org/installer-team/debootstrap/-/archive/master/debootstrap-master.tar.gz \
-                --output-document=/tmp/debootstrap.tar.gz
-              mkdir -p "$debootstrap_path"
-              tar -xf /tmp/debootstrap.tar.gz -C "$debootstrap_path"
-              rm /tmp/debootstrap.tar.gz
-              if ! DEBOOTSTRAP_DIR="${debootstrap_path}/debootstrap-master" \
-                "${debootstrap_path}/debootstrap-master/debootstrap" \
-                  --arch=armhf \
-                  --variant=minbase \
-                  --foreign \
-                  bullseye "$src_path"; then
-                cat "${src_path}/debootstrap/debootstrap.log"
-                exit 1
-              fi
-              if ! chroot "$src_path" /debootstrap/debootstrap --second-stage; then
-                cat "${src_path}/debootstrap/debootstrap.log"
-                exit 1
-              fi
-              mkdir -p "${src_path}/usr/sbin"
-              cat > "${src_path}/usr/sbin/policy-rc.d" << EOF
-              #!/bin/sh
-              exit 101
-              EOF
-              chmod a+x "${src_path}/usr/sbin/policy-rc.d"
-              ln -sf /bin/true "${src_path}/usr/bin/ischroot"
-              cp /etc/hosts "${src_path}/etc/hosts"
-              cp /etc/resolv.conf "${src_path}/etc/resolv.conf"
-              ln -sf /root "${src_path}/home/root"
-              mount --bind /dev "${src_path}/dev"
-              mount --bind /dev/pts "${src_path}/dev/pts"
-              mount --bind /proc "${src_path}/proc"
-              mount --bind /sys "${src_path}/sys"
-              mount --bind /run "${src_path}/run"
-              mount -t tmpfs tmpfs "${src_path}/tmp"
-              chroot "$src_path" bash -x <<'EOF'
-                set -e
-                apt install -y ca-certificates
-                apt install -y \
-                  python3-dev \
-                  libffi-dev \
-                  python3-pip \
-                  python3-venv \
-                  patchelf \
-                  ccache
-                python3 -m venv /opt/lib/nuitka
-                source /opt/lib/nuitka/bin/activate
-                pip install nuitka
-              EOF
-          run: |
-              set -eu
-              src_path=/home/root/.local/share/debian
-              mount --bind . "${src_path}/mnt"
-              chroot "$src_path" bash -x <<'EOF'
-                set -e
-                source /opt/lib/nuitka/bin/activate
-                cd /mnt
-                pip install -r requirements.txt
-                NUITKA_CACHE_DIR="/mnt/.nuitka" \
-                nuitka3 \
-                  --enable-plugin=pylint-warnings \
-                  --onefile \
-                  --lto=yes \
-                  --assume-yes-for-downloads \
-                  --remove-output \
-                  --output-dir=dist \
-                  codexctl.py
-              EOF
+          main: codexctl.py
+          run: true
+          python_version: '3.9'
       - uses: actions/upload-artifact@v3
         with:
-          name: remarkable-${{ matrix.fw_version }}
+          name: remarkable
           path: dist
           if-no-files-found: error
   release:
