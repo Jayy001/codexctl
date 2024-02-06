@@ -99,6 +99,7 @@ jobs:
           if-no-files-found: error
   test_device:
     name: Test for reMarkable ${{ matrix.fw_version }}
+    needs: [device]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -117,7 +118,7 @@ jobs:
             ./codexctl.bin --help
   release:
     name: Release
-    needs: [remote,device]
+    needs: [remote,device,test_device]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     permissions:
