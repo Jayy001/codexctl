@@ -115,6 +115,7 @@ jobs:
           path: artifacts
           fw_version: ${{ matrix.fw_version }}
           run: |
+            chmod +x ./codexctl.bin
             ./codexctl.bin --help
   release:
     name: Release
