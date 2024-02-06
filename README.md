@@ -9,21 +9,21 @@ A utility program that helps to manage the remarkable device version utilizing [
 This program can be directly ran on the ReMarkable device as well as from a remote device such as your computer, it currently only has support for **command line interfaces** but a graphical interface is soon to come. The steps to install are closely similar apart from the couple of extra depedancies needed for running on a remote device. 
 
 ## Downloading compiled binaries
-Thanks to @Eeems, you can directly download the compiled binary from the [releases](https://github.com/Jayy001/codexctl/releases/) page! Just select your operating system & download the zip repo containing the binaries - then open up a terminal and run how you would from there. `./codexctl --help` 
+You can directly download the compiled binary from the [releases](https://github.com/Jayy001/codexctl/releases/) page. Just select your operating system & download the zip repo containing the binaries - then open up a terminal and run how you would from there. `./codexctl --help`
 
 ## Building from source
 
 ```
 git clone https://github.com/Jayy001/codexctl.git
 cd codexctl
-pip install requests loguru
+pip install -r requirements.txt
 ```
 
 Thats it for running it directly on the remarkable. If you are running on a remote device you will need to use Python 3.8 or higher and run the following,
 
 ```
 pip install wheel
-pip install -r requirements.txt
+pip install -r requirements.remote.txt
 ```
 
 

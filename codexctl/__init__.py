@@ -4,7 +4,6 @@ import re
 import threading
 import os.path
 import socket
-import psutil
 import sys
 import tempfile
 import shutil
@@ -13,10 +12,10 @@ import logging
 from pathlib import Path
 from loguru import logger
 
-from modules.sync import RmWebInterfaceAPI
-from modules.updates import UpdateManager
-from modules.server import startUpdate, scanUpdates
-from modules.extractor import extract
+from .sync import RmWebInterfaceAPI
+from .updates import UpdateManager
+from .server import startUpdate, scanUpdates
+from .extractor import extract
 
 REMOTE_DEPS_MET = True
 
@@ -33,9 +32,9 @@ fw_setenv "bootcount" "0"
 
 OLDPART=$(fw_printenv -n active_partition)
 if [ $OLDPART  ==  "2" ]; then
-	NEWPART="3"
+    NEWPART="3"
 else
-	NEWPART="2"
+    NEWPART="2"
 fi
 echo "new: ${NEWPART}"
 echo "fallback: ${OLDPART}"
@@ -48,6 +47,9 @@ fw_setenv "active_partition" "${NEWPART}"
 def get_host_ip():
     possible_ips = []
     try:
+        if "psutil" not in sys.modules:
+            import psutil
+
         for interface, snics in psutil.net_if_addrs().items():
             logger.debug(f"New interface found: {interface}")
             for snic in snics:
@@ -104,7 +106,7 @@ def connect_to_rm(args, ip="10.11.99.1"):
         except paramiko.ssh_exception.AuthenticationException:
             print("Incorrect password or ssh path given in arguments!")
 
-    if "n" in input("Would you like to use a password to connect? (Y/n) ").lower():
+    if "n" in input("Would you like to use a password to connect? (Y/n): ").lower():
         while True:
             key_path = input("Enter path to SSH key: ")
 
@@ -165,16 +167,16 @@ def set_server_config(contents, server_host_name):
 This works as intended, but the remarkable device seems to ignore it...
 
 def enable_web_over_usb(remarkable_remote=None):
-	if remarkable_remote is None:
-		with open(r'/home/root/.config/remarkable/xochitl.conf', 'r') as file:
-			fileContents = file.read()
-			fileContents = re.sub("WebInterfaceEnabled=.*", "WebInterfaceEnabled=true", fileContents)
-  
-		with open(r'/home/root/.config/remarkable/xochitl.conf', 'w') as file:
-			file.write(fileContents)
-			
-	else:
-		remarkable_remote.exec_command("sed -i 's/WebInterfaceEnabled=.*/WebInterfaceEnabled=true/g' /home/root/.config/remarkable/xochitl.conf")
+    if remarkable_remote is None:
+        with open(r'/home/root/.config/remarkable/xochitl.conf', 'r') as file:
+            fileContents = file.read()
+            fileContents = re.sub("WebInterfaceEnabled=.*", "WebInterfaceEnabled=true", fileContents)
+
+        with open(r'/home/root/.config/remarkable/xochitl.conf', 'w') as file:
+            file.write(fileContents)
+
+    else:
+        remarkable_remote.exec_command("sed -i 's/WebInterfaceEnabled=.*/WebInterfaceEnabled=true/g' /home/root/.config/remarkable/xochitl.conf")
 """
 
 
@@ -226,31 +228,51 @@ def do_download(args, device_type):
     if filename is None:
         raise SystemExit("Error: Was not able to download firmware file!")
 
+    if filename == "Download folder does not exist":
+        raise SystemExit("Error: Download folder does not exist!")
+
     if filename == "Not in version list":
         raise SystemExit("Error: This version is not currently supported!")
 
     print(f"Done! ({filename})")
 
 
-def do_status(args):
-    try:
-        with open("/etc/remarkable.conf") as file:
-            config_contents = file.read()
-        with open("/etc/version") as file:
-            version_id = file.read().rstrip()
-        with open("/usr/share/remarkable/update.conf") as file:
-            version_contents = file.read().rstrip()
-    except FileNotFoundError:
-        if not REMOTE_DEPS_MET:
-            raise SystemExit(
-                "Error: Detected as running on the remote device, but could not resolve dependencies. "
-                'Please install them with "pip install -r requirements.txt'
-            )
-        if len(get_host_ip()) == 1:
-            ip = "10.11.99.1"
-        else:
-            ip = get_remarkable_ip()
+def is_rm():
+    if not os.path.exists("/sys/devices/soc0/machine"):
+        return False
 
+    with open("/sys/devices/soc0/machine") as f:
+        return f.read().strip().startswith("reMarkable")
+
+
+def do_status(args):
+    if is_rm():
+        if os.path.exists("/etc/remarkable.conf"):
+            with open("/etc/remarkable.conf") as file:
+                config_contents = file.read()
+        else:
+            config_contents = ""
+
+        if os.path.exists("/etc/version"):
+            with open("/etc/version") as file:
+                version_id = file.read().rstrip()
+        else:
+            version_id = ""
+
+        if os.path.exists("/usr/share/remarkable/update.conf"):
+            with open("/usr/share/remarkable/update.conf") as file:
+                version_contents = file.read().rstrip()
+        else:
+            version_contents = ""
+
+    elif not REMOTE_DEPS_MET:
+        raise SystemExit(
+            "Error: Detected as running on the remote device, but could not resolve dependencies. "
+            'Please install them with "pip install -r requirements.txt'
+        )
+
+    else:
+        ip = "10.11.99.1" if len(get_host_ip()) == 1 else get_remarkable_ip()
         logger.debug(f"IP of remarkable is {ip}")
         remarkable_remote = connect_to_rm(args, ip=ip)
 
@@ -268,7 +290,8 @@ def do_status(args):
             version_contents = file.read().decode("utf-8")
 
     beta = re.search("(?<=BetaProgram=).*", config_contents)
-    prev = re.search("(?<=[Pp]reviousVersion=).*", config_contents).group()
+    m = re.search("(?<=[Pp]reviousVersion=).*", config_contents)
+    prev = m.group() if m is not None else "unknown"
     current = re.search("(?<=REMARKABLE_RELEASE_VERSION=).*", version_contents).group()
 
     print(
@@ -333,46 +356,47 @@ def do_install(args, device_type):
     server_host = "0.0.0.0"
     remarkable_remote = None
 
-    if not os.path.isfile("/usr/share/remarkable/update.conf") and not REMOTE_DEPS_MET:
-        raise SystemExit(
-            "Error: Detected as running on the remote device, but could not resolve dependencies. "
-            'Please install them with "pip install -r requirements.txt'
-        )
-
-    server_host = get_host_ip()
-
-    logger.debug(f"Server host is {server_host}")
-
-    if server_host is None:
-        raise SystemExit(
-            "Error: This device does not seem to have a network connection."
-        )
-
-    if len(server_host) == 1:  # This means its found the USB interface
-        server_host = server_host[0]
-        remarkable_remote = connect_to_rm(args)
-    else:
-        host_interfaces = "\n".join(server_host)
-
-        print(
-            f"\n{host_interfaces}\nCould not find USB interface, assuming connected over WiFi (interfaces list above)"
-        )
-        while True:
-            server_host = input(
-                "\nPlease enter your IP for the network the device is connected to: "
+    if not is_rm():
+        if not REMOTE_DEPS_MET:
+            raise SystemExit(
+                "Error: Detected as running on the remote device, but could not resolve dependencies. "
+                'Please install them with "pip install -r requirements.txt'
             )
 
-            if server_host not in host_interfaces.split("\n"):  # Really...? This co
-                print("Error: Invalid IP given")
-                continue
-            if "n" in input("Are you sure? (Y/n) ").lower():
-                continue
+        server_host = get_host_ip()
 
-            break
+        logger.debug(f"Server host is {server_host}")
 
-        remote_ip = get_remarkable_ip()
+        if server_host is None:
+            raise SystemExit(
+                "Error: This device does not seem to have a network connection."
+            )
 
-        remarkable_remote = connect_to_rm(args, remote_ip)
+        if len(server_host) == 1:  # This means its found the USB interface
+            server_host = server_host[0]
+            remarkable_remote = connect_to_rm(args)
+        else:
+            host_interfaces = "\n".join(server_host)
+
+            print(
+                f"\n{host_interfaces}\nCould not find USB interface, assuming connected over WiFi (interfaces list above)"
+            )
+            while True:
+                server_host = input(
+                    "\nPlease enter your IP for the network the device is connected to: "
+                )
+
+                if server_host not in host_interfaces.split("\n"):  # Really...? This co
+                    print("Error: Invalid IP given")
+                    continue
+                if "n" in input("Are you sure? (Y/n): ").lower():
+                    continue
+
+                break
+
+            remote_ip = get_remarkable_ip()
+
+            remarkable_remote = connect_to_rm(args, remote_ip)
 
     logger.debug("Editing config file")
     edit_config(remarkable_remote=remarkable_remote, server_ip=server_host, port=8080)
@@ -390,27 +414,35 @@ def do_install(args, device_type):
     # Is it worth mapping the messages to a variable?
     if remarkable_remote is None:
         print("Enabling update service")
-        subprocess.run("systemctl start update-engine", shell=True, text=True)
+        subprocess.run(
+            ["/bin/systemctl", "start", "update-engine"],
+            text=True,
+            check=True,
+            env={"PATH": "/bin:/usr/bin:/sbin"},
+        )
 
-        process = subprocess.Popen(
-            "update_engine_client -update",
+        with subprocess.Popen(
+            ["/usr/bin/update_engine_client", "-update"],
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            shell=True,
-        )
+            env={"PATH": "/bin:/usr/bin:/sbin"},
+        ) as process:
+            if process.wait() != 0:
+                print("".join(process.stderr.readlines()))
 
-        if process.wait() != 0:
-            print("".join(process.stderr.readlines()))
+                raise SystemExit("There was an error updating :(")
 
-            raise SystemExit("There was an error updating :(")
+            logger.debug(
+                f'Stdout of update checking service is {"".join(process.stderr.readlines())}'
+            )
 
-        logger.debug(
-            f'Stdout of update checking service is {"".join(process.stderr.readlines())}'
-        )
-
-        if "y" in input("Done! Would you like to shutdown?: ").lower():
-            subprocess.run(["shutdown", "now"])
+        if "y" in input("Done! Would you like to shutdown? (y/N): ").lower():
+            subprocess.run(
+                ["/sbin/shutdown", "now"],
+                check=True,
+                env={"PATH": "/bin:/usr/bin:/sbin"},
+            )
     else:
         print("Checking if device can reach server")
         _stdin, stdout, _stderr = remarkable_remote.exec_command(
@@ -449,14 +481,23 @@ def do_install(args, device_type):
 
 
 def do_restore(args):
-    if "y" not in input("Are you sure you want to restore? (y/N) ").lower():
+    if "y" not in input("Are you sure you want to restore? (y/N): ").lower():
         raise SystemExit("Aborted!!!")
 
     if os.path.isfile("/usr/share/remarkable/update.conf"):
-        subprocess.run(RESTORE_CODE, shell=True, text=True)
+        subprocess.run(
+            ["/bin/bash", "-l", "-c", RESTORE_CODE],
+            text=True,
+            check=True,
+            env={"PATH": "/bin:/usr/bin:/sbin"},
+        )
 
-        if "y" in input("Done! Would you like to shutdown?: ").lower():
-            subprocess.run(["shutdown", "now"])
+        if "y" in input("Done! Would you like to shutdown? (y/N): ").lower():
+            subprocess.run(
+                ["shutdown", "now"],
+                check=True,
+                env={"PATH": "/bin:/usr/bin:/sbin"},
+            )
 
     elif not REMOTE_DEPS_MET:
         raise SystemExit(
@@ -581,7 +622,7 @@ def main():
     subparsers.add_parser(
         "restore", help="Restores to previous version installed on device"
     )
-    
+
     subparsers.add_parser("list", help="List all versions available for use")
 
     install.add_argument("version", help="Version to install")
@@ -612,7 +653,7 @@ def main():
         "-r",
         "--remote",
         help="Remote directory to upload to. Defaults to root folder",
-        default=""
+        default="",
     )
     backup.add_argument(
         "-r",
@@ -681,7 +722,7 @@ def main():
 
     elif choice == "backup":
         do_backup(args)
-    
+
     elif choice == "upload":
         do_upload(args)
 
