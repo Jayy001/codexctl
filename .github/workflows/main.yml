@@ -89,7 +89,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/.nuitka
-          key: ${{ github.job }}-remarkable-2.15.1
+          key: ${{ github.job }}-remarkable
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -113,21 +113,29 @@ jobs:
             cd /src
             source /opt/lib/nuitka/bin/activate
             ./github-make-executable.sh
+  test_device:
+    name: Test for reMarkable ${{ matrix.fw_version }}
+    needs: [device]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        fw_version: ['2.15.1', '3.3.2', '3.9.3']
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+          name: remarkable
+          if-no-files-found: error
       - uses: Eeems-Org/run-in-remarkable-action@v1
         with:
-          fw_version: 2.15.1
+          path: artifacts
+          fw_version: ${{ matrix.fw_version }}
           run: |
-            set -ex
-            ./codexctl.bin download --out /tmp 2.15.1.1189
-          path: dist
-      - uses: actions/upload-artifact@v3
-        with:
-          name: remarkable-2.15.1
-          path: dist
-          if-no-files-found: error
+            chmod +x ./codexctl.bin
+            ./codexctl.bin download --out /tmp toltec
   release:
     name: Release
-    needs: [remote,device]
+    needs: [remote,device,test_device]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     permissions:
