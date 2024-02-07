@@ -130,7 +130,6 @@ jobs:
         with:
           path: artifacts
           name: remarkable
-          if-no-files-found: error
       - uses: Eeems-Org/run-in-remarkable-action@v1
         with:
           path: artifacts
