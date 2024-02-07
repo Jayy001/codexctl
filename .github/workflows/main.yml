@@ -113,6 +113,11 @@ jobs:
             cd /src
             source /opt/lib/nuitka/bin/activate
             ./github-make-executable.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: remarkable
+          path: dist
+          if-no-files-found: error
   test_device:
     name: Test for reMarkable ${{ matrix.fw_version }}
     needs: [device]
