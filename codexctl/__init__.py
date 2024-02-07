@@ -312,6 +312,7 @@ def get_available_version(version):
 
 def do_install(args, device_type):
     temp_path = None
+    orig_cwd = os.getcwd()
 
     if args.serve_folder:  # update folder
         os.chdir(args.serve_folder)
@@ -473,6 +474,7 @@ def do_install(args, device_type):
 
         print("Success! Please restart the reMarkable device!")
 
+    os.chdir(orig_cwd)
     if temp_path:
         logger.debug(f"Removing {temp_path}")
         shutil.rmtree(temp_path)
