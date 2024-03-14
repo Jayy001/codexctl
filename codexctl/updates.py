@@ -255,13 +255,15 @@ class UpdateManager:
             for data in response.iter_content(chunk_size=4096):
                 dl += len(data)
                 f.write(data)
-                done = int(50 * dl / total_length)
-                sys.stdout.write("\r[%s%s]" % ("=" * done, " " * (50 - done)))
-                sys.stdout.flush()
+                if sys.stdout.isatty():
+                    done = int(50 * dl / total_length)
+                    sys.stdout.write("\r[%s%s]" % ("=" * done, " " * (50 - done)))
+                    sys.stdout.flush()
 
-        print(end="\r\n")
+        if sys.stdout.isatty():
+            print(end="\r\n")
 
-        self.logger.debug(f"Downloaded filename")
+        self.logger.debug("Downloaded filename")
 
         if os.path.getsize(filename) != total_length:
             os.remove(filename)
