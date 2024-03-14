@@ -29,14 +29,14 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	@echo "[info] Running test"
 	. $(VENV_BIN_ACTIVATE); \
 	python test.py
-	if [ -d .venv/mnt ] && mountpoint -q .venv/mnt; then \
-	    umount -ql .venv/mnt; \
-	fi
-	mkdir -p .venv/mnt
-	. $(VENV_BIN_ACTIVATE); \
-	python -m codexctl mount --out .venv/mnt ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
-	mountpoint .venv/mnt
-	umount -ql .venv/mnt
+# 	if [ -d .venv/mnt ] && mountpoint -q .venv/mnt; then \
+# 	    umount -ql .venv/mnt; \
+# 	fi
+# 	mkdir -p .venv/mnt
+# 	. $(VENV_BIN_ACTIVATE); \
+# 	python -m codexctl mount --out .venv/mnt ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
+# 	mountpoint .venv/mnt
+# 	umount -ql .venv/mnt
 
 clean:
 	@echo "[info] Cleaning"
