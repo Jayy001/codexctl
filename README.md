@@ -6,33 +6,47 @@ A utility program that helps to manage the remarkable device version utilizing [
 
 ### Installation & Use
 
-This program can be directly ran on the ReMarkable device as well as from a remote device such as your computer, it currently only has support for **command line interfaces** but a graphical interface is soon to come. The steps to install are closely similar apart from the couple of extra depedancies needed for running on a remote device. 
+You can find pre-compiled binaries on the [releases](https://github.com/Jayy001/codexctl/releases/) page. This includes a build for the reMarkable itself, as well as well as builds for linux, macOS, and Windows. It currently only has support for **command line interfaces** but a graphical interface is soon to come.
 
-## Downloading compiled binaries
-You can directly download the compiled binary from the [releases](https://github.com/Jayy001/codexctl/releases/) page. Just select your operating system & download the zip repo containing the binaries - then open up a terminal and run how you would from there. `./codexctl --help`
+## Running from source
 
-## Building from source
+Codexctl can be run from source on both the reMarkable, as well as on a remote device.
+
+### Running on reMarkable
 
 ```
 git clone https://github.com/Jayy001/codexctl.git
 cd codexctl
 pip install -r requirements.txt
+python codexctl.py --help
 ```
 
-Thats it for running it directly on the remarkable. If you are running on a remote device you will need to use Python 3.8 or higher and run the following,
+### Running on a remote device
+
+This requires python 3.8 or newer.
 
 ```
+git clone https://github.com/Jayy001/codexctl.git
+cd codexctl
 pip install wheel
 pip install -r requirements.remote.txt
+python codexctl.py --help
 ```
 
+## Building executables from source
+
+This requires python 3.8 or newer, python-venv, pip. Linux also requires libfuse-dev.
+
+```
+make executable
+```
+
+## Usage
 
 The script is designed to have as little interactivity as possible, meaning arguments are directly taken from the command to run the script. 
 
-## Usage 
-
 ```
-❯ python codexctl.py --help
+❯ codexctl --help
 usage: Codexctl app [-h] [--debug] [--rm1] [--auth AUTH] [--verbose] {install,download,backup,extract,mount,status,restore,list} ...
 
 positional arguments:
@@ -56,11 +70,11 @@ options:
 
 # Examples
 ```
-python codexctl.py install latest # Downloads and installs latest version
-python codexctl.py download toltec # Downloads latest version that has full support for toltec
-python codexctl.py download 3.0.4.1305 --rm1 # Downloads 3.0.4.1305 firmware file for remarkable 1
-python codexctl.py status # Prints current & previous version (can only be used when running on device itself)
-python codexctl.py list # Lists all available versions 
+codexctl install latest # Downloads and installs latest version
+codexctl download toltec # Downloads latest version that has full support for toltec
+codexctl download 3.0.4.1305 --rm1 # Downloads 3.0.4.1305 firmware file for remarkable 1
+codexctl status # Prints current & previous version (can only be used when running on device itself)
+codexctl list # Lists all available versions 
 python codexctl.py restore # Restores previous version
 python codexctl.py --verbose # Enables logging
 python codexctl.py --backup # Exports all files to local directory
