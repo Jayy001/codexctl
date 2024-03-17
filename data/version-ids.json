@@ -1,5 +1,13 @@
 {
     "remarkable1": {
+        "3.10.2.2063": [
+            "NXiSL3XohA",
+            "508d97e773f86fd67d1f7b6379b7b9b9bf7eb4945148286d898b1ae00f3d5c72"
+        ],
+        "3.9.5.2026": [
+            "dkcJxJw3e5",
+            "a141cb1381660670630d2132a287470dd385e2e6ff9354bb23969b7ac64d9234"
+        ],
         "3.9.4.2018": [
             "EptYHsKUvv",
             "005ef63d04f60ea575c44843c8c5603e8c0905b3e6cc0c9f3d567ef610815f1a"
@@ -114,6 +122,14 @@
         ]
     },
     "remarkable2": {
+        "3.10.2.2063": [
+            "zKnOgdh8c5",
+            "db0da1138106d62f01e533919fe9f4800207361b1ecbf34732cbfe7020291d54"
+        ],
+        "3.9.5.2026": [
+            "7Mtxk3FUms",
+            "e91232517986d58faffb4ff0cbd034f5a2f5e7af9920b43d12fd86e7bf510051"
+        ],
         "3.9.4.2018": [
             "dg5knKZECj",
             "3907334416f57e574c60d0dc9f8b116da9c869da7b04a866d848f08f39fe1399"
@@ -239,7 +255,7 @@
             "abde0fac3d12f7599a167414e2871fd340fe10312bc5cb1b65af958b4f5f0736"
         ]
     },
-    "last-updated": 1707594589,
+    "last-updated": 1710207428,
     "toltec": "2.15.1.1189",
-    "latest": "3.9.4.2018"
+    "latest": "3.10.2.2063"
 }
