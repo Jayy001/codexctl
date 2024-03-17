@@ -142,11 +142,11 @@ def set_server_config(contents, server_host_name):
     data_attributes = contents.split("\n")
     line = 0
 
-    logger.debug(f"Contents are: {contents}")
+    logger.debug(f"Contents are:\n{contents}")
 
     for i in range(0, len(data_attributes)):
-        if data_attributes[i].startswith("[GENERAL]"):
-            logger.debug("Found GENERAL= line")
+        if data_attributes[i].startswith("[General]"):
+            logger.debug("Found [General] line")
             line = i + 1
         if not data_attributes[i].startswith("SERVER="):
             continue
@@ -157,7 +157,7 @@ def set_server_config(contents, server_host_name):
     data_attributes.insert(line, f"SERVER={server_host_name}")
     converted = "\n".join(data_attributes)
 
-    logger.debug("Converted contents are: {converted}")
+    logger.debug(f"Converted contents are:\n{converted}")
 
     return converted
 

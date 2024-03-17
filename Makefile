@@ -27,6 +27,8 @@ $(VENV_BIN_ACTIVATE): requirements.remote.txt requirements.txt
 
 test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	@echo "[info] Running test"
+	. $(VENV_BIN_ACTIVATE); \
+	python test.py
 	if [ -d .venv/mnt ] && mountpoint -q .venv/mnt; then \
 	    umount -ql .venv/mnt; \
 	fi
