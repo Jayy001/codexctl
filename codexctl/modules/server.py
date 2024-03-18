@@ -1,9 +1,8 @@
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-import http.server
 import xml.etree.ElementTree as ET
-import os, sys, io, socket, hashlib, base64
+import os
+import hashlib
 import binascii
-import time
 
 response_ok = """<?xml version='1.0' encoding='UTF-8'?>
 <response protocol="3.0" server="prod">
@@ -60,6 +59,16 @@ def getupdateinfo(platform, version, update_name):
     return (update_sha1, update_sha256, update_size)
 
 
+def get_available_version(version):
+    available_versions = scanUpdates()
+
+    for device, ids in available_versions.items():
+        if version in ids:
+            available_version = {device: ids}
+
+            return available_version
+
+
 def scanUpdates():
     files = os.listdir("updates")
     versions = {}
@@ -88,7 +97,8 @@ class MySimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length"))
         body = self.rfile.read(length).decode("utf-8")
-        print(body)
+        # print(body)
+        print("Updating...")
         xml = ET.fromstring(body)
         updatecheck_node = xml.find("app/updatecheck")
 
@@ -96,8 +106,8 @@ class MySimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
         if updatecheck_node is not None:
             version = xml.attrib["version"]
             platform = xml.find("os").attrib["platform"]
-            print("requested: ", version)
-            print("platform: ", platform)
+            # print("requested: ", version)
+            # print("platform: ", platform)
 
             version, update_name = available_versions[platform]
 
@@ -114,8 +124,8 @@ class MySimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
             }
 
             response = response_template.format(**params)
-            print("Response:")
-            print(response)
+            # print("Response:")
+            # print(response)
             self.send_response(200)
             self.end_headers()
             self.wfile.write(response.encode())
@@ -127,7 +137,7 @@ class MySimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
 
         # post install status
         if event_result != 0:
-            print("Update done")
+            print("Update downloaded, please wait for device to install...")
             if "errorcode" in event_node.attrib:
                 print("With errorcode:", event_node.attrib["errorcode"])
             return
@@ -148,9 +158,6 @@ def startUpdate(versionsGiven, host, port=8080):
 
     host_url = f"http://{host}:{port}/"
     available_versions = versionsGiven
-
-    if not available_versions:
-        raise FileNotFoundError("Could not find any update files")
 
     handler = MySimpleHTTPRequestHandler
     print(f"Starting fake updater at {host}:{port}")

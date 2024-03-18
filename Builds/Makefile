@@ -24,7 +24,7 @@ $(VENV_BIN_ACTIVATE): requirements.remote.txt requirements.txt
 .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed: $(VENV_BIN_ACTIVATE) $(OBJ)
 	@echo "[info] Downloading remarkable update file"
 	. $(VENV_BIN_ACTIVATE); \
-	python -m codexctl download --out .venv ${FW_VERSION}
+	python -m ../codexctl download --out .venv ${FW_VERSION}
 
 test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	@echo "[info] Running test"
@@ -35,11 +35,11 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	fi
 	mkdir -p .venv/mnt
 	. $(VENV_BIN_ACTIVATE); \
-	python -m codexctl mount --out .venv/mnt ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
+	python -m ../codexctl mount --out .venv/mnt ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
 	mountpoint .venv/mnt
 	umount -ql .venv/mnt
 	. $(VENV_BIN_ACTIVATE); \
-	python -m codexctl extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
+	python -m ../codexctl extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
 	echo "${IMG_MD5}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | md5sum --check
 	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"
 
@@ -54,7 +54,7 @@ executable: $(VENV_BIN_ACTIVATE)
 	@echo "[info] Installing Nuitka"
 	. $(VENV_BIN_ACTIVATE); \
 	python -m pip install --extra-index-url=https://wheels.eeems.codes/ wheel nuitka
-	@echo "[info] Building codexctl"
+	@echo "[info] Building ../codexctl"
 	. $(VENV_BIN_ACTIVATE); \
 	NUITKA_CACHE_DIR="$(realpath .)/.nuitka" \
 	python -m nuitka \
@@ -66,7 +66,7 @@ executable: $(VENV_BIN_ACTIVATE)
 	    --assume-yes-for-downloads \
 	    --remove-output \
 	    --output-dir=dist \
-	    codexctl.py
+	    ../codexctl.py
 	@echo "[info] Sanity check"
 	dist/codexctl.* --help
 
