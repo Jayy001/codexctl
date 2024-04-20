@@ -4,6 +4,10 @@
 # Codexctl
 A utility program that helps to manage the remarkable device version utilizing [ddvks update server](https://github.com/ddvk/remarkable-update) 
 
+### PLEASE READ BEFORE USING
+If your remarkable device is at version >= 3.11, codexctl will not be able to automatically install updates on it due to a major overhaul in the update engine. You can still use the other functions like downloading the image files and then manually extracting it, using `dd` to write to the other partition and then using the `switch` command.
+
+
 ### Installation & Use
 
 You can find pre-compiled binaries on the [releases](https://github.com/Jayy001/codexctl/releases/) page. This includes a build for the reMarkable itself, as well as well as builds for linux, macOS, and Windows. It currently only has support for **command line interfaces** but a graphical interface is soon to come.
