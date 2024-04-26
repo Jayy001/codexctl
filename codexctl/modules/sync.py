@@ -5,7 +5,7 @@ import glob
 import logging
 
 
-class RmWebInterfaceAPI(object):
+class RmWebInterfaceAPI:  # TODO: Add docstrings
     def __init__(self, BASE="http://10.11.99.1/", logger=None):
         self.logger = logger
 
@@ -31,7 +31,7 @@ class RmWebInterfaceAPI(object):
 
             if result.status_code == 408:
                 self.logger.error("Request timed out!")
-            
+
             logging.debug(f"Result headers: {result.headers}")
             if "application/json" in result.headers["Content-Type"]:
                 return result.json()
@@ -148,26 +148,26 @@ class RmWebInterfaceAPI(object):
             return False
 
     def upload(self, input_paths, remoteFolder):
-        folderId = "" 
+        folderId = ""
         if remoteFolder:
             folderId = self.__get_folder_id(remoteFolder)
 
             if folderId is None:
                 raise SystemExit(f"Error: Folder {remoteFolder} does not exist!")
-        
-        self.__POST(f"documents/{folderId}") # Setting up for upload...
-        
+
+        self.__POST(f"documents/{folderId}")  # Setting up for upload...
+
         errors, documents = [], []
-        
-        for document in input_paths: # This needs improvement...
+
+        for document in input_paths:  # This needs improvement...
             if os.path.isdir(document):
-                for file in glob.glob(f'{document}/*'):
-                    if not file.endswith('.pdf'):
+                for file in glob.glob(f"{document}/*"):
+                    if not file.endswith(".pdf"):
                         self.logger.error(f"Error: {document} is not a pdf!")
                     else:
                         documents.append(file)
             elif os.path.isfile(document):
-                if not document.endswith('.pdf'):
+                if not document.endswith(".pdf"):
                     errors.append(document)
                     self.logger.error(f"Error: {document} is not a pdf!")
                 else:
@@ -177,22 +177,27 @@ class RmWebInterfaceAPI(object):
                 self.logger.error(f"Error: {document} is not a file or directory!")
 
         for document in documents:
-            self.logger.debug(f"Uploading {document} to {remoteFolder if remoteFolder else 'root'}")
-            with open(document, 'rb') as inFile:
-                response = self.__POST(f"upload", data={'file': inFile}, fileUpload=True)
-                
+            self.logger.debug(
+                f"Uploading {document} to {remoteFolder if remoteFolder else 'root'}"
+            )
+            with open(document, "rb") as inFile:
+                response = self.__POST(
+                    f"upload", data={"file": inFile}, fileUpload=True
+                )
+
                 if response is None:
-                    self.logger.error(f"Error: Unknown error while uploading {document}!")
+                    self.logger.error(
+                        f"Error: Unknown error while uploading {document}!"
+                    )
                     errors.append(document)
-                elif response == {'status': 'Upload successful'}:
+                elif response == {"status": "Upload successful"}:
                     self.logger.debug(f"Uploaded {document} successfully!")
-        
+
         if len(errors) > 0:
-            print('The following files failed to upload: ' + ','.join(errors))
-        
+            print("The following files failed to upload: " + ",".join(errors))
+
         print(f"Done! {len(documents)-len(errors)} files were uploaded.")
 
-        
     def sync(self, localFolder, remoteFolder="", overwrite=False, recursive=True):
         count = 0
 
