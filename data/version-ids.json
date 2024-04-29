@@ -1,5 +1,9 @@
 {
     "remarkable1": {
+        "3.11.2.5": [
+            "ShunAN3V1W",
+            "2ad14c56caca60f4db19b55297519f1507a36b042c6aad3fb31fde41ba15ffb8"
+        ],
         "3.10.2.2063": [
             "NXiSL3XohA",
             "508d97e773f86fd67d1f7b6379b7b9b9bf7eb4945148286d898b1ae00f3d5c72"
@@ -122,6 +126,10 @@
         ]
     },
     "remarkable2": {
+        "3.11.2.5": [
+            "qLFGoqPtPL",
+            "a86afd842c6f1e5b33f4bbc10ec8360ce1789ab1c6caef75324619e0ab859cdb"
+        ],
         "3.10.2.2063": [
             "zKnOgdh8c5",
             "db0da1138106d62f01e533919fe9f4800207361b1ecbf34732cbfe7020291d54"
@@ -255,7 +263,7 @@
             "abde0fac3d12f7599a167414e2871fd340fe10312bc5cb1b65af958b4f5f0736"
         ]
     },
-    "last-updated": 1710207428,
+    "last-updated": 1714393567,
     "toltec": "2.15.1.1189",
-    "latest": "3.10.2.2063"
+    "latest": "3.11.2.5"
 }
