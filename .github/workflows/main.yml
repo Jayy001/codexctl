@@ -68,13 +68,25 @@ jobs:
         run: ./github-make-executable.sh
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
+      - name: Upload Compilation Report
+        uses: actions/upload-artifact@v3
+        if:  runner.debug == '1'
+        with:
+          name: ${{ matrix.os }}-compilation-report
+          path: compilation-report.xml
+          if-no-files-found: warn
+      - name: Test Built version
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: make test-executable
       - name: Move .ccache
         shell: bash
         run: |
           mv "$nuitka_cache/ccache" .ccache
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
-      - uses: actions/upload-artifact@v3
+      - name: Upload executable
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}
           path: dist
@@ -113,7 +125,15 @@ jobs:
             cd /src
             source /opt/lib/nuitka/bin/activate
             ./github-make-executable.sh
-      - uses: actions/upload-artifact@v3
+      - name: Upload Compilation Report
+        uses: actions/upload-artifact@v3
+        if:  runner.debug == '1'
+        with:
+          name: ${{ matrix.os }}-compilation-report
+          path: compilation-report.xml
+          if-no-files-found: warn
+      - name: Upload executable
+        uses: actions/upload-artifact@v3
         with:
           name: remarkable
           path: dist

@@ -43,6 +43,11 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check
 	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"
 
+test-executable: .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
+	dist/codexctl.* extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
+	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check
+	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"
+
 clean:
 	@echo "[info] Cleaning"
 	if [ -d .venv/mnt ] && mountpoint -q .venv/mnt; then \
@@ -60,13 +65,18 @@ executable: $(VENV_BIN_ACTIVATE)
 	python -m nuitka \
 	    --enable-plugin=pylint-warnings \
 	    --enable-plugin=upx \
+	     --include-package=google \
 	    --warn-implicit-exceptions \
 	    --onefile \
 	    --lto=yes \
 	    --assume-yes-for-downloads \
 	    --remove-output \
 	    --output-dir=dist \
+	    --report=compilation-report.xml \
 	    codexctl.py
+	if [ -d dist/codexctl.build ]; then \
+	    rm -r dist/codexctl.build; \
+	fi
 	@echo "[info] Sanity check"
 	dist/codexctl.* --help
 
@@ -76,4 +86,5 @@ all: executable
 	all \
 	executable \
 	clean \
-	test
+	test \
+	test-executable
