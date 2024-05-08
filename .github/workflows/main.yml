@@ -68,6 +68,10 @@ jobs:
         run: ./github-make-executable.sh
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
+      - name: Test Built version
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: make test-executable
       - name: Move .ccache
         shell: bash
         run: |

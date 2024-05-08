@@ -43,6 +43,11 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check
 	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"
 
+test-executable: .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed executable
+	dist/codexctl.* extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
+	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check
+	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"
+
 clean:
 	@echo "[info] Cleaning"
 	if [ -d .venv/mnt ] && mountpoint -q .venv/mnt; then \
@@ -76,4 +81,5 @@ all: executable
 	all \
 	executable \
 	clean \
-	test
+	test \
+	test-executable
