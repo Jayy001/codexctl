@@ -1,6 +1,6 @@
 #!/bin/bash
 
-make executable 2>&1 \
+make executable test-executable 2>&1 \
 | while read -r line; do
   IFS=$'\n' read -r -a lines <<< "$line"
   if [[ "$line" == 'Nuitka'*':ERROR:'* ]]; then
