@@ -28,7 +28,7 @@ python codexctl.py --help
 
 ### Running on a remote device
 
-This requires python 3.8 or newer.
+This requires python 3.11 or newer.
 
 ```
 git clone https://github.com/Jayy001/codexctl.git
@@ -40,7 +40,7 @@ python codexctl.py --help
 
 ## Building executables from source
 
-This requires python 3.8 or newer, python-venv, pip. Linux also requires libfuse-dev.
+This requires python 3.11 or newer, python-venv, pip. Linux also requires libfuse-dev.
 
 ```
 make executable

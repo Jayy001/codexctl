@@ -33,7 +33,7 @@ class UpdateManager:
         self.id_lookups_rm2 = versions["remarkable2"]
 
         self.latest_toltec_version = versions["toltec"]
-        self.latest_version = "3.7.0.1930"
+        self.latest_version = versions["latest"]
 
     def update_version_ids(self, location):
         with open(location, "w") as f:
@@ -119,8 +119,11 @@ class UpdateManager:
             else:
                 BASE_URL = BASE_URL_V3
 
-        id = f"-{versionDict[version][0]}"
-        checksum = versionDict[version][1]
+        data = versionDict[version]
+        id = f"-{data[0]}"
+        checksum = data[1]
+        if len(data) > 2:
+            print(f"Warning for {version}: {data[2]}")
 
         file_name = f"{version}_reMarkable{'2' if device == 2 else ''}{id}.signed"
         file_url = f"{BASE_URL}/{version}/{file_name}"
