@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := all
 FW_VERSION := 2.15.1.1189
 FW_DATA := wVbHkgKisg-
-IMG_MD5 := 67be7fd1d75628e6935a40bf83e42945
+IMG_SHA := fc7d145e18f14a1a3f435f2fd5ca5924fe8dfe59bf45605dc540deed59551ae4
 SHELL := /bin/bash
 
 ifeq ($(VENV_BIN_ACTIVATE),)
@@ -40,7 +40,7 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	umount -ql .venv/mnt
 	. $(VENV_BIN_ACTIVATE); \
 	python -m codexctl extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
-	echo "${IMG_MD5}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | md5sum --check
+	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check
 	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"
 
 clean:
