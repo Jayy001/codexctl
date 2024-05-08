@@ -2,7 +2,8 @@
     "remarkable1": {
         "3.11.2.5": [
             "ShunAN3V1W",
-            "2ad14c56caca60f4db19b55297519f1507a36b042c6aad3fb31fde41ba15ffb8"
+            "2ad14c56caca60f4db19b55297519f1507a36b042c6aad3fb31fde41ba15ffb8",
+            "This version changes the update mechanism, which codexctl currently does not support. If you install this version, you will not be able to downgrade using codexctl."
         ],
         "3.10.2.2063": [
             "NXiSL3XohA",
@@ -128,7 +129,8 @@
     "remarkable2": {
         "3.11.2.5": [
             "qLFGoqPtPL",
-            "a86afd842c6f1e5b33f4bbc10ec8360ce1789ab1c6caef75324619e0ab859cdb"
+            "a86afd842c6f1e5b33f4bbc10ec8360ce1789ab1c6caef75324619e0ab859cdb",
+            "This version changes the update mechanism, which codexctl currently does not support. If you install this version, you will not be able to downgrade using codexctl."
         ],
         "3.10.2.2063": [
             "zKnOgdh8c5",
