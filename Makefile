@@ -71,6 +71,7 @@ executable: $(VENV_BIN_ACTIVATE)
 	    --assume-yes-for-downloads \
 	    --remove-output \
 	    --output-dir=dist \
+	    --report=compilation-report.xml \
 	    codexctl.py
 	@echo "[info] Sanity check"
 	dist/codexctl.* --help
