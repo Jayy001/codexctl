@@ -26,10 +26,10 @@ except ImportError:
 RESTORE_CODE = """
 # switches the active root partition
 
-fw_setenv "upgrade_available" "1"
-fw_setenv "bootcount" "0"
+/sbin/fw_setenv "upgrade_available" "1"
+/sbin/fw_setenv "bootcount" "0"
 
-OLDPART=$(fw_printenv -n active_partition)
+OLDPART=$(/sbin/fw_printenv -n active_partition)
 if [ $OLDPART  ==  "2" ]; then
     NEWPART="3"
 else
@@ -38,8 +38,8 @@ fi
 echo "new: ${NEWPART}"
 echo "fallback: ${OLDPART}"
 
-fw_setenv "fallback_partition" "${OLDPART}"
-fw_setenv "active_partition" "${NEWPART}"
+/sbin/fw_setenv "fallback_partition" "${OLDPART}"
+/sbin/fw_setenv "active_partition" "${NEWPART}"
 """
 
 
