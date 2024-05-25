@@ -89,7 +89,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}
-          path: dist
+          path: |
+            dist/codexctl.bin
+            dist/codexctl.exe
           if-no-files-found: error
   device:
     name: Build for remarkable
