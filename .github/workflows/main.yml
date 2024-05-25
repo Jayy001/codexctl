@@ -86,12 +86,18 @@ jobs:
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Upload executable
+        if: matrix.os != 'windows-latest'
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}
-          path: |
-            dist/codexctl.bin
-            dist/codexctl.exe
+          path: dist/codexctl.bin
+          if-no-files-found: error
+      - name: Upload executable
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.os }}
+          path: dist/codexctl.exe
           if-no-files-found: error
   device:
     name: Build for remarkable
