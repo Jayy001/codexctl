@@ -63,12 +63,6 @@ executable: $(VENV_BIN_ACTIVATE)
 	. $(VENV_BIN_ACTIVATE); \
 	NUITKA_CACHE_DIR="$(realpath .)/.nuitka" \
 	python -m nuitka \
-	    --enable-plugin=pylint-warnings \
-	    --enable-plugin=upx \
-	     --include-package=google \
-	    --warn-implicit-exceptions \
-	    --onefile \
-	    --lto=yes \
 	    --assume-yes-for-downloads \
 	    --remove-output \
 	    --output-dir=dist \
