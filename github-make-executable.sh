@@ -1,9 +1,10 @@
 #!/bin/bash
+set +e
 
 make executable test-executable 2>&1 \
 | while read -r line; do
   IFS=$'\n' read -r -a lines <<< "$line"
-  if [[ "$line" == 'Nuitka'*':ERROR:'* ]]; then
+  if [[ "$line" == 'Nuitka'*':ERROR:'* ]] || [[ "$line" == 'FATAL:'* ]] || [[ "$line" == 'make: *** ['*'] Error'* ]] ; then
     printf '::error file=codexctl.py,title=Nuitka Error::%s\n' "${lines[@]}"
   elif [[ "$line" == 'Nuitka'*':WARNING:'* ]]; then
     printf '::warning file=codexctl.py,title=Nuitka Warning::%s\n' "${lines[@]}"
