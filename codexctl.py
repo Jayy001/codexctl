@@ -1,3 +1,11 @@
+# nuitka-project: --enable-plugin=pylint-warnings
+# nuitka-project: --enable-plugin=upx
+# nuitka-project: --warn-implicit-exceptions
+# nuitka-project: --onefile
+# nuitka-project: --lto=yes
+# nuitka-project-if: {OS} in ("Linux"):
+#    nuitka-project: --include-package=google
+
 from codexctl import main
 
 if __name__ == "__main__":
