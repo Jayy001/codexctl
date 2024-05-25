@@ -1,7 +1,7 @@
 #!/bin/bash
 set +e
 
-make executable test-executable 2>&1 \
+make executable 2>&1 \
 | while read -r line; do
   IFS=$'\n' read -r -a lines <<< "$line"
   if [[ "$line" == 'Nuitka'*':ERROR:'* ]] || [[ "$line" == 'FATAL:'* ]] || [[ "$line" == 'make: *** ['*'] Error'* ]] ; then
@@ -12,6 +12,9 @@ make executable test-executable 2>&1 \
     echo "$line"
   else
     printf '::debug::%s\n' "${lines[@]}"
-    echo "::debug::$line"
   fi
 done
+if ! make test-executable; then
+  printf '::error file=codexctl.bin,title=Test Error::Sanity test failed\n'
+  exit 1
+fi

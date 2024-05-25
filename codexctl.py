@@ -5,6 +5,7 @@
 # nuitka-project: --lto=yes
 # nuitka-project-if: {OS} in ("Linux"):
 #    nuitka-project: --include-package=google
+#    nuitka-project: --noinclude-unittest-mode=allow
 
 from codexctl import main
 
