@@ -45,7 +45,7 @@ jobs:
           mv .ccache "$nuitka_cache/ccache"
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -69,7 +69,7 @@ jobs:
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Upload Compilation Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if:  runner.debug == '1'
         with:
           name: ${{ matrix.os }}-compilation-report
@@ -87,14 +87,14 @@ jobs:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Upload executable
         if: matrix.os != 'windows-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
           path: dist/codexctl.bin
           if-no-files-found: error
       - name: Upload executable
         if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
           path: dist/codexctl.exe
@@ -134,17 +134,17 @@ jobs:
             source /opt/lib/nuitka/bin/activate
             ./github-make-executable.sh
       - name: Upload Compilation Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if:  runner.debug == '1'
         with:
           name: ${{ matrix.os }}-compilation-report
           path: compilation-report.xml
           if-no-files-found: warn
       - name: Upload executable
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: remarkable
-          path: dist
+          path: dist/codexctl.bin
           if-no-files-found: error
   test_device:
     name: Test for reMarkable ${{ matrix.fw_version }}
