@@ -244,6 +244,35 @@ def is_rm():
         return f.read().strip().startswith("reMarkable")
 
 
+def get_update_image(file):
+    import ext4
+    from remarkable_update_image import UpdateImage
+    from remarkable_update_image import UpdateImageSignatureException
+
+    image = UpdateImage(file)
+    volume = ext4.Volume(image, offset=0)
+    try:
+        inode = volume.inode_at("/usr/share/update_engine/update-payload-key.pub.pem")
+        if inode is None:
+            raise FileNotFoundError()
+
+        inode.verify()
+        image.verify(inode.open().read())
+
+    except UpdateImageSignatureException:
+        warnings.warn("Signature doesn't match contents", RuntimeWarning)
+
+    except FileNotFoundError:
+        warnings.warn("Public key missing", RuntimeWarning)
+
+    except OSError as e:
+        if e.errno != errno.ENOTDIR:
+            raise
+        warnings.warn("Unable to open public key", RuntimeWarning)
+
+    return image, volume
+
+
 def do_status(args):
     if is_rm():
         if os.path.exists("/etc/remarkable.conf"):
@@ -557,34 +586,6 @@ def do_backup(args):
     )
 
 
-def get_update_image(file):
-    import ext4
-    from remarkable_update_image import UpdateImage
-
-    image = UpdateImage(args.file)
-    ext4.Volume(self.image, offset=0)
-    try:
-        inode = volume.inode_at("/usr/share/update_engine/update-payload-key.pub.pem")
-        if inode is None:
-            raise FileNotFoundError()
-
-        inode.verify()
-        image.verify(inode.open().read())
-
-    except UpdateImageSignatureException:
-        warnings.warn("Signature doesn't match contents", RuntimeWarning)
-
-    except FileNotFoundError:
-        warnings.warn("Public key missing", RuntimeWarning)
-
-    except OSError as e:
-        if e.errno != errno.ENOTDIR:
-            raise
-        warnings.warn("Unable to open public key", RuntimeWarning)
-
-    return image, volume
-
-
 def do_ls(args):
     image, volume = get_update_image(args.file)
     inode = volume.inode_at(args.path)
@@ -593,7 +594,9 @@ def do_ls(args):
         return
 
     for dirent, _ in inode.opendir():
-        print(dirent.name, end=" ")
+        print(dirent.name_str, end=" ")
+
+    print()
 
 
 def do_cat(args):
@@ -604,7 +607,7 @@ def do_cat(args):
         print(f"{args.path}: No such file or directory")
         return
 
-    print(inode.open().read())
+    sys.stdout.buffer.write(inode.open().read())
 
 
 def do_extract(args):
@@ -612,9 +615,8 @@ def do_extract(args):
         args.out = os.getcwd() + "/extracted"
 
     logger.debug(f"Extracting {args.file} to {args.out}")
-    from remarkable_update_image import UpdateImage
-
     image, volume = get_update_image(args.file)
+    image.seek(0)
     with open(args.out, "wb") as f:
         f.write(image.read())
 
@@ -740,7 +742,7 @@ def main():
     )
 
     ls.add_argument("file", help="Path to update file to extract", default=None)
-    ls.add_argument("path", help="Path inside the image to list", default="/")
+    ls.add_argument("path", help="Path inside the image to list", default=None)
 
     cat.add_argument("file", help="Path to update file to cat", default=None)
     cat.add_argument("path", help="Path inside the image to list", default=None)
