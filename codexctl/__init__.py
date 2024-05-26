@@ -590,30 +590,30 @@ def do_backup(args):
 def do_ls(args):
     image, volume = get_update_image(args.file)
     try:
-        inode = volume.inode_at(args.path)
+        inode = volume.inode_at(args.target_path)
         print(" ".join([x.name_str for x, _ in inode.opendir()]))
 
     except FileNotFoundError:
-        print(f"cannot access '{args.path}': No such file or directory")
+        print(f"cannot access '{args.target_path}': No such file or directory")
         sys.exit(1)
 
     except OSError as e:
-        print(f"cannot access '{args.path}': {os.strerror(e.errno)}")
+        print(f"cannot access '{args.target_path}': {os.strerror(e.errno)}")
         sys.exit(e.errno)
 
 
 def do_cat(args):
     image, volume = get_update_image(args.file)
     try:
-        inode = volume.inode_at(args.path)
+        inode = volume.inode_at(args.target_path)
         sys.stdout.buffer.write(inode.open().read())
 
     except FileNotFoundError:
-        print(f"'{args.path}': No such file or directory")
+        print(f"'{args.target_path}': No such file or directory")
         sys.exit(1)
 
     except OSError:
-        print(f"'{args.path}': {os.strerror(e.errno)}")
+        print(f"'{args.target_path}': {os.strerror(e.errno)}")
         sys.exit(e.errno)
 
 
@@ -750,12 +750,12 @@ def main():
 
     ls.add_argument("file", help="Path to update file to extract", default=None)
     ls.add_argument(
-        "path", help="Path inside the image to list", default=None, type=str
+        "target_path", help="Path inside the image to list", default=None, type=str
     )
 
     cat.add_argument("file", help="Path to update file to cat", default=None)
     cat.add_argument(
-        "path", help="Path inside the image to list", default=None, type=str
+        "target_path", help="Path inside the image to list", default=None, type=str
     )
 
     args = parser.parse_args()
