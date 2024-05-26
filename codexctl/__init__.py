@@ -1,4 +1,5 @@
 import argparse
+import errno
 import subprocess
 import re
 import threading
@@ -588,23 +589,32 @@ def do_backup(args):
 
 def do_ls(args):
     image, volume = get_update_image(args.file)
-    inode = volume.inode_at(args.path)
-    if inode is None:
-        print(f"cannot access '{args.path}': No such file or directory")
-        return
+    try:
+        inode = volume.inode_at(args.path)
+        print(" ".join([x.name_str for x, _ in inode.opendir()]))
 
-    print(" ".join([x.name_str for x, _ in inode.opendir()]))
+    except FileNotFoundError:
+        print(f"cannot access '{args.path}': No such file or directory")
+        sys.exit(1)
+
+    except OSError as e:
+        print(f"cannot access '{args.path}': {os.strerror(e.errno)}")
+        sys.exit(e.errno)
 
 
 def do_cat(args):
     image, volume = get_update_image(args.file)
-    inode = volume.inode_at(args.path)
+    try:
+        inode = volume.inode_at(args.path)
+        sys.stdout.buffer.write(inode.open().read())
 
-    if inode is None:
-        print(f"{args.path}: No such file or directory")
-        return
+    except FileNotFoundError:
+        print(f"'{args.path}': No such file or directory")
+        sys.exit(1)
 
-    sys.stdout.buffer.write(inode.open().read())
+    except OSError:
+        print(f"'{args.path}': {os.strerror(e.errno)}")
+        sys.exit(e.errno)
 
 
 def do_extract(args):
@@ -739,10 +749,14 @@ def main():
     )
 
     ls.add_argument("file", help="Path to update file to extract", default=None)
-    ls.add_argument("path", help="Path inside the image to list", default=None)
+    ls.add_argument(
+        "path", help="Path inside the image to list", default=None, type=str
+    )
 
     cat.add_argument("file", help="Path to update file to cat", default=None)
-    cat.add_argument("path", help="Path inside the image to list", default=None)
+    cat.add_argument(
+        "path", help="Path inside the image to list", default=None, type=str
+    )
 
     args = parser.parse_args()
     level = "ERROR"
