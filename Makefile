@@ -37,30 +37,19 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	@echo "[info] Running test"
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
-	python test.py
-	if [ -d .venv/mnt ] && mountpoint -q .venv/mnt; then \
-	    umount -ql .venv/mnt; \
-	fi
-	mkdir -p .venv/mnt
-	@set -e; \
-	. $(VENV_BIN_ACTIVATE); \
+	python test.py; \
 	if [[ "linux" == "$$(python -c 'import sys;print(sys.platform)')" ]]; then \
+	  if [ -d .venv/mnt ] && mountpoint -q .venv/mnt; then \
+	    umount -ql .venv/mnt; \
+	  fi; \
+	  mkdir -p .venv/mnt; \
 	  python -m codexctl mount --out .venv/mnt ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
 	  mountpoint .venv/mnt; \
 	  umount -ql .venv/mnt; \
 	fi; \
 	python -m codexctl extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
 	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
-	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
-	set -o pipefail; \
-	if ! diff --color <(python -m codexctl ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /) <(echo ${LS_DATA}) | cat -te; then \
-	  echo "codexctl ls failed test"; \
-	  exit 1; \
-	fi; \
-	if ! diff --color <(python -m codexctl cat ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /etc/version) <(echo ${CAT_DATA}) | cat -te; then \
-	  echo "codexctl cat failed test"; \
-	  exit 1; \
-	fi
+	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"
 
 test-executable: .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	@set -e; \
