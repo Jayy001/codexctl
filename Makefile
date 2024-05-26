@@ -43,10 +43,10 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	  python -m codexctl mount --out .venv/mnt ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
 	  mountpoint .venv/mnt; \
 	  umount -ql .venv/mnt; \
-	  python -m codexctl extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
-	  echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
-	  rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
 	fi; \
+	python -m codexctl extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
+	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
+	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
 	if ! diff --color <(python -m codexctl ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /) <(echo ${LS_DATA}) | cat -te; then \
 	  echo "codexctl ls failed test"; \
 	  exit 1; \
@@ -58,11 +58,9 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 
 test-executable: .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	. $(VENV_BIN_ACTIVATE); \
-	if [[ "linux" == "$$(python -c 'import sys;print(sys.platform)')" ]]; then \
-	  dist/codexctl.* extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
-	  echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
-	  rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
-	fi
+	dist/codexctl.* extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
+	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
+	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
 	if ! diff --color <(dist/codexctl.* ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /) <(echo ${LS_DATA}) | cat -te; then \
 	  echo "codexctl ls failed test"; \
 	  exit 1; \
