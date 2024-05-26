@@ -86,4 +86,6 @@ python codexctl.py --backup # Exports all files to local directory
 python codexctl.py --backup -l root -r FM --no-recursion --no-overwrite # Exports all files from FM directory to root folder on localhost
 python codexctl.py extract 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed # Extracts contents to filesystem named "extracted"
 python codexctl.py mount extracted /opt/remarkable # Mounts extracted filesystem to /opt/remarkable
+python codexctl.py ls 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed / # Lists the root directory of the update image
+python codexctl.py cat 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed /etc/version # Outputs the contents of /etc/version from the update image
 ```
