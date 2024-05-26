@@ -82,7 +82,6 @@ jobs:
           path: compilation-report.xml
           if-no-files-found: warn
       - name: Test Built version
-        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: make test-executable
       - name: Move .ccache
