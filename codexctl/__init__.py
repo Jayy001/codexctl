@@ -557,19 +557,74 @@ def do_backup(args):
     )
 
 
+def get_update_image(file):
+    import ext4
+    from remarkable_update_image import UpdateImage
+
+    image = UpdateImage(args.file)
+    ext4.Volume(self.image, offset=0)
+    try:
+        inode = volume.inode_at("/usr/share/update_engine/update-payload-key.pub.pem")
+        if inode is None:
+            raise FileNotFoundError()
+
+        inode.verify()
+        image.verify(inode.open().read())
+
+    except UpdateImageSignatureException:
+        warnings.warn("Signature doesn't match contents", RuntimeWarning)
+
+    except FileNotFoundError:
+        warnings.warn("Public key missing", RuntimeWarning)
+
+    except OSError as e:
+        if e.errno != errno.ENOTDIR:
+            raise
+        warnings.warn("Unable to open public key", RuntimeWarning)
+
+    return image, volume
+
+
+def do_ls(args):
+    image, volume = get_update_image(args.file)
+    inode = volume.inode_at(args.path)
+    if inode is None:
+        print(f"cannot access '{args.path}': No such file or directory")
+        return
+
+    for dirent, _ in inode.opendir():
+        print(dirent.name, end=" ")
+
+
+def do_cat(args):
+    image, volume = get_update_image(args.file)
+    inode = volume.inode_at(args.path)
+
+    if inode is None:
+        print(f"{args.path}: No such file or directory")
+        return
+
+    print(inode.open().read())
+
+
 def do_extract(args):
     if not args.out:
         args.out = os.getcwd() + "/extracted"
 
     logger.debug(f"Extracting {args.file} to {args.out}")
-    from remarkable_update_fuse import UpdateImage
+    from remarkable_update_image import UpdateImage
 
-    image = UpdateImage(args.file)
+    image, volume = get_update_image(args.file)
     with open(args.out, "wb") as f:
         f.write(image.read())
 
 
 def do_mount(args):
+    if sys.platform != "linux":
+        raise NotImplementedError(
+            f"Mounting has not been implemented on {sys.platform}"
+        )
+
     if args.out is None:
         args.out = "/opt/remarkable/"
 
@@ -625,8 +680,11 @@ def main():
     subparsers.add_parser(
         "restore", help="Restores to previous version installed on device"
     )
-
     subparsers.add_parser("list", help="List all versions available for use")
+    ls = subparsers.add_parser("ls", help="List files inside an update image")
+    cat = subparsers.add_parser(
+        "cat", help="Cat the contents of a file inside an update image"
+    )
 
     install.add_argument("version", help="Version to install")
     install.add_argument(
@@ -658,6 +716,7 @@ def main():
         help="Remote directory to upload to. Defaults to root folder",
         default="",
     )
+
     backup.add_argument(
         "-r",
         "--remote",
@@ -670,7 +729,6 @@ def main():
         help="Local directory to backup to. Defaults to download folder",
         default="./",
     )
-
     backup.add_argument(
         "-nr",
         "--no-recursion",
@@ -680,6 +738,12 @@ def main():
     backup.add_argument(
         "-no-ow", "--no-overwrite", help="Disables overwrite", action="store_true"
     )
+
+    ls.add_argument("file", help="Path to update file to extract", default=None)
+    ls.add_argument("path", help="Path inside the image to list", default="/")
+
+    cat.add_argument("file", help="Path to update file to cat", default=None)
+    cat.add_argument("path", help="Path inside the image to list", default=None)
 
     args = parser.parse_args()
     level = "ERROR"
@@ -734,6 +798,12 @@ def main():
 
     elif choice == "mount":
         do_mount(args)
+
+    elif choice == "ls":
+        do_ls(args)
+
+    elif choice == "cat":
+        do_cat(args)
 
 
 if __name__ == "__main__":
