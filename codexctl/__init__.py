@@ -593,10 +593,7 @@ def do_ls(args):
         print(f"cannot access '{args.path}': No such file or directory")
         return
 
-    for dirent, _ in inode.opendir():
-        print(dirent.name_str, end=" ")
-
-    print()
+    print(" ".join([x.name_str for x, _ in inode.opendir()]))
 
 
 def do_cat(args):

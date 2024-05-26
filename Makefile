@@ -2,7 +2,7 @@
 FW_VERSION := 2.15.1.1189
 FW_DATA := wVbHkgKisg-
 IMG_SHA := fc7d145e18f14a1a3f435f2fd5ca5924fe8dfe59bf45605dc540deed59551ae4
-LS_DATA := ". .. lost+found bin boot dev etc home lib media mnt postinst proc run sbin sys tmp uboot-postinst uboot-version usr var "
+LS_DATA := ". .. lost+found bin boot dev etc home lib media mnt postinst proc run sbin sys tmp uboot-postinst uboot-version usr var"
 CAT_DATA := 20221026104022
 SHELL := /bin/bash
 
