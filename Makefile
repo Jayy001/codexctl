@@ -42,7 +42,9 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	  python -m codexctl extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
 	  echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
 	  rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
-	fi
+	fi; \
+	python -m codexctl ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
+	python -m codexctl cat ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /etc/version
 
 test-executable: .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	. $(VENV_BIN_ACTIVATE); \
@@ -50,9 +52,9 @@ test-executable: .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	  dist/codexctl.* extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
 	  echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
 	  rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
-	else \
-	  dist/codexctl.* list; \
 	fi
+	dist/codexctl.* ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"
+	dist/codexctl.* cat ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /etc/version
 
 clean:
 	@echo "[info] Cleaning"
