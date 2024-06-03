@@ -177,7 +177,7 @@ jobs:
         run: |
           echo "NAME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
           echo "TAG=$(date +%s)" >> $GITHUB_ENV
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: Rename artifacts
