@@ -1,3 +1,4 @@
 requests==2.31.0
 loguru==0.7.2
-remarkable-update-fuse==1.0.8; sys_platform == 'linux'
+remarkable-update-image==1.0.1
+remarkable-update-fuse==1.1.1; sys_platform == 'linux'

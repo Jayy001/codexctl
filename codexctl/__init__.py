@@ -1,4 +1,5 @@
 import argparse
+import errno
 import subprocess
 import re
 import threading
@@ -242,6 +243,35 @@ def is_rm():
 
     with open("/sys/devices/soc0/machine") as f:
         return f.read().strip().startswith("reMarkable")
+
+
+def get_update_image(file):
+    import ext4
+    from remarkable_update_image import UpdateImage
+    from remarkable_update_image import UpdateImageSignatureException
+
+    image = UpdateImage(file)
+    volume = ext4.Volume(image, offset=0)
+    try:
+        inode = volume.inode_at("/usr/share/update_engine/update-payload-key.pub.pem")
+        if inode is None:
+            raise FileNotFoundError()
+
+        inode.verify()
+        image.verify(inode.open().read())
+
+    except UpdateImageSignatureException:
+        warnings.warn("Signature doesn't match contents", RuntimeWarning)
+
+    except FileNotFoundError:
+        warnings.warn("Public key missing", RuntimeWarning)
+
+    except OSError as e:
+        if e.errno != errno.ENOTDIR:
+            raise
+        warnings.warn("Unable to open public key", RuntimeWarning)
+
+    return image, volume
 
 
 def do_status(args):
@@ -557,19 +587,53 @@ def do_backup(args):
     )
 
 
+def do_ls(args):
+    image, volume = get_update_image(args.file)
+    try:
+        inode = volume.inode_at(args.target_path)
+        print(" ".join([x.name_str for x, _ in inode.opendir()]))
+
+    except FileNotFoundError:
+        print(f"cannot access '{args.target_path}': No such file or directory")
+        sys.exit(1)
+
+    except OSError as e:
+        print(f"cannot access '{args.target_path}': {os.strerror(e.errno)}")
+        sys.exit(e.errno)
+
+
+def do_cat(args):
+    image, volume = get_update_image(args.file)
+    try:
+        inode = volume.inode_at(args.target_path)
+        sys.stdout.buffer.write(inode.open().read())
+
+    except FileNotFoundError:
+        print(f"'{args.target_path}': No such file or directory")
+        sys.exit(1)
+
+    except OSError:
+        print(f"'{args.target_path}': {os.strerror(e.errno)}")
+        sys.exit(e.errno)
+
+
 def do_extract(args):
     if not args.out:
         args.out = os.getcwd() + "/extracted"
 
     logger.debug(f"Extracting {args.file} to {args.out}")
-    from remarkable_update_fuse import UpdateImage
-
-    image = UpdateImage(args.file)
+    image, volume = get_update_image(args.file)
+    image.seek(0)
     with open(args.out, "wb") as f:
         f.write(image.read())
 
 
 def do_mount(args):
+    if sys.platform != "linux":
+        raise NotImplementedError(
+            f"Mounting has not been implemented on {sys.platform}"
+        )
+
     if args.out is None:
         args.out = "/opt/remarkable/"
 
@@ -625,8 +689,11 @@ def main():
     subparsers.add_parser(
         "restore", help="Restores to previous version installed on device"
     )
-
     subparsers.add_parser("list", help="List all versions available for use")
+    ls = subparsers.add_parser("ls", help="List files inside an update image")
+    cat = subparsers.add_parser(
+        "cat", help="Cat the contents of a file inside an update image"
+    )
 
     install.add_argument("version", help="Version to install")
     install.add_argument(
@@ -658,6 +725,7 @@ def main():
         help="Remote directory to upload to. Defaults to root folder",
         default="",
     )
+
     backup.add_argument(
         "-r",
         "--remote",
@@ -670,7 +738,6 @@ def main():
         help="Local directory to backup to. Defaults to download folder",
         default="./",
     )
-
     backup.add_argument(
         "-nr",
         "--no-recursion",
@@ -679,6 +746,16 @@ def main():
     )
     backup.add_argument(
         "-no-ow", "--no-overwrite", help="Disables overwrite", action="store_true"
+    )
+
+    ls.add_argument("file", help="Path to update file to extract", default=None)
+    ls.add_argument(
+        "target_path", help="Path inside the image to list", default=None, type=str
+    )
+
+    cat.add_argument("file", help="Path to update file to cat", default=None)
+    cat.add_argument(
+        "target_path", help="Path inside the image to list", default=None, type=str
     )
 
     args = parser.parse_args()
@@ -734,6 +811,12 @@ def main():
 
     elif choice == "mount":
         do_mount(args)
+
+    elif choice == "ls":
+        do_ls(args)
+
+    elif choice == "cat":
+        do_cat(args)
 
 
 if __name__ == "__main__":

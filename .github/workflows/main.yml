@@ -32,6 +32,9 @@ jobs:
           execute_install_scripts: true
           packages: libfuse-dev
           version: 1.0
+      - name: Install brew packages
+        if: matrix.os == 'macos-latest'
+        run: brew install coreutils
       - name: Checkout the Git repository
         uses: actions/checkout@v4
       - name: ccache
@@ -52,9 +55,15 @@ jobs:
           cache-dependency-path: |
             **/requirements*.txt
       - name: Test codexctl
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os != 'windows-latest'
         shell: bash
         run: make test
+      - name: Test codexctl
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: make test
+        env:
+          VENV_BIN_ACTIVATE: .venv/Scripts/activate
       - name: Build codexctl
         if: matrix.os == 'windows-latest'
         shell: bash
@@ -76,7 +85,6 @@ jobs:
           path: compilation-report.xml
           if-no-files-found: warn
       - name: Test Built version
-        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: make test-executable
       - name: Move .ccache
