@@ -36,13 +36,14 @@ class UpdateManager:
         self.latest_version = versions["latest"]
 
     def update_version_ids(self, location):
-        with open(location, "w") as f:
+        with open(location, "w", newline="\n") as f:
             try:
                 self.logger.debug("Downloading version-ids.json")
                 contents = requests.get(
                     "https://raw.githubusercontent.com/Jayy001/codexctl/main/data/version-ids.json"
                 ).json()
-                json.dump(contents, f)
+                json.dump(contents, f, indent=4)
+                f.write("\n")
             except requests.exceptions.Timeout:
                 raise SystemExit(
                     "Error: Connection timed out while downloading version-ids.json! Do you have an internet connection?"
