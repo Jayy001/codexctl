@@ -86,7 +86,9 @@ executable: $(VENV_BIN_ACTIVATE)
 	@echo "[info] Installing Nuitka"
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
-	python -m pip install --extra-index-url=https://wheels.eeems.codes/ nuitka
+	python -m pip install \
+	    --extra-index-url=https://wheels.eeems.codes/ \
+	    nuitka==2.2.3
 	@echo "[info] Building codexctl"
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
