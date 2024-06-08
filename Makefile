@@ -11,6 +11,7 @@ ifeq ($(OS),Windows_NT)
 		VENV_BIN_ACTIVATE := .venv/Scripts/activate
 	endif
 	CODEXCTL_BIN := codexctl.exe
+	export MSYS_NO_PATHCONV = 1
 else
 	ifeq ($(VENV_BIN_ACTIVATE),)
 		VENV_BIN_ACTIVATE := .venv/bin/activate
@@ -57,7 +58,16 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	fi; \
 	python -m codexctl extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
 	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
-	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"
+	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
+	set -o pipefail; \
+	if ! diff --color <(python -m codexctl ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" / | tr -d "\n\r") <(echo -n ${LS_DATA}) | cat -te; then \
+	  echo "codexctl ls failed test"; \
+	  exit 1; \
+	fi; \
+	if ! diff --color <(python -m codexctl cat ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /etc/version | tr -d "\n\r") <(echo -n ${CAT_DATA}) | cat -te; then \
+	  echo "codexctl cat failed test"; \
+	  exit 1; \
+	fi
 
 test-executable: .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	@set -e; \
@@ -66,11 +76,11 @@ test-executable: .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
 	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
 	set -o pipefail; \
-	if ! diff --color <(dist/${CODEXCTL_BIN} ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /) <(echo ${LS_DATA}) | cat -te; then \
+	if ! diff --color <(dist/${CODEXCTL_BIN} ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" / | tr -d "\n\r") <(echo -n ${LS_DATA}) | cat -te; then \
 	  echo "codexctl ls failed test"; \
 	  exit 1; \
-	fi
-	if ! diff --color <(dist/${CODEXCTL_BIN} cat ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /etc/version) <(echo ${CAT_DATA}) | cat -te; then \
+	fi; \
+	if ! diff --color <(dist/${CODEXCTL_BIN} cat ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /etc/version | tr -d "\n\r") <(echo -n ${CAT_DATA}) | cat -te; then \
 	  echo "codexctl cat failed test"; \
 	  exit 1; \
 	fi

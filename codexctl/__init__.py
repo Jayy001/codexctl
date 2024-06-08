@@ -749,14 +749,10 @@ def main():
     )
 
     ls.add_argument("file", help="Path to update file to extract", default=None)
-    ls.add_argument(
-        "target_path", help="Path inside the image to list", default=None, type=str
-    )
+    ls.add_argument("target_path", help="Path inside the image to list", default=None)
 
     cat.add_argument("file", help="Path to update file to cat", default=None)
-    cat.add_argument(
-        "target_path", help="Path inside the image to list", default=None, type=str
-    )
+    cat.add_argument("target_path", help="Path inside the image to list", default=None)
 
     args = parser.parse_args()
     level = "ERROR"
