@@ -64,7 +64,7 @@ jobs:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Upload Compilation Report
         uses: actions/upload-artifact@v4
-        if:  runner.debug == '1'
+        if:  (success() || failure()) && runner.debug == '1'
         with:
           name: ${{ matrix.os }}-compilation-report
           path: compilation-report.xml
