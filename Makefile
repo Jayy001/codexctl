@@ -6,17 +6,26 @@ LS_DATA := ". .. lost+found bin boot dev etc home lib media mnt postinst proc ru
 CAT_DATA := 20221026104022
 SHELL := /bin/bash
 
-ifeq ($(VENV_BIN_ACTIVATE),)
-VENV_BIN_ACTIVATE := .venv/bin/activate
+ifeq ($(OS),Windows_NT)
+	ifeq ($(VENV_BIN_ACTIVATE),)
+		VENV_BIN_ACTIVATE := .venv/Scripts/activate
+	endif
+	CODEXCTL_BIN := codexctl.exe
+	export MSYS_NO_PATHCONV = 1
+else
+	ifeq ($(VENV_BIN_ACTIVATE),)
+		VENV_BIN_ACTIVATE := .venv/bin/activate
+	endif
+	CODEXCTL_BIN := codexctl.bin
 endif
 
-OBJ := $(shell find codexctl -type f | grep -v __pycache__)
-OBJ += $(shell find data -type f)
+OBJ := $(wildcard codexctl/**)
+OBJ += $(wildcard data/*)
 OBJ += README.md
 
 $(VENV_BIN_ACTIVATE): requirements.remote.txt requirements.txt
 	@echo "[info] Setting up development virtual env in .venv"
-	python -m venv .venv
+	python -m venv --system-site-packages .venv
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
 	python -m pip install wheel
@@ -49,20 +58,29 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	fi; \
 	python -m codexctl extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
 	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
-	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"
+	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
+	set -o pipefail; \
+	if ! diff --color <(python -m codexctl ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" / | tr -d "\n\r") <(echo -n ${LS_DATA}) | cat -te; then \
+	  echo "codexctl ls failed test"; \
+	  exit 1; \
+	fi; \
+	if ! diff --color <(python -m codexctl cat ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /etc/version | tr -d "\n\r") <(echo -n ${CAT_DATA}) | cat -te; then \
+	  echo "codexctl cat failed test"; \
+	  exit 1; \
+	fi
 
 test-executable: .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
-	dist/codexctl.* extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
+	dist/${CODEXCTL_BIN} extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
 	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
 	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
 	set -o pipefail; \
-	if ! diff --color <(dist/codexctl.* ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /) <(echo ${LS_DATA}) | cat -te; then \
+	if ! diff --color <(dist/${CODEXCTL_BIN} ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" / | tr -d "\n\r") <(echo -n ${LS_DATA}) | cat -te; then \
 	  echo "codexctl ls failed test"; \
 	  exit 1; \
-	fi
-	if ! diff --color <(dist/codexctl.* cat ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /etc/version) <(echo ${CAT_DATA}) | cat -te; then \
+	fi; \
+	if ! diff --color <(dist/${CODEXCTL_BIN} cat ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" /etc/version | tr -d "\n\r") <(echo -n ${CAT_DATA}) | cat -te; then \
 	  echo "codexctl cat failed test"; \
 	  exit 1; \
 	fi
@@ -78,7 +96,9 @@ executable: $(VENV_BIN_ACTIVATE)
 	@echo "[info] Installing Nuitka"
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
-	python -m pip install --extra-index-url=https://wheels.eeems.codes/ nuitka
+	python -m pip install \
+	    --extra-index-url=https://wheels.eeems.codes/ \
+	    nuitka==2.2.3
 	@echo "[info] Building codexctl"
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
@@ -93,7 +113,7 @@ executable: $(VENV_BIN_ACTIVATE)
 	    rm -r dist/codexctl.build; \
 	fi
 	@echo "[info] Sanity check"
-	dist/codexctl.* --help
+	dist/${CODEXCTL_BIN} --help
 
 all: executable
 
