@@ -135,7 +135,7 @@ class UpdateManager:
     def __get_latest_toltec_supported(self):
         site_body_html = requests.get("https://toltec-dev.org/").text  # or /raw ?
         m = re.search(
-            "Toltec does not support OS builds newer than (.*)\. You will soft-brick",
+            r"Toltec does not support OS builds newer than (.*)\. You will soft-brick",
             site_body_html,
         )
         if m is None:
