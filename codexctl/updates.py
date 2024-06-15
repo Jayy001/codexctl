@@ -132,17 +132,6 @@ class UpdateManager:
         self.logger.debug(f"File URL is {file_url}, File name is {file_name}")
         return self.download_file(file_url, file_name, download_folder, checksum)
 
-    def __get_latest_toltec_supported(self):
-        site_body_html = requests.get("https://toltec-dev.org/").text  # or /raw ?
-        m = re.search(
-            "Toltec does not support OS builds newer than (.*)\. You will soft-brick",
-            site_body_html,
-        )
-        if m is None:
-            return None
-
-        return m.group(1).strip()
-
     def get_latest_version(self, device):  # Hardcoded for now
         # This is problematic...either we get the latest version from the RM directly or from the currently installed ones
         # The latter is more reliable, but the former is more accurate
