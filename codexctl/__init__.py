@@ -69,6 +69,7 @@ def version_lookup(version, device):
     logger.debug(f"Looking up {version} for ReMarkable {device}")
     if version == "latest":
         return updateman.get_latest_version(device=device)
+
     if version == "toltec":
         return updateman.latest_toltec_version
 

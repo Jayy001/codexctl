@@ -28,6 +28,18 @@ class BufferBytesIO(BytesIO):
         return BufferWriter(self)
 
 
+def assert_value(msg, value, expected):
+    global FAILED
+    print(f"Testing {msg}: ", end="")
+    if value == expected:
+        print("pass")
+        return
+
+    FAILED = True
+    print("fail")
+    print(f"  {value} != {expected}")
+
+
 def test_set_server_config(original, expected):
     global FAILED
     print("Testing set_server_config: ", end="")
@@ -148,6 +160,12 @@ test_ls(
 )
 
 test_cat("/etc/version", b"20221026104022\n")
+
+codexctl.updateman = codexctl.UpdateManager(logger=codexctl.logger)
+assert_value("latest rm1 version", codexctl.version_lookup("latest", 1), "3.11.2.5")
+assert_value("latest rm2 version", codexctl.version_lookup("latest", 2), "3.11.2.5")
+assert_value("toltec rm1 version", codexctl.version_lookup("toltec", 1), "3.3.2.1666")
+assert_value("toltec rm2 version", codexctl.version_lookup("toltec", 2), "3.3.2.1666")
 
 if FAILED:
     sys.exit(1)
