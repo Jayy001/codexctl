@@ -33,7 +33,6 @@ class UpdateManager:
         self.id_lookups_rm2 = versions["remarkable2"]
 
         self.latest_toltec_version = versions["toltec"]
-        self.latest_version = versions["latest"]
 
     def update_version_ids(self, location):
         with open(location, "w", newline="\n") as f:
@@ -104,7 +103,7 @@ class UpdateManager:
             versionDict = self.id_lookups_rm2
 
         if version is None:
-            version = self.latest_version
+            version = self.get_latest_version(device)
 
         if version not in versionDict:
             return "Not in version list"
@@ -132,41 +131,15 @@ class UpdateManager:
         self.logger.debug(f"File URL is {file_url}, File name is {file_name}")
         return self.download_file(file_url, file_name, download_folder, checksum)
 
-    def __get_latest_toltec_supported(self):
-        site_body_html = requests.get("https://toltec-dev.org/").text  # or /raw ?
-        m = re.search(
-            "Toltec does not support OS builds newer than (.*)\. You will soft-brick",
-            site_body_html,
-        )
-        if m is None:
-            return None
-
-        return m.group(1).strip()
+    @staticmethod
+    def __max_version(versions):
+        return sorted(versions.keys(), key=lambda v: tuple(map(int, v.split("."))))[-1]
 
     def get_latest_version(self, device):  # Hardcoded for now
-        # This is problematic...either we get the latest version from the RM directly or from the currently installed ones
-        # The latter is more reliable, but the former is more accurate
-        # We'll use the latter for now
-
-        return self.latest_version
-
         if device == 2:
-            return max([item for item in list(self.id_lookups_rm2.keys())])
-        else:
-            return max([item for item in list(self.id_lookups_rm1.keys())])
-        """
+            return self.__max_version(self.id_lookups_rm2)
 
-        data = self._generate_xml_data()
-
-        response = self._make_request(data)
-
-        if response is None:  # or if not response
-            return
-        print(response)
-        file_version, file_uri, file_name = self._parse_response(response)
-
-        return 'file_version'
-        """
+        return self.__max_version(self.id_lookups_rm1)
 
     def _generate_xml_data(self):  # TODO: Support for remarkable1
         params = {
