@@ -71,7 +71,7 @@ def version_lookup(version, device):
         return updateman.get_latest_version(device=device)
 
     if version == "toltec":
-        return updateman.latest_toltec_version
+        return updateman.get_toltec_version(device=device)
 
     if device == 2:
         version_dict = updateman.id_lookups_rm2

@@ -32,8 +32,6 @@ class UpdateManager:
         self.id_lookups_rm1 = versions["remarkable1"]
         self.id_lookups_rm2 = versions["remarkable2"]
 
-        self.latest_toltec_version = versions["toltec"]
-
     def update_version_ids(self, location):
         with open(location, "w", newline="\n") as f:
             try:
@@ -89,6 +87,21 @@ class UpdateManager:
         self.logger.debug(f"Contents are {contents}")
         return contents
 
+    def get_toltec_version(self, device=2):
+        response = requests.get("https://toltec-dev.org/stable/Compatibility")
+        if response.status_code != 200:
+            raise SystemExit(
+                f"Error: Failed to get toltec compatibility table: {response.status_code} {response.reason}"
+            )
+
+        return self.__max_version(
+            [
+                x.split("=")[1]
+                for x in response.text.splitlines()
+                if x.startswith(f"rm{device}=")
+            ]
+        )
+
     def get_version(self, device=2, version=None, download_folder=None):
         if download_folder is None:
             download_folder = self.DOWNLOAD_FOLDER
@@ -133,13 +146,13 @@ class UpdateManager:
 
     @staticmethod
     def __max_version(versions):
-        return sorted(versions.keys(), key=lambda v: tuple(map(int, v.split("."))))[-1]
+        return sorted(versions, key=lambda v: tuple(map(int, v.split("."))))[-1]
 
     def get_latest_version(self, device):  # Hardcoded for now
         if device == 2:
-            return self.__max_version(self.id_lookups_rm2)
+            return self.__max_version(self.id_lookups_rm2.keys())
 
-        return self.__max_version(self.id_lookups_rm1)
+        return self.__max_version(self.id_lookups_rm1.keys())
 
     def _generate_xml_data(self):  # TODO: Support for remarkable1
         params = {
