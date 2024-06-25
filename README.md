@@ -80,12 +80,12 @@ codexctl download toltec # Downloads latest version that has full support for to
 codexctl download 3.0.4.1305 --rm1 # Downloads 3.0.4.1305 firmware file for remarkable 1
 codexctl status # Prints current & previous version (can only be used when running on device itself)
 codexctl list # Lists all available versions 
-python codexctl.py restore # Restores previous version
-python codexctl.py --verbose # Enables logging
-python codexctl.py --backup # Exports all files to local directory
-python codexctl.py --backup -l root -r FM --no-recursion --no-overwrite # Exports all files from FM directory to root folder on localhost
-python codexctl.py extract 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed # Extracts contents to filesystem named "extracted"
-python codexctl.py mount extracted /opt/remarkable # Mounts extracted filesystem to /opt/remarkable
-python codexctl.py ls 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed / # Lists the root directory of the update image
-python codexctl.py cat 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed /etc/version # Outputs the contents of /etc/version from the update image
+codexctl restore # Restores previous version
+codexctl --verbose # Enables logging
+codexctl --backup # Exports all files to local directory
+codexctl --backup -l root -r FM --no-recursion --no-overwrite # Exports all files from FM directory to root folder on localhost
+codexctl extract 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed # Extracts contents to filesystem named "extracted"
+codexctl mount extracted /opt/remarkable # Mounts extracted filesystem to /opt/remarkable
+codexctl ls 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed / # Lists the root directory of the update image
+codexctl cat 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed /etc/version # Outputs the contents of /etc/version from the update image
 ```
