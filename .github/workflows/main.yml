@@ -12,6 +12,7 @@ on:
      - scripts/**
      - github-make-executable.sh
      - Makefile
+     - .github/workflows/main.yml
   push:
     branches:
       - main
@@ -24,6 +25,7 @@ on:
      - scripts/**
      - github-make-executable.sh
      - Makefile
+     - .github/workflows/main.yml
   workflow_dispatch:
 
 defaults:
