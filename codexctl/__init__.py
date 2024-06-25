@@ -475,7 +475,7 @@ def do_install(args, device_type):
                 env={"PATH": "/bin:/usr/bin:/sbin"},
             )
     else:
-        print("Checking if device can reach server")
+        print("Checking if device can connect to this machine")
         _stdin, stdout, _stderr = remarkable_remote.exec_command(
             f"sleep 2 && echo | nc {server_host} 8080"
         )
@@ -484,7 +484,7 @@ def do_install(args, device_type):
         logger.debug(f"Stdout of nc checking: {stdout.readlines()}")
         if check != 0:
             raise SystemExit(
-                "Device cannot reach server! Is the firewall blocking connections?"
+                "Device cannot connect to this machine! Is the firewall blocking connections?"
             )
 
         print("Starting update service on device")
