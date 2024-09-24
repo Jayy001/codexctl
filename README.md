@@ -13,7 +13,7 @@ If your remarkable device is at version >= 3.11, codexctl will not be able to au
 
 You can find pre-compiled binaries on the [releases](https://github.com/Jayy001/codexctl/releases/) page. This includes a build for the reMarkable itself, as well as well as builds for linux, macOS, and Windows. It currently only has support for **command line interfaces** but a graphical interface is soon to come.
 
-## Usage
+### Usage
 
 The script is designed to have as little interactivity as possible, meaning arguments are directly taken from the command to run the script. 
 
@@ -40,7 +40,7 @@ options:
   --verbose             Enable verbose logging
 ```
 
-## Examples
+### Examples
 ```
 codexctl install latest # Downloads and installs latest version
 codexctl download toltec # Downloads latest version that has full support for toltec
