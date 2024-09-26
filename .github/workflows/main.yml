@@ -42,6 +42,7 @@ jobs:
           - ubuntu-latest
           - windows-latest
           - macos-latest
+          - macos-13
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install Apt packages
