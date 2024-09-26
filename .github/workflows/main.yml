@@ -54,7 +54,7 @@ jobs:
           packages: libfuse-dev
           version: 1.0
       - name: Install brew packages
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
         run: brew install coreutils
       - name: Checkout the Git repository
         uses: actions/checkout@v4
