@@ -89,7 +89,7 @@ class UpdateManager:
             contents["external-provider-url"],
         )
 
-    def update_version_ids(self, location) -> None:
+    def update_version_ids(self, location: str) -> None:
         """Updates the version-ids.json file
 
         Args:
@@ -114,7 +114,7 @@ class UpdateManager:
                     f"Unknown error while downloading version-ids.json! {error}"
                 )
 
-    def get_latest_version(self, device_type) -> str:
+    def get_latest_version(self, device_type: str) -> str:
         """Gets the latest version available for the device
 
         Args:
@@ -134,7 +134,9 @@ class UpdateManager:
 
         return list(versions.keys())[0]
 
-    def download_version(self, device_type, update_version, download_folder=None):
+    def download_version(
+        self, device_type: str, update_version: str, download_folder: str = None
+    ) -> str | None:
         """Downloads the specified version of the update
 
         Args:
@@ -227,7 +229,7 @@ class UpdateManager:
     </app>
 </request>""".format(**params)
 
-    def __parse_response(self, resp) -> tuple[str, str, str] | None:
+    def __parse_response(self, resp: str) -> tuple[str, str, str] | None:
         """Parses the response from the update server and returns the file name, uri, and version if an update is available
 
         Args:
@@ -255,7 +257,7 @@ class UpdateManager:
         return file_version, file_uri, file_name
 
     def __download_version_file(
-        self, uri, name, download_folder, checksum
+        self, uri: str, name: str, download_folder: str, checksum: str
     ) -> str | None:
         """Downloads the version file from the server and checks the checksum
 
@@ -263,7 +265,7 @@ class UpdateManager:
             uri (str): Location to the file
             name (str): Name of the file
             download_folder (str): Location of download folder
-            checksum (str): Checksum of the file
+            checksum (str): Sha256 Checksum of the file
 
         Returns:
             str | None: Location of the file if the checksum matches, None otherwise
@@ -318,5 +320,14 @@ class UpdateManager:
         return filename
 
     @staticmethod
-    def uses_new_update_engine(version) -> bool:
+    def uses_new_update_engine(version: str) -> bool:
+        """
+        Checks if the version given is above 3.11 and so requires the newer update engine
+
+        Args:
+            version (str): version to check against
+
+        Returns:
+            bool: If it uses the new update engine or not
+        """
         return int(version.split(".")[0]) >= 3 and int(version.split(".")[1]) >= 11

@@ -285,7 +285,7 @@ class DeviceManager:
 
         return beta, old_update_engine, xochitl_version, version_id
 
-    def set_server_config(self, contents, server_host_name) -> str:
+    def set_server_config(self, contents: str, server_host_name: str) -> str:
         """Converts the contents given to point to the given server IP and port
 
         Args:
@@ -317,7 +317,7 @@ class DeviceManager:
 
         return converted
 
-    def edit_update_conf(self, server_ip, server_port) -> bool:
+    def edit_update_conf(self, server_ip: str, server_port: str) -> bool:
         """Edits the update.conf file to point to the given server IP and port
 
         Args:
@@ -409,14 +409,17 @@ echo "fallback: ${OLDPART}"
         else:
             os.system("reboot")
 
-    @staticmethod
-    def output_put_progress(transferred, toBeTransferred):
-        print(
-            f"Transferring progress...{int((transferred/toBeTransferred)*100)}%",
-            end="\r",
-        )
+    def install_sw_update(self, version_file: str) -> None:
+        """
+        Installs new version from version file path, utilising swupdate
 
-    def install_sw_update(self, version_file):
+        Args:
+            version_file (str): Path to img file
+
+        Raises:
+            SystemExit: If there was an error installing the update
+
+        """
         command = f'/usr/bin/swupdate -v -i VERSION_FILE -k /usr/share/swupdate/swupdate-payload-key-pub.pem -H "{self.hardware}:1.0" -e "stable,copy1"'
 
         if self.client:
@@ -485,7 +488,7 @@ echo "fallback: ${OLDPART}"
         print("Success! Rebooting the device...")
         self.reboot_device()
 
-    def install_ohma_update(self, version_available):
+    def install_ohma_update(self, version_available: dict) -> None:
         """Installs version from update folder on the device
 
         Args:
@@ -575,3 +578,12 @@ echo "fallback: ${OLDPART}"
 
             print("Success! Rebooting the device...")
             self.reboot_device()
+
+    @staticmethod
+    def output_put_progress(transferred: int, toBeTransferred: int) -> None:
+        """Used for displaying progress for paramiko ftp.put function"""
+
+        print(
+            f"Transferring progress...{int((transferred/toBeTransferred)*100)}%",
+            end="\r",
+        )
