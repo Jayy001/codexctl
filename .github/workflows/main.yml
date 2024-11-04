@@ -58,14 +58,14 @@ jobs:
       - name: Build codexctl
         if: matrix.os == 'windows-latest'
         shell: bash
-        run: ./github-make-executable.sh
+        run: ./builds/github-make-executable.sh
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
           VENV_BIN_ACTIVATE: .venv/Scripts/activate
       - name: Build codexctl
         if: matrix.os != 'windows-latest'
         shell: bash
-        run: ./github-make-executable.sh
+        run: ./builds/github-make-executable.sh
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Move .ccache
@@ -112,7 +112,7 @@ jobs:
               libfuse-dev
             cd /src
             source /opt/lib/nuitka/bin/activate
-            ./github-make-executable.sh
+            ./builds/github-make-executable.sh
       - uses: actions/upload-artifact@v3
         with:
           name: remarkable

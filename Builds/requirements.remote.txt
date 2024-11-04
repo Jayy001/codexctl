@@ -1,3 +1,0 @@
--r requirements.txt
-paramiko==3.3.1
-psutil==5.9.5

@@ -9,7 +9,7 @@ import tempfile
 import shutil
 import json
 
-from pathlib import Path
+from os import listdir
 
 try:
     from loguru import logger
@@ -21,11 +21,15 @@ if importlib.util.find_spec("requests") is None:
         "Requests is required for accessing remote files. Please install it."
     )
 
-from .modules.updates import UpdateManager
+from .updates import UpdateManager
 
 
 class Manager:
-    def __init__(self, device, logger):
+    """
+    Main class for codexctl
+    """
+
+    def __init__(self, device: str, logger: logging.Logger) -> None:
         """Initializes the Manager class for codexctl
 
         Args:
@@ -36,11 +40,16 @@ class Manager:
         self.logger = logger
         self.updater = UpdateManager(logger)
 
-    def call_func(self, function: str, args) -> None:
-        """Runs a command based on the function name and arguments provided"""
+    def call_func(self, function: str, args: dict) -> None:
+        """Runs a command based on the function name and arguments provided
+
+        Args:
+            function: The function to run
+            args: What arguments to pass into the function
+        """
 
         if "remarkable" not in self.device:
-            remarkable_version = "remarkable1" if "rm1" in args else "remarkable2"
+            remarkable_version = args.get("hardware")
         else:
             remarkable_version = self.device
 
@@ -55,6 +64,9 @@ class Manager:
         if function == "list":
             print(
                 f"""
+ReMarkable Paper Pro:
+{json.dumps(list(self.updater.remarkablepp_versions.keys()), indent=4)}
+
 ReMarkable 2:
 {json.dumps(list(self.updater.remarkable2_versions.keys()), indent=4)}
 
@@ -111,7 +123,7 @@ ReMarkable 1:
 
         ### WebInterface functionalities
         elif function in ("backup", "upload"):
-            from .modules.sync import RmWebInterfaceAPI
+            from .sync import RmWebInterfaceAPI
 
             print(
                 "Please make sure the web-interface is enabled in the remarkable settings!\nStarting upload..."
@@ -144,20 +156,20 @@ ReMarkable 1:
                     )
                 remote = True
 
-            from .modules.device import DeviceManager
-            from .modules.server import get_available_version
+            from .device import DeviceManager
+            from .server import get_available_version
 
             remarkable = DeviceManager(
                 remote=remote,
                 address=args["address"],
                 logger=self.logger,
-                authentication=args["pass"],
+                authentication=args["password"],
             )
 
             if function == "status":
-                beta, prev, current = remarkable.get_device_status()
+                beta, prev, current, version_id = remarkable.get_device_status()
                 print(
-                    f"\nCurrent version: {current}\nSecondary version: {prev}\nBeta active: {beta}"
+                    f"\nCurrent version: {current}\nOld update engine: {prev}\nBeta active: {beta}\nVersion id: {version_id}"
                 )
 
             elif function == "restore":
@@ -184,30 +196,46 @@ ReMarkable 1:
                 if not os.path.exists("updates"):
                     os.mkdir("updates")
 
-                # Downloading version if not available
-                if get_available_version(version) is None:
+                # We then check if the update file exists
+                update_file = False
+                new_engine = UpdateManager.uses_new_update_engine(version)
+
+                if new_engine:
+                    update_files = listdir("updates")
+                    for file in update_files:
+                        if version in file:
+                            update_file = file
+
+                            break
+                else:
+                    update_file = get_available_version(version)
+
+                if not update_file:
                     print(
                         f"Version {version} not available in serve folder. Downloading..."
                     )
 
                     result = self.updater.download_version(
-                        remarkable_version, version, "./updates"
+                        remarkable.hardware, version, "./updates"
                     )
                     if result:
                         print(f"Downloaded version {version} to {result}")
 
+                        if new_engine:
+                            update_file = result
+                        else:
+                            update_file = get_available_version(version)
+
                     else:
                         raise SystemExit(f"Failed to download version {version}!")
 
-                # Installing version
-                version_available = get_available_version(version)
+                if not update_file:
+                    raise SystemExit("Could still not find update file!")
 
-                if version_available is None:
-                    print(
-                        f"Version {version} still not available in serve folder. Exiting..."
-                    )
+                if new_engine:
+                    remarkable.install_sw_update(f"./updates/{update_file}")
                 else:
-                    remarkable.install_manual_update(version_available)
+                    remarkable.install_ohma_update(update_file)
 
                 os.chdir(orig_cwd)
                 if temp_path:
@@ -220,12 +248,6 @@ def main() -> None:
 
     ### Setting up the argument parser
     parser = argparse.ArgumentParser("Codexctl")
-    parser.add_argument(
-        "--pass",
-        "-p",
-        required=False,
-        help="Specify password or path to SSH key for remote access",
-    )
     parser.add_argument(
         "--verbose",
         "-v",
@@ -240,7 +262,12 @@ def main() -> None:
         help="Specify the address of the device",
         default=None,
     )
-
+    parser.add_argument(
+        "--password",
+        "-p",
+        required=False,
+        help="Specify password or path to SSH key for remote access",
+    )
     subparsers = parser.add_subparsers(dest="command")
     subparsers.required = True  # This fixes a bug with older versions of python
 
@@ -262,9 +289,9 @@ def main() -> None:
         "download", help="Download the specified version firmware file"
     )
     download.add_argument("version", help="Version to download")
-    download.add_argument("--out", help="Folder to download to", default=None)
+    download.add_argument("--out", "-o", help="Folder to download to", default=None)
     download.add_argument(
-        "--rm1", help="Download reMarkable 1 version", action="store_true"
+        "--hardware", "--h", help="Hardware to download for", required=True
     )
 
     ### Backup subcommand
@@ -344,9 +371,12 @@ def main() -> None:
         ("DEBUG", logging.DEBUG) if args.verbose else ("ERROR", logging.ERROR)
     )
 
-    logger.remove()
-    logger.add(sys.stderr, level=logging_level)
-    logging.basicConfig(level=paramiko_level)
+    try:
+        logger.remove()
+        logger.add(sys.stderr, level=logging_level)
+        logging.basicConfig(level=paramiko_level)
+    except AttributeError:  # For non-loguru
+        logger.level = logging_level
 
     ### Detecting device information
     device = None
@@ -355,8 +385,8 @@ def main() -> None:
         with open("/sys/devices/soc0/machine") as machine_file:
             contents = machine_file.read().strip()
 
-            if contents.startswith("reMarkable"):
-                device = "reMarkable1" if "1" in contents else "reMarkable2"
+            if "reMarkable" in contents:
+                device = contents  # reMarkable 1, reMarkable 2, reMarkable Ferrari
 
     if device is None:
         device = sys.platform
