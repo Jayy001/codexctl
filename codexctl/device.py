@@ -4,6 +4,7 @@ import logging
 import threading
 import re
 import os
+import time
 
 from .server import startUpdate
 
@@ -27,6 +28,8 @@ class DeviceManager:
             Authentication (str, optional): Authentication method. Defaults to None.
         """
         self.logger = logger
+        self.address = address
+        self.authentication = authentication
         self.client = None
 
         if self.logger is None:
@@ -36,6 +39,9 @@ class DeviceManager:
             self.client = self.connect_to_device(
                 authentication=authentication, remote_address=address
             )
+
+            self.client.authentication = authentication
+            self.client.address = address
 
             ftp = self.client.open_sftp()
             with ftp.file("/sys/devices/soc0/machine") as file:
@@ -150,9 +156,10 @@ class DeviceManager:
 
         if remote_address is None:
             remote_address = self.get_remarkable_address()
+            self.address = remote_address # For future reference
         else:
             if self.check_is_address_reachable(remote_address) is False:
-                raise SystemExit(f"Error: Device {remote_address} is not reachable!")
+                raise SystemError(f"Error: Device {remote_address} is not reachable!")
 
         client = paramiko.client.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -240,9 +247,11 @@ class DeviceManager:
                     ).group()
             except Exception:
                 with ftp.file("/etc/os-release") as file:
-                    xochitl_version = re.search(
-                        "(?<=IMG_VERSION=).*", file.read().decode("utf-8")
-                    ).group()
+                    xochitl_version = (
+                        re.search("(?<=IMG_VERSION=).*", file.read().decode("utf-8"))
+                        .group()
+                        .strip('"')
+                    )
                     old_update_engine = False
 
             with ftp.file("/etc/version") as file:
@@ -260,11 +269,13 @@ class DeviceManager:
                     ).group()
             else:
                 with open("/etc/os-release") as file:
-                    xochitl_version = re.search(
-                        "(?<=IMG_VERSION=).*", file.read().decode("utf-8")
-                    ).group()
-                    old_update_engine = False
+                    xochitl_version = (
+                        re.search("(?<=IMG_VERSION=).*", file.read().decode("utf-8"))
+                        .group()
+                        .strip('"')
+                    )
 
+                    old_update_engine = False
             if os.path.exists("/etc/version"):
                 with open("/etc/version") as file:
                     version_id = file.read().rstrip()
@@ -402,13 +413,6 @@ echo "fallback: ${OLDPART}"
 
         self.logger.debug("Restore script ran")
 
-    def reboot_device(self) -> None:
-        """Reboots the device"""
-        if self.client:
-            self.client.exec_command("/sbin/reboot")
-        else:
-            os.system("reboot")
-
     def install_sw_update(self, version_file: str) -> None:
         """
         Installs new version from version file path, utilising swupdate
@@ -427,12 +431,12 @@ echo "fallback: ${OLDPART}"
 
             print(f"Uploading {version_file} image")
 
-            out_location = f'/tmp/{version_file.split("/")[-1]}.swu'
+            out_location = f'/tmp/{os.path.basename(version_file)}.swu'
             ftp_client.put(
                 version_file, out_location, callback=self.output_put_progress
             )
 
-            print("\nDone! Running swupdate... (PLEASE BE PATIENT, ~5 MINUTES)")
+            print("\nDone! Running swupdate (PLEASE BE PATIENT, ~5 MINUTES)")
 
             command = command.replace("VERSION_FILE", out_location)
 
@@ -443,6 +447,8 @@ echo "fallback: ${OLDPART}"
                 self.logger.debug(command)
                 _stdin, stdout, _stderr = self.client.exec_command(command)
 
+                self.logger.debug(f"Stdout of swupdate checking: {stdout.readlines()}")
+
                 exit_status = stdout.channel.recv_exit_status()
 
                 if exit_status != 0:
@@ -450,9 +456,32 @@ echo "fallback: ${OLDPART}"
                         continue
                     else:
                         print("".join(_stderr.readlines()))
-                        raise SystemExit("Update failed")
+                        raise SystemError("Update failed!")
 
-                self.logger.debug(f"Stdout of swupdate checking: {stdout.readlines()}")
+            print("Done! Now rebooting the device and disabling update service")
+
+            #### Now disable automatic updates
+
+            self.client.exec_command("sleep 1 && reboot")  # Should be enough
+            self.client.close()
+
+            time.sleep(
+                2
+            )  # Somehow the code runs faster than the time it takes for the device to reboot
+
+            print("Trying to connect to device")
+
+            while not self.check_is_address_reachable(self.address):
+                time.sleep(1)
+
+            self.client = self.connect_to_device(
+                remote_address=self.address, authentication=self.authentication
+            )
+            self.client.exec_command("systemctl stop swupdate memfaultd")
+
+            print(
+                "Update complete and update service disabled, restart device to enable it"
+            )
 
         else:
             print("Running swupdate")
@@ -479,14 +508,14 @@ echo "fallback: ${OLDPART}"
                             continue
                         else:
                             print("".join(process.stderr.readlines()))
-                            raise SystemExit("Update failed")
+                            raise SystemError("Update failed")
 
                     self.logger.debug(
                         f'Stdout of update checking service is {"".join(process.stdout.readlines())}'
                     )
 
-        print("Success! Rebooting the device...")
-        self.reboot_device()
+            print("Update complete and device rebooting")
+            os.system("reboot")
 
     def install_ohma_update(self, version_available: dict) -> None:
         """Installs version from update folder on the device
@@ -526,7 +555,7 @@ echo "fallback: ${OLDPART}"
             self.logger.debug(f"Stdout of nc checking: {stdout.readlines()}")
 
             if check != 0:
-                raise SystemExit(
+                raise SystemError(
                     "Device cannot connect to this machine! Is the firewall blocking connections?"
                 )
 
@@ -541,14 +570,36 @@ echo "fallback: ${OLDPART}"
 
             if exit_status != 0:
                 print("".join(_stderr.readlines()))
-                raise SystemExit("There was an error updating :(")
+                raise SystemError("There was an error updating :(")
 
             self.logger.debug(
                 f'Stdout of update checking service is {"".join(_stderr.readlines())}'
             )
 
-            print("Success! Rebooting the device...")
-            self.reboot_device()
+            #### Now disable automatic updates
+
+            print("Done! Now rebooting the device and disabling update service")
+
+            self.client.exec_command("sleep 1 && reboot")  # Should be enough
+            self.client.close()
+
+            time.sleep(
+                2
+            )  # Somehow the code runs faster than the time it takes for the device to reboot
+
+            print("Trying to connect to device")
+
+            while not self.check_is_address_reachable(address):
+                time.sleep(1)
+
+            self.client = self.connect_to_device(
+                remote_address=address, authentication=authentication
+            )
+            self.client.exec_command("systemctl stop update-engine")
+
+            print(
+                "Update complete and update service disabled. Restart device to enable it"
+            )
 
         else:
             print("Enabling update service")
@@ -570,20 +621,20 @@ echo "fallback: ${OLDPART}"
                 if process.wait() != 0:
                     print("".join(process.stderr.readlines()))
 
-                    raise SystemExit("There was an error updating :(")
+                    raise SystemError("There was an error updating :(")
 
                 self.logger.debug(
                     f'Stdout of update checking service is {"".join(process.stderr.readlines())}'
                 )
 
-            print("Success! Rebooting the device...")
-            self.reboot_device()
+            print("Update complete and device rebooting")
+            os.system("reboot")
 
     @staticmethod
     def output_put_progress(transferred: int, toBeTransferred: int) -> None:
         """Used for displaying progress for paramiko ftp.put function"""
 
         print(
-            f"Transferring progress...{int((transferred/toBeTransferred)*100)}%",
+            f"Transferring progress{int((transferred/toBeTransferred)*100)}%",
             end="\r",
         )

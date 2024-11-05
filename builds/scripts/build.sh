@@ -12,4 +12,4 @@ python -m PyInstaller \
   --runtime-tmpdir /tmp \
   --onefile \
   --strip \
-  codexctl.py
+  main.py

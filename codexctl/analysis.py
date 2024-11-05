@@ -2,9 +2,10 @@ import ext4
 from remarkable_update_image import UpdateImage
 from remarkable_update_image import UpdateImageSignatureException
 
+
 def get_update_image(file: str):
     """Extracts files from an update image (<3.11 currently)"""
-    
+
     image = UpdateImage(file)
     volume = ext4.Volume(image, offset=0)
     try:

@@ -161,7 +161,7 @@ def startUpdate(versionsGiven, host, port=8080):
 
     if not available_versions:
         raise FileNotFoundError("Could not find any update files")
-        
+
     handler = MySimpleHTTPRequestHandler
     print(f"Starting fake updater at {host}:{port}")
     try:

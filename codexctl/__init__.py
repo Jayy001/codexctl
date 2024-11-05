@@ -4,10 +4,11 @@ import argparse
 import os.path
 import sys
 import logging
-import importlib
+import importlib.util
 import tempfile
 import shutil
 import json
+import re
 
 from os import listdir
 
@@ -65,13 +66,13 @@ class Manager:
             print(
                 f"""
 ReMarkable Paper Pro:
-{json.dumps(list(self.updater.remarkablepp_versions.keys()), indent=4)}
+{'\n'.join(list(self.updater.remarkablepp_versions.keys()))}
 
 ReMarkable 2:
-{json.dumps(list(self.updater.remarkable2_versions.keys()), indent=4)}
+{'\n'.join(list(self.updater.remarkable2_versions.keys()))}
 
 ReMarkable 1:
-{json.dumps(list(self.updater.remarkable1_versions.keys()), indent=4)}
+{'\n'.join(list(self.updater.remarkable1_versions.keys()))}
             """
             )
 
@@ -132,11 +133,11 @@ ReMarkable 1:
                 raise ImportError(
                     "remarkable_update_image is required for analysis. Please install it. (Linux only!)"
                 )
-            
+
             try:
                 image, volume = get_update_image(args.file)
                 inode = volume.inode_at(args.target_path)
-                
+
             except FileNotFoundError:
                 print(f"'{args.target_path}': No such file or directory")
                 raise FileNotFoundError
@@ -156,7 +157,7 @@ ReMarkable 1:
             from .sync import RmWebInterfaceAPI
 
             print(
-                "Please make sure the web-interface is enabled in the remarkable settings!\nStarting upload..."
+                "Please make sure the web-interface is enabled in the remarkable settings!\nStarting upload"
             )
 
             rmWeb = RmWebInterfaceAPI(BASE="http://10.11.99.1/", logger=logger)
@@ -208,75 +209,90 @@ ReMarkable 1:
                     f"Device restored to previous version [{remarkable.get_device_status()[1]}]"
                 )
                 remarkable.reboot_device()
-                print("Device rebooted...")
+                print("Device rebooted")
 
             else:
                 temp_path = None
+                made_update_folder = False
                 orig_cwd = os.getcwd()
 
-                # Do we have a specific folder to serve from?
+                # Do we have a specific update file to serve?
 
-                if args["serve_folder"]:
-                    os.chdir(args["serve_folder"])
+                update_file = version if os.path.isfile(version) else None
+                
+                version_lookup = lambda version: re.search(r'\b\d+\.\d+\.\d+\.\d+\b', version)
+                version_number = version_lookup(version)
 
-                else:
-                    temp_path = tempfile.mkdtemp()
-                    os.chdir(temp_path)
+                if not version_number:
+                    version_number = input("Failed to get the version number from the filename, please enter it: ") 
+                    if not version_lookup(version_number):
+                        raise SystemError("Invalid version!")
 
-                if not os.path.exists("updates"):
-                    os.mkdir("updates")
+                version_number = version_number.group()
 
-                # We then check if the update file exists
-                update_file = False
-                update_file_requires_new_engine = UpdateManager.uses_new_update_engine(version)
-                device_version_uses_new_engine = UpdateManager.uses_new_update_engine(remarkable.get_device_status()[2])
+                update_file_requires_new_engine = UpdateManager.uses_new_update_engine(
+                    version_number
+                )
+                device_version_uses_new_engine = UpdateManager.uses_new_update_engine(
+                    remarkable.get_device_status()[2]
+                )
 
                 #### PREVENT USERS FROM INSTALLING NON-COMPATIBLE IMAGES ####
 
-                #TODO: Downgrade from versions above 3.11 to versions below 3.11 (We alredy know how to do this with #71)
-                #TODO: Upgrade from versions below 3.11 to versions above 3.11 (Easy way: upgrade to 3.11.2.5 to get the new update engine, then upgrade again to the specific version)
+                # TODO: Downgrade from versions above 3.11 to versions below 3.11 (We alredy know how to do this with #71)
+                # TODO: Upgrade from versions below 3.11 to versions above 3.11 (Easy way: upgrade to 3.11.2.5 to get the new update engine, then upgrade again to the specific version)
 
                 if device_version_uses_new_engine != update_file_requires_new_engine:
-                    raise SystemError("Incompatible update file with current reMarkable update engine. See #71")
+                    raise SystemError(
+                        "Incompatible update file with current reMarkable update engine. See #71"
+                    )
 
                 #############################################################
 
-                if update_file_requires_new_engine:
-                    update_files = listdir("updates")
-                    for file in update_files:
-                        if version in file:
-                            update_file = file
+                if not update_file_requires_new_engine:
+                    if not os.path.exists("updates"):
+                        os.mkdir("updates")
+                    if update_file:
+                        shutil.move(update_file, "updates")
+                        update_file = get_available_version(version)
+                        made_update_folder = True  # Delete at end
 
-                            break
-                else:
-                    update_file = get_available_version(version)
+                # If version was a valid location file, update_file will be the location.
 
                 if not update_file:
-                    print(
-                        f"Version {version} not available in serve folder. Downloading..."
-                    )
+                    temp_path = tempfile.mkdtemp()
+                    os.chdir(temp_path)
+
+                    print(f"Version {version} not found. Attempting to download")
+
+                    location = "./"
+                    if not update_file_requires_new_engine:
+                        location += "updates"
 
                     result = self.updater.download_version(
-                        remarkable.hardware, version, "./updates"
+                        remarkable.hardware, version, location
                     )
                     if result:
                         print(f"Downloaded version {version} to {result}")
 
-                        if new_engine:
+                        if device_version_uses_new_engine:
                             update_file = result
                         else:
                             update_file = get_available_version(version)
 
                     else:
-                        raise SystemExit(f"Failed to download version {version}!")
+                        raise SystemExit(
+                            f"Failed to download version {version}! Does this version or location exist?"
+                        )
 
-                if not update_file:
-                    raise SystemExit("Could still not find update file!")
-
-                if new_engine:
-                    remarkable.install_sw_update(f"./updates/{update_file}")
+                if device_version_uses_new_engine:
+                    remarkable.install_sw_update(update_file)
                 else:
                     remarkable.install_ohma_update(update_file)
+
+                if made_update_folder:  # Move update file back out
+                    shutil.move(os.listdir("updates")[0], "../")
+                    shutil.rmtree("updates")
 
                 os.chdir(orig_cwd)
                 if temp_path:
@@ -317,13 +333,7 @@ def main() -> None:
         "install",
         help="Install the specified version (will download if not available on the device)",
     )
-    install.add_argument("version", help="Version to install")
-    install.add_argument(
-        "-sf",
-        "--serve-folder",
-        help="Location of folder containing update folder & files",
-        default=None,
-    )
+    install.add_argument("version", help="Version (or location to file) to install")
 
     ### Download subcommand
     download = subparsers.add_parser(

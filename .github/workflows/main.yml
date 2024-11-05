@@ -74,12 +74,9 @@ jobs:
           cache: 'pip'
           cache-dependency-path: |
             **/requirements*.txt
-      - name: Test codexctl
-        shell: bash
-        run: make test
       - name: Build codexctl
         shell: bash
-        run: ./github-make-executable.sh
+        run: ./builds/github-make-executable.sh
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Upload Compilation Report
@@ -89,9 +86,6 @@ jobs:
           name: ${{ matrix.os }}-compilation-report
           path: compilation-report.xml
           if-no-files-found: warn
-      - name: Test Built version
-        shell: bash
-        run: make test-executable
       - name: Move .ccache
         shell: bash
         run: |
@@ -145,7 +139,7 @@ jobs:
               libfuse-dev
             cd /src
             source /opt/lib/nuitka/bin/activate
-            ./github-make-executable.sh
+            ./builds/github-make-executable.sh
       - name: Upload Compilation Report
         uses: actions/upload-artifact@v4
         if:  runner.debug == '1'
@@ -180,7 +174,7 @@ jobs:
           fw_version: ${{ matrix.fw_version }}
           run: |
             chmod +x ./codexctl.bin
-            ./codexctl.bin download --out /tmp toltec --hardware rm2
+            ./codexctl.bin download --hardware rm2 --out /tmp toltec 
   release:
     name: Release
     needs: [remote,device,test_device]

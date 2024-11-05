@@ -65,7 +65,7 @@ class UpdateManager:
             with open(file_location) as f:
                 contents = json.load(f)
         except ValueError:
-            raise SystemExit(
+            raise SystemError(
                 f"Version-ids.json @ {file_location} is corrupted! Please delete it and try again. Also, PLEASE open an issue on the repo showing the contents of the file."
             )
 
@@ -82,7 +82,7 @@ class UpdateManager:
 
         return (
             contents["remarkablepp"],
-            ["remarkable2"],
+            contents["remarkable2"],
             contents["remarkable1"],
             contents["external-provider-url"],
         )
@@ -103,7 +103,7 @@ class UpdateManager:
                     "https://raw.githubusercontent.com/Jayy001/codexctl/main/data/version-ids.json"
                 ).json()
                 json.dump(contents, f, indent=4)
-                f.write('\n')
+                f.write("\n")
             except requests.exceptions.Timeout:
                 raise SystemExit(
                     "Connection timed out while downloading version-ids.json! Do you have an internet connection?"
@@ -149,13 +149,14 @@ class UpdateManager:
         response = requests.get("https://toltec-dev.org/stable/Compatibility")
         if response.status_code != 200:
             raise SystemExit(
-                f"Error: Failed to get toltec compatibility table: {response.status_code}")
+                f"Error: Failed to get toltec compatibility table: {response.status_code}"
+            )
 
         return self.__max_version(
             [
                 x.split("=")[1]
                 for x in response.text.splitlines()
-                if x.startswith(f"rm{device_type}=")
+                if x.startswith(f"{device_type}=")
             ]
         )
 
@@ -192,13 +193,15 @@ class UpdateManager:
         BASE_URL = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device%20Beta/RM110"  # Default URL for v2 versions
         BASE_URL_V3 = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device/reMarkable"
 
-        if device_type in ("rm1", "reMarkable 1"):
+        if device_type in ("rm1", "reMarkable 1", "remarkable1"):
             version_lookup = self.remarkable1_versions
-        elif device_type in ("rm2", "reMarkable 2"):
+        elif device_type in ("rm2", "reMarkable 2", "remarkable2"):
             version_lookup = self.remarkable2_versions
             BASE_URL_V3 += "2"
-        elif device_type in ("rmpp", "reMarkable Ferrari"):
+        elif device_type in ("rmpp", "rmpro", "reMarkable Ferrari", "ferrari"):
             version_lookup = self.remarkablepp_versions
+        else:
+            raise SystemError("Hardware version does not exist! (rm1,rm2,rmpp)")
 
         if update_version not in version_lookup:
             self.logger.error(
@@ -222,7 +225,7 @@ class UpdateManager:
             file_url = self.external_provider_url.replace("REPLACE_ID", version_id)
             file_name = f"remarkable-production-memfault-image-{update_version}-{device_type.replace(' ', '-')}-public"
         else:
-            file_name = f"{update_version}_reMarkable{'2' if device_type == 'remarkable2' else ''}-{version_id}.signed"
+            file_name = f"{update_version}_reMarkable{'2' if '2' in device_type else ''}-{version_id}.signed"
             file_url = f"{BASE_URL}/{update_version}/{file_name}"
 
         self.logger.debug(f"File URL is {file_url}, File name is {file_name}")
@@ -252,7 +255,9 @@ class UpdateManager:
     <app appid="{{{appid}}}" version="{current}" track="{group}" ap="{group}" bootid="{{{bootid}}}" oem="{oem}" oemversion="2.5.2" alephversion="{current}" machineid="{machineid}" lang="en-US" board="" hardware_class="" delta_okay="false" nextversion="" brand="" client="" >
         <updatecheck/>
     </app>
-</request>""".format(**params)
+</request>""".format(
+            **params
+        )
 
     def __parse_response(self, resp: str) -> tuple[str, str, str] | None:
         """Parses the response from the update server and returns the file name, uri, and version if an update is available

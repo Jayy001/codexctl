@@ -33,20 +33,19 @@ $(VENV_BIN_ACTIVATE): requirements.remote.txt requirements.txt
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
 	python -m pip install \
-	    --extra-index-url=https://wheels.eeems.codes/ \
 	    -r requirements.remote.txt
 
 .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed: $(VENV_BIN_ACTIVATE) $(OBJ)
 	@echo "[info] Downloading remarkable update file"
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
-	python -m codexctl download --out .venv ${FW_VERSION}
+	python -m codexctl download --hardware rm2 --out .venv ${FW_VERSION}
 
 test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	@echo "[info] Running test"
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
-	python test.py; \
+	python tests/test.py; \
 	if [[ "linux" == "$$(python -c 'import sys;print(sys.platform)')" ]]; then \
 	  if [ -d .venv/mnt ] && mountpoint -q .venv/mnt; then \
 	    umount -ql .venv/mnt; \
@@ -97,7 +96,6 @@ executable: $(VENV_BIN_ACTIVATE)
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
 	python -m pip install \
-	    --extra-index-url=https://wheels.eeems.codes/ \
 	    nuitka==2.4.8
 	@echo "[info] Building codexctl"
 	@set -e; \
@@ -108,7 +106,8 @@ executable: $(VENV_BIN_ACTIVATE)
 	    --remove-output \
 	    --output-dir=dist \
 	    --report=compilation-report.xml \
-	    codexctl.py
+	    main.py
+	mv dist/main.bin dist/codexctl.bin
 	if [ -d dist/codexctl.build ]; then \
 	    rm -r dist/codexctl.build; \
 	fi
