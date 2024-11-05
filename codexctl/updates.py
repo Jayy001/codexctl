@@ -29,7 +29,6 @@ class UpdateManager:
             self.remarkablepp_versions,
             self.remarkable2_versions,
             self.remarkable1_versions,
-            self.toltec_latest,
             self.external_provider_url,
         ) = self.get_remarkable_versions()
 
@@ -85,7 +84,6 @@ class UpdateManager:
             contents["remarkablepp"],
             ["remarkable2"],
             contents["remarkable1"],
-            contents["toltec"],
             contents["external-provider-url"],
         )
 
@@ -157,7 +155,7 @@ class UpdateManager:
             [
                 x.split("=")[1]
                 for x in response.text.splitlines()
-                if x.startswith(f"rm{device}=")
+                if x.startswith(f"rm{device_type}=")
             ]
         )
 
