@@ -180,7 +180,7 @@ jobs:
           fw_version: ${{ matrix.fw_version }}
           run: |
             chmod +x ./codexctl.bin
-            ./codexctl.bin download --out /tmp toltec
+            ./codexctl.bin download --out /tmp toltec --hardware rm2
   release:
     name: Release
     needs: [remote,device,test_device]
