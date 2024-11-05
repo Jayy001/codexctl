@@ -58,7 +58,7 @@ class Manager:
         if version == "latest":
             version = self.updater.get_latest_version(remarkable_version)
         elif version == "toltec":
-            version = self.updater.toltec_latest
+            version = self.updater.get_toltec_version(remarkable_version)
 
         ### Download functionalities
         if function == "list":
@@ -84,23 +84,26 @@ ReMarkable 1:
             if filename:
                 print(f"Sucessfully downloaded to {filename}")
 
-        ### Analysis functionalities
-        elif function in ("mount", "extract"):
+        ### Mounting functionalities
+        elif function in ("extract", "mount"):
             try:
-                from remarkable_update_fuse import UpdateFS
+                from .analysis import get_update_image
             except ImportError:
                 raise ImportError(
-                    "remarkable_update_fuse is required for mounting and extracting. Please install it. (Linux only!)"
+                    "remarkable_update_image is required for analysis. Please install it!"
                 )
 
             if function == "extract":
+                if sys.platform != "linux":
+                    raise NotImplementedError
+
                 if not args["out"]:
                     args["out"] = os.getcwd() + "/extracted"
 
                 logger.debug(f"Extracting {args['file']} to {args['out']}")
-                from remarkable_update_fuse import UpdateImage
+                image, volume = get_update_image(args["file"])
+                image.seek(0)
 
-                image = UpdateImage(args["file"])
                 with open(args["out"], "wb") as f:
                     f.write(image.read())
             else:
@@ -120,6 +123,33 @@ ReMarkable 1:
                     args=[args["filesystem"], args["out"]], values=server, errex=1
                 )
                 server.main()
+
+        ### Analysis functionalities
+        elif function in ("cat", "ls"):
+            try:
+                from .analysis import get_update_image
+            except ImportError:
+                raise ImportError(
+                    "remarkable_update_image is required for analysis. Please install it. (Linux only!)"
+                )
+            
+            try:
+                image, volume = get_update_image(args.file)
+                inode = volume.inode_at(args.target_path)
+                
+            except FileNotFoundError:
+                print(f"'{args.target_path}': No such file or directory")
+                raise FileNotFoundError
+
+            except OSError:
+                print(f"'{args.target_path}': {os.strerror(e.errno)}")
+                sys.exit(e.errno)
+
+            if function == "cat":
+                sys.stdout.buffer.write(inode.open().read())
+
+            elif function == "ls":
+                print(" ".join([x.name_str for x, _ in inode.opendir()]))
 
         ### WebInterface functionalities
         elif function in ("backup", "upload"):
@@ -319,6 +349,18 @@ def main() -> None:
     backup.add_argument(
         "-no-ow", "--no-overwrite", help="Disables overwrite", action="store_true"
     )
+
+    ### Cat subcommand
+    cat = subparsers.add_parser(
+        "cat", help="Cat the contents of a file inside an update image"
+    )
+    cat.add_argument("file", help="Path to update file to cat", default=None)
+    cat.add_argument("target_path", help="Path inside the image to list", default=None)
+
+    ### Ls subcommand
+    ls = subparsers.add_parser("ls", help="List files inside an update image")
+    ls.add_argument("file", help="Path to update file to extract", default=None)
+    ls.add_argument("target_path", help="Path inside the image to list", default=None)
 
     ### Extract subcommand
     extract = subparsers.add_parser(

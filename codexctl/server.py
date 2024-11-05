@@ -106,8 +106,8 @@ class MySimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
         if updatecheck_node is not None:
             version = xml.attrib["version"]
             platform = xml.find("os").attrib["platform"]
-            # print("requested: ", version)
-            # print("platform: ", platform)
+            print("requested: ", version)
+            print("platform: ", platform)
 
             version, update_name = available_versions[platform]
 
@@ -159,6 +159,9 @@ def startUpdate(versionsGiven, host, port=8080):
     host_url = f"http://{host}:{port}/"
     available_versions = versionsGiven
 
+    if not available_versions:
+        raise FileNotFoundError("Could not find any update files")
+        
     handler = MySimpleHTTPRequestHandler
     print(f"Starting fake updater at {host}:{port}")
     try:

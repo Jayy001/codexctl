@@ -98,13 +98,14 @@ class UpdateManager:
         Raises:
             SystemExit: If the file cannot be updated
         """
-        with open(location, "w") as f:
+        with open(location, "w", newline="\n") as f:
             try:
                 self.logger.debug("Downloading version-ids.json")
                 contents = requests.get(
                     "https://raw.githubusercontent.com/Jayy001/codexctl/main/data/version-ids.json"
                 ).json()
-                json.dump(contents, f)
+                json.dump(contents, f, indent=4)
+                f.write('\n')
             except requests.exceptions.Timeout:
                 raise SystemExit(
                     "Connection timed out while downloading version-ids.json! Do you have an internet connection?"
@@ -118,7 +119,7 @@ class UpdateManager:
         """Gets the latest version available for the device
 
         Args:
-            device_type (str): Type of the device (remarkable2 or remarkable1)
+            device_type (str): Type of the device (remarkablepp or remarkable2 or remarkable1)
 
         Returns:
             str: Latest version available for the device
@@ -132,7 +133,33 @@ class UpdateManager:
         else:
             return None  # Explicit?
 
-        return list(versions.keys())[0]
+        return self.__max_version(versions.keys())
+
+    def get_toltec_version(self, device_type: str) -> str:
+        """Gets the latest version available toltec for the device
+
+        Args:
+            device_type (str): Type of the device (remarkablepp or remarkable2 or remarkable1)
+
+        Returns:
+            str: Latest version available for the device
+        """
+
+        if "ferrari" in device_type:
+            raise SystemExit("ReMarkable Paper Pro does not support toltec")
+
+        response = requests.get("https://toltec-dev.org/stable/Compatibility")
+        if response.status_code != 200:
+            raise SystemExit(
+                f"Error: Failed to get toltec compatibility table: {response.status_code}")
+
+        return self.__max_version(
+            [
+                x.split("=")[1]
+                for x in response.text.splitlines()
+                if x.startswith(f"rm{device}=")
+            ]
+        )
 
     def download_version(
         self, device_type: str, update_version: str, download_folder: str = None
@@ -331,3 +358,8 @@ class UpdateManager:
             bool: If it uses the new update engine or not
         """
         return int(version.split(".")[0]) >= 3 and int(version.split(".")[1]) >= 11
+
+    @staticmethod
+    def __max_version(versions: list) -> str:
+        """Returns the highest avaliable version from a list with semantic versioning"""
+        return sorted(versions, key=lambda v: tuple(map(int, v.split("."))))[-1]

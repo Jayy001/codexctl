@@ -133,3 +133,4 @@ updates/
 rm-docker/
 nuitka-crash-report.xml
 .nuitka/
+compilation-report.xml
