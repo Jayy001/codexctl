@@ -9,8 +9,8 @@ on:
      - '*.py'
      - data/**
      - codexctl/**
-     - scripts/**
-     - github-make-executable.sh
+     - builds/scripts/**
+     - builds/github-make-executable.sh
      - Makefile
      - .github/workflows/main.yml
   push:
@@ -22,8 +22,8 @@ on:
      - '*.py'
      - data/**
      - codexctl/**
-     - scripts/**
-     - github-make-executable.sh
+     - builds/scripts/**
+     - builds/github-make-executable.sh
      - Makefile
      - .github/workflows/main.yml
   workflow_dispatch:
