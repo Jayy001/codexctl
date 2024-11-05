@@ -535,7 +535,7 @@ echo "fallback: ${OLDPART}"
             self.client.exec_command("systemctl start update-engine")
 
             _stdin, stdout, _stderr = self.client.exec_command(
-                "update_engine_client -update"
+                "/usr/bin/update_engine_client -update"
             )
             exit_status = stdout.channel.recv_exit_status()
 

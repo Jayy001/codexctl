@@ -228,9 +228,17 @@ ReMarkable 1:
 
                 # We then check if the update file exists
                 update_file = False
-                new_engine = UpdateManager.uses_new_update_engine(version)
+                update_file_requires_new_engine = UpdateManager.uses_new_update_engine(version)
+                device_version_uses_new_engine = UpdateManager.uses_new_update_engine(remarkable.get_device_status()[2])
 
-                if new_engine:
+                #### PREVENT USERS FROM INSTALLING NON-COMPATIBLE IMAGES ####
+
+                if device_version_uses_new_engine != update_file_requires_new_engine:
+                    raise SystemError("Incompatible update file with current reMarkable update engine. See #93")
+
+                #############################################################
+
+                if update_file_requires_new_engine:
                     update_files = listdir("updates")
                     for file in update_files:
                         if version in file:
