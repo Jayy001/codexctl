@@ -233,8 +233,11 @@ ReMarkable 1:
 
                 #### PREVENT USERS FROM INSTALLING NON-COMPATIBLE IMAGES ####
 
+                #TODO: Downgrade from versions above 3.11 to versions below 3.11 (We alredy know how to do this with #71)
+                #TODO: Upgrade from versions below 3.11 to versions above 3.11 (Easy way: upgrade to 3.11.2.5 to get the new update engine, then upgrade again to the specific version)
+
                 if device_version_uses_new_engine != update_file_requires_new_engine:
-                    raise SystemError("Incompatible update file with current reMarkable update engine. See #93")
+                    raise SystemError("Incompatible update file with current reMarkable update engine. See #71")
 
                 #############################################################
 
