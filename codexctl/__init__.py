@@ -63,17 +63,12 @@ class Manager:
 
         ### Download functionalities
         if function == "list":
+            remarkable_pp_versions = "\n".join(self.updater.remarkablepp_versions.keys())
+            remarkable_2_versions = "\n".join(self.updater.remarkable2_versions.keys())
+            remarkable_1_versions = "\n".join(self.updater.remarkable1_versions.keys())
+
             print(
-                f"""
-ReMarkable Paper Pro:
-{'\n'.join(list(self.updater.remarkablepp_versions.keys()))}
-
-ReMarkable 2:
-{'\n'.join(list(self.updater.remarkable2_versions.keys()))}
-
-ReMarkable 1:
-{'\n'.join(list(self.updater.remarkable1_versions.keys()))}
-            """
+                f"ReMarkable Paper Pro:\n{remarkable_pp_versions}\n\nReMarkable 2:\n{remarkable_2_versions}\n\nReMarkable 1:\n{remarkable_1_versions}"
             )
 
         elif function == "download":
@@ -135,15 +130,15 @@ ReMarkable 1:
                 )
 
             try:
-                image, volume = get_update_image(args.file)
-                inode = volume.inode_at(args.target_path)
+                image, volume = get_update_image(args["file"])
+                inode = volume.inode_at(args["target_path"])
 
             except FileNotFoundError:
-                print(f"'{args.target_path}': No such file or directory")
+                print(f"'{args["target_path"]}': No such file or directory")
                 raise FileNotFoundError
 
             except OSError:
-                print(f"'{args.target_path}': {os.strerror(e.errno)}")
+                print(f"'{args["target_path"]}': {os.strerror(e.errno)}")
                 sys.exit(e.errno)
 
             if function == "cat":
@@ -239,13 +234,19 @@ ReMarkable 1:
 
                 #### PREVENT USERS FROM INSTALLING NON-COMPATIBLE IMAGES ####
 
-                # TODO: Downgrade from versions above 3.11 to versions below 3.11 (We alredy know how to do this with #71)
-                # TODO: Upgrade from versions below 3.11 to versions above 3.11 (Easy way: upgrade to 3.11.2.5 to get the new update engine, then upgrade again to the specific version)
-
-                if device_version_uses_new_engine != update_file_requires_new_engine:
-                    raise SystemError(
-                        "Incompatible update file with current reMarkable update engine. See #71"
-                    )
+                if device_version_uses_new_engine:
+                    if not update_file_requires_new_engine:
+                        raise SystemError("Cannot downgrade to this version as it uses the old update engine, please manually downgrade.")
+                        # TODO: Implement manual downgrading.
+                        # `codexctl download --out . 3.11.2.5`
+                        # `codexctl extract --out 3.11.2.5.img 3.11.2.5_reMarkable2-qLFGoqPtPL.signed`
+                        # `codexctl transfer 3.11.2.5.img ~/root`
+                        # `dd if=/home/root/3.11.2.5.img of=/dev/mmcblk2p2` (depending on fallback partition)
+                        # `codexctl restore`
+                        
+                else:
+                    if update_file_requires_new_engine:
+                        raise SystemError("This version requires the new update engine, please upgrade your device to version 3.11.2.5 first.")
 
                 #############################################################
 

@@ -47,8 +47,11 @@ class DeviceManager:
             with ftp.file("/sys/devices/soc0/machine") as file:
                 machine_contents = file.read().decode("utf-8").strip("\n")
         else:
-            with open("/sys/devices/soc0/machine") as file:
-                machine_contents = file.read().decode("utf-8").strip("\n")
+            try:
+                with open("/sys/devices/soc0/machine") as file:
+                    machine_contents = file.read().decode("utf-8").strip("\n")
+            except FileNotFoundError:
+                machine_contents = "tests"
 
         if "reMarkable Ferrari" in machine_contents:
             self.hardware = "ferrari"

@@ -145,6 +145,10 @@ class UpdateManager:
 
         if "ferrari" in device_type:
             raise SystemExit("ReMarkable Paper Pro does not support toltec")
+        elif "1" in device_type:
+            device_type = "rm1"
+        else:
+            device_type = "rm2"
 
         response = requests.get("https://toltec-dev.org/stable/Compatibility")
         if response.status_code != 200:
@@ -350,6 +354,11 @@ class UpdateManager:
         return filename
 
     @staticmethod
+    def __max_version(versions: list) -> str:
+        """Returns the highest avaliable version from a list with semantic versioning"""
+        return sorted(versions, key=lambda v: tuple(map(int, v.split("."))))[-1]
+
+    @staticmethod
     def uses_new_update_engine(version: str) -> bool:
         """
         Checks if the version given is above 3.11 and so requires the newer update engine
@@ -361,8 +370,3 @@ class UpdateManager:
             bool: If it uses the new update engine or not
         """
         return int(version.split(".")[0]) >= 3 and int(version.split(".")[1]) >= 11
-
-    @staticmethod
-    def __max_version(versions: list) -> str:
-        """Returns the highest avaliable version from a list with semantic versioning"""
-        return sorted(versions, key=lambda v: tuple(map(int, v.split("."))))[-1]
