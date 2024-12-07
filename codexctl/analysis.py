@@ -1,4 +1,7 @@
 import ext4
+import warnings 
+import errno
+
 from remarkable_update_image import UpdateImage
 from remarkable_update_image import UpdateImageSignatureException
 

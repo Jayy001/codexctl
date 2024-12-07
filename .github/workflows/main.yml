@@ -9,8 +9,8 @@ on:
      - '*.py'
      - data/**
      - codexctl/**
-     - builds/scripts/**
-     - builds/github-make-executable.sh
+     - scripts/**
+     - github-make-executable.sh
      - Makefile
      - .github/workflows/main.yml
   push:
@@ -22,8 +22,8 @@ on:
      - '*.py'
      - data/**
      - codexctl/**
-     - builds/scripts/**
-     - builds/github-make-executable.sh
+     - scripts/**
+     - github-make-executable.sh
      - Makefile
      - .github/workflows/main.yml
   workflow_dispatch:
@@ -74,9 +74,12 @@ jobs:
           cache: 'pip'
           cache-dependency-path: |
             **/requirements*.txt
+      - name: Test codexctl
+        shell: bash
+        run: make test
       - name: Build codexctl
         shell: bash
-        run: ./builds/github-make-executable.sh
+        run: ./scripts/github-make-executable.sh
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Upload Compilation Report
@@ -97,7 +100,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
-          path: dist/codexctl.bin
+          path: dist/codexctl
           if-no-files-found: error
       - name: Upload executable
         if: matrix.os == 'windows-latest'
@@ -136,10 +139,10 @@ jobs:
             echo "[info] Installing build dependencies"
             apt update
             apt install -y \
-              libfuse-dev
+              libfuse-dev rustc cargo
             cd /src
             source /opt/lib/nuitka/bin/activate
-            ./builds/github-make-executable.sh
+            ./scripts/github-make-executable.sh
       - name: Upload Compilation Report
         uses: actions/upload-artifact@v4
         if:  runner.debug == '1'
@@ -151,7 +154,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: remarkable
-          path: dist/codexctl.bin
+          path: dist/codexctl
           if-no-files-found: error
   test_device:
     name: Test for reMarkable ${{ matrix.fw_version }}
@@ -173,8 +176,8 @@ jobs:
           path: artifacts
           fw_version: ${{ matrix.fw_version }}
           run: |
-            chmod +x ./codexctl.bin
-            ./codexctl.bin download --hardware rm2 --out /tmp toltec 
+            chmod +x ./codexctl
+            ./codexctl download --hardware rm2 --out /tmp toltec 
   release:
     name: Release
     needs: [remote,device,test_device]

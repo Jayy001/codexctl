@@ -592,11 +592,11 @@ echo "fallback: ${OLDPART}"
 
             print("Trying to connect to device")
 
-            while not self.check_is_address_reachable(address):
+            while not self.check_is_address_reachable(self.address):
                 time.sleep(1)
 
             self.client = self.connect_to_device(
-                remote_address=address, authentication=authentication
+                remote_address=self.address, authentication=self.authentication
             )
             self.client.exec_command("systemctl stop update-engine")
 

@@ -153,7 +153,7 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
             folderId = self.__get_folder_id(remoteFolder)
 
             if folderId is None:
-                raise SystemExit(f"Error: Folder {remoteFolder} does not exist!")
+                raise SystemError(f"Error: Folder {remoteFolder} does not exist!")
 
         self.__POST(f"documents/{folderId}")  # Setting up for upload...
 

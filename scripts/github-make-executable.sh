@@ -16,6 +16,6 @@ make executable 2>&1 \
 done
 
 if ! make test-executable; then
-  printf '::error file=codexctl.bin,title=Test Error::Sanity test failed\n'
-  exit 0 # TODO: Fix at a later date
+  printf '::error file=codexctl,title=Test Error::Sanity test failed\n'
+  exit 1
 fi

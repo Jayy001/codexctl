@@ -14,7 +14,6 @@ set_server_config = DeviceManager().set_server_config
 codexctl = Manager(device="reMarkable2", logger=logging.getLogger(__name__))
 updater = UpdateManager(logger=logging.getLogger(__name__))
 
-from collections import namedtuple
 from io import StringIO
 from io import BytesIO
 

@@ -4,83 +4,74 @@
 # Codexctl
 A utility program that helps to manage the remarkable device version utilizing [ddvks update server](https://github.com/ddvk/remarkable-update) 
 
-### Installation & Use
+## Caveat for downgrading to a version below 3.11 
 
-You can find pre-compiled binaries on the [releases](https://github.com/Jayy001/codexctl/releases/) page. This includes a build for the reMarkable itself, as well as well as builds for linux, macOS, and Windows. It currently only has support for **command line interfaces** but a graphical interface is soon to come.
+If youre remarkable device is above 3.11 and you want to downgrade to a version below 3.11, codexctl is not able to do this (at the moment). Please refer to #71 for manual instructions.
 
-## Running from source
+## Installation 
 
-Codexctl can be run from source on both the reMarkable, as well as on a remote device.
+You can find pre-compiled binaries on the [releases](https://github.com/Jayy001/codexctl/releases/) page. This includes a build for the reMarkable itself, as well as well as builds for linux, macOS, and Windows. Alternatively, you can install directly from pypi with `pip install codexctl`. Codexctl currently only has support for a **command line interfaces** but a graphical interface is soon to come.
 
-### Running on reMarkable
+Finally, if you want to build it yourself, you can run `make executable` which requires python 3.11 or newer, python-venv and pip. Linux also requires libfuse-dev.
 
-```
-git clone https://github.com/Jayy001/codexctl.git
-cd codexctl
-pip install -r requirements.txt
-python codexctl.py --help
-```
-
-### Running on a remote device
-
-This requires python 3.11 or newer.
-
-```
-git clone https://github.com/Jayy001/codexctl.git
-cd codexctl
-pip install wheel
-pip install -r requirements.remote.txt
-python codexctl.py --help
-```
-
-## Building executables from source
-
-This requires python 3.11 or newer, python-venv, pip. Linux also requires libfuse-dev.
-
-```
-make executable
-```
-
-## Usage
-
-The script is designed to have as little interactivity as possible, meaning arguments are directly taken from the command to run the script. 
+## General useage
 
 ```
 ❯ codexctl --help
-usage: Codexctl app [-h] [--debug] [--rm1] [--auth AUTH] [--verbose] {install,download,backup,extract,mount,status,restore,list} ...
+usage: Codexctl [-h] [--verbose] [--address ADDRESS] [--password PASSWORD]
+                {install,download,backup,cat,ls,extract,mount,upload,status,restore,list} ...
 
 positional arguments:
-  {install,download,backup,extract,mount,status,restore,list}
+  {install,download,backup,cat,ls,extract,mount,upload,status,restore,list}
     install             Install the specified version (will download if not available on the device)
     download            Download the specified version firmware file
     backup              Download remote files to local directory
-    extract             Extract the specified version update file
+    cat                 Cat the contents of a file inside a firmware image
+    ls                  List files inside a firmware image
+    extract             Extract the specified version firmware file
     mount               Mount the specified version firmware filesystem
+    upload              Upload folder/files to device (pdf only)
     status              Get the current version of the device and other information
     restore             Restores to previous version installed on device
-    list                List all versions available for use
+    list                List all available versions
 
 options:
   -h, --help            show this help message and exit
-  --debug               Print debug info
-  --rm1                 Use rm1
-  --auth AUTH           Specify password or SSH key for SSH
-  --verbose             Enable verbose logging
+  --verbose, -v         Enable verbose logging
+  --address ADDRESS, -a ADDRESS
+                        Specify the address of the device
+  --password PASSWORD, -p PASSWORD
+                        Specify password or path to SSH key for remote access
 ```
 
-# Examples
+## Examples
+- Installing thge latest for device (will automatically figure out the version)
 ```
-codexctl install latest # Downloads and installs latest version
-codexctl download toltec # Downloads latest version that has full support for toltec
-codexctl download 3.0.4.1305 --rm1 # Downloads 3.0.4.1305 firmware file for remarkable 1
-codexctl status # Prints current & previous version (can only be used when running on device itself)
-codexctl list # Lists all available versions 
-codexctl restore # Restores previous version
-codexctl --verbose # Enables logging
-codexctl --backup # Exports all files to local directory
-codexctl --backup -l root -r FM --no-recursion --no-overwrite # Exports all files from FM directory to root folder on localhost
-codexctl extract 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed # Extracts contents to filesystem named "extracted"
-codexctl mount extracted /opt/remarkable # Mounts extracted filesystem to /opt/remarkable
-codexctl ls 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed / # Lists the root directory of the update image
-codexctl cat 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed /etc/version # Outputs the contents of /etc/version from the update image
+codexctl install latest
 ```
+- Downloading rmpp version 3.15.4.2 to a folder named `out` and then installing it
+```
+codexctl download 3.0.4.1305 -hw rm1 -o out
+codexctl install ./out/remarkable-ct-prototype-image-3.15.4.2-ferrari-public.swu
+```
+- Backing up all documents to the cwd
+```
+codexctl backup 
+```
+- Backing up only documents in a folder named "FM" to cwd, without overwriting any current files
+```
+codexctl backup -l root -r FM --no-recursion --no-overwrite
+```
+- Getting the version of the device and then switching to previous version (restore only for rm1/rm2)
+```
+codexctl status
+codexctl restore
+```
+- Download 3.8.0.1944 for rm2, then cat the /etc/version file from it
+```
+codexctl download 3.8.0.1944 --hardware rm2
+codexctl cat 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed /etc/version
+```
+
+
+

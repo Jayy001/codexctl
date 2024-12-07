@@ -56,10 +56,11 @@ class Manager:
 
         version = args.get("version", None)
 
-        if version == "latest":
-            version = self.updater.get_latest_version(remarkable_version)
-        elif version == "toltec":
-            version = self.updater.get_toltec_version(remarkable_version)
+        if remarkable_version:
+            if version == "latest":
+                version = self.updater.get_latest_version(remarkable_version)
+            elif version == "toltec":
+                version = self.updater.get_toltec_version(remarkable_version)
 
         ### Download functionalities
         if function == "list":
@@ -90,9 +91,6 @@ class Manager:
                 )
 
             if function == "extract":
-                if sys.platform != "linux":
-                    raise NotImplementedError
-
                 if not args["out"]:
                     args["out"] = os.getcwd() + "/extracted"
 
@@ -134,11 +132,11 @@ class Manager:
                 inode = volume.inode_at(args["target_path"])
 
             except FileNotFoundError:
-                print(f"'{args["target_path"]}': No such file or directory")
+                print(f"{args['target_path']}: No such file or directory")
                 raise FileNotFoundError
 
-            except OSError:
-                print(f"'{args["target_path"]}': {os.strerror(e.errno)}")
+            except OSError as e:
+                print(f"{args['target_path']}: {os.strerror(e.errno)}")
                 sys.exit(e.errno)
 
             if function == "cat":
@@ -192,6 +190,11 @@ class Manager:
                 authentication=args["password"],
             )
 
+            if version == "latest":
+                version = self.updater.get_latest_version(remarkable.hardware)
+            elif version == "toltec":
+                version = self.updater.get_toltec_version(remarkable.hardware)
+
             if function == "status":
                 beta, prev, current, version_id = remarkable.get_device_status()
                 print(
@@ -199,6 +202,8 @@ class Manager:
                 )
 
             elif function == "restore":
+                if remarkable.hardware == "ferrari":
+                    raise SystemError("Restore not available for rmpro.")
                 remarkable.restore_previous_version()
                 print(
                     f"Device restored to previous version [{remarkable.get_device_status()[1]}]"
@@ -250,15 +255,19 @@ class Manager:
 
                 #############################################################
 
-                if not update_file_requires_new_engine:
-                    if not os.path.exists("updates"):
-                        os.mkdir("updates")
-                    if update_file:
-                        shutil.move(update_file, "updates")
-                        update_file = get_available_version(version)
-                        made_update_folder = True  # Delete at end
+                update_file_requires_new_engine = False 
+                device_version_uses_new_engine = False 
 
-                # If version was a valid location file, update_file will be the location.
+                if not update_file_requires_new_engine:
+                    if update_file: # Check if file exists
+                        if not (os.path.dirname(os.path.abspath(update_file)) == os.path.abspath("updates")):
+                            if not os.path.exists("updates"):
+                                os.mkdir("updates")
+                            shutil.move(update_file, "updates")
+                            update_file = get_available_version(version)
+                            made_update_folder = True  # Delete at end
+
+                # If version was a valid location file, update_file will be the location else it'll be a version number
 
                 if not update_file:
                     temp_path = tempfile.mkdtemp()
@@ -343,7 +352,7 @@ def main() -> None:
     download.add_argument("version", help="Version to download")
     download.add_argument("--out", "-o", help="Folder to download to", default=None)
     download.add_argument(
-        "--hardware", "--h", help="Hardware to download for", required=True
+        "--hardware", "-hd", help="Hardware to download for", required=True
     )
 
     ### Backup subcommand
@@ -374,13 +383,13 @@ def main() -> None:
 
     ### Cat subcommand
     cat = subparsers.add_parser(
-        "cat", help="Cat the contents of a file inside an update image"
+        "cat", help="Cat the contents of a file inside a firmwareimage"
     )
     cat.add_argument("file", help="Path to update file to cat", default=None)
     cat.add_argument("target_path", help="Path inside the image to list", default=None)
 
     ### Ls subcommand
-    ls = subparsers.add_parser("ls", help="List files inside an update image")
+    ls = subparsers.add_parser("ls", help="List files inside a firmware image")
     ls.add_argument("file", help="Path to update file to extract", default=None)
     ls.add_argument("target_path", help="Path inside the image to list", default=None)
 

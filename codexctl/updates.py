@@ -22,7 +22,7 @@ class UpdateManager:
 
         self.logger = logger
 
-        if logging is None:
+        if self.logger is None:
             self.logger = logging
 
         (
@@ -47,7 +47,7 @@ class UpdateManager:
         else:
             if os.name == "nt":  # Windows
                 folder_location = os.getenv("APPDATA") + "/codexctl"
-            elif os.name == "posix" or "darwin":  # Linux or MacOS
+            elif os.name in ("posix", "darwin"):  # Linux or MacOS
                 folder_location = os.path.expanduser("~/.config/codexctl")
             else:
                 raise SystemError("Unsupported OS")
