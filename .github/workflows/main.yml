@@ -77,6 +77,8 @@ jobs:
       - name: Test codexctl
         shell: bash
         run: make test
+      - name: Make script executable
+        run: chmod +x ./scripts/github-make-executable.sh
       - name: Build codexctl
         shell: bash
         run: ./scripts/github-make-executable.sh
@@ -142,6 +144,7 @@ jobs:
               libfuse-dev rustc cargo
             cd /src
             source /opt/lib/nuitka/bin/activate
+            chmod +x ./scripts/github-make-executable.sh
             ./scripts/github-make-executable.sh
       - name: Upload Compilation Report
         uses: actions/upload-artifact@v4
