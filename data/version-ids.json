@@ -1,9 +1,36 @@
 {
     "remarkable1": {
+    	"3.15.3.1": [
+    		"remarkable-production-memfault-image-3.15.3.1-rm1-public.swu",
+    		"03a6ff64df69da292ebf82286e361b95d3ddeb1958618fe1c9e302bc6403c7f4"
+    	],
+    	"3.14.1.9": [
+    		"remarkable-production-memfault-image-3.14.1.9-rm1-public.swu",
+    		"d2293e3395bb966708465efbf9c1d28718f8d7f2d14c95bb69c62b0153f07bae"
+    	],
+    	"3.13.2.0": [
+    		"remarkable-production-memfault-image-3.13.2.0-rm1-public.swu",
+    		"a0be8e1d53ea3b7dc500c8b8564ab21e14e9dbaaec665549787c444cbc428eb9"
+    	],
+    	"3.13.1.2": [
+    		"remarkable-production-memfault-image-3.13.1.2-rm1-public.swu",
+    		"0e7f92c46e355c2e35b45f8fa2bb5a6e3ba1191424da692fb6facac0d5233a6a"
+    	],
+    	"3.12.4.4": [
+    		"remarkable-production-memfault-image-3.12.4.4-rm1-public.swu",
+    		"a735ccc2175625d38a270b523ff9c1c29f801cb662da085c06af23d945152e07"
+    	],
+    	"3.12.4.3": [
+    		"remarkable-production-memfault-image-3.12.4.3-rm1-public.swu",
+    		"1bd3d76cb773aaa40a1cc3c745a5ed0b3313ad9147316b589853efa4d1a5865d"
+    	],
+    	"3.11.3.3": [
+    		"remarkable-production-memfault-image-3.11.3.3-rm1-public.swu",
+    		"37c8a4a61a59fdd6e893e75ce48b9f0283e41718b00aeebc3da81f9f7fa1006c"
+    	],
         "3.11.2.5": [
             "ShunAN3V1W",
-            "2ad14c56caca60f4db19b55297519f1507a36b042c6aad3fb31fde41ba15ffb8",
-            "This version changes the update mechanism, which codexctl currently does not support. If you install this version, you will not be able to downgrade using codexctl."
+            "2ad14c56caca60f4db19b55297519f1507a36b042c6aad3fb31fde41ba15ffb8"
         ],
         "3.10.2.2063": [
             "NXiSL3XohA",
@@ -127,10 +154,33 @@
         ]
     },
     "remarkable2": {
+    	"3.14.1.9": [
+    		"remarkable-production-memfault-image-3.14.1.9-rm2-public.swu",
+    		"f3394019dbfec3628eec1aee4502d00bd8af1921ed2bcd9edfa01221e445df32"
+    	],
+    	"3.13.2.0": [
+    		"remarkable-production-memfault-image-3.13.2.0-rm2-public.swu",
+    		"331be43421a3a655a5b886c583917341c9912f0aa056d3475b83906dfa9720f5"
+    	],
+    	"3.13.1.2": [
+    		"remarkable-production-memfault-image-3.13.1.2-rm2-public.swu",
+    		"cbd3fc3de77b152aa04e4098b621b52de0f1b053d3652f7d54e14b654711f80c"
+    	],
+    	"3.12.4.4": [
+    		"remarkable-production-memfault-image-3.12.4.4-rm2-public.swu",
+    		"a15448464e34c868674134b656707823aac305e6b7e1fe1882d3d60182947088"
+    	],
+    	"3.12.4.3": [
+    		"remarkable-production-memfault-image-3.12.4.3-rm2-public.swu",
+    		"a1780b93e27f226e03496b41419acd53eb8caf531c4768d7675f2589ae419aaa"
+    	],
+    	"3.11.3.3": [
+    		"remarkable-production-memfault-image-3.11.3.3-rm2-public.swu",
+    		"cb4a598c575acbab2a4480b13521a97def846337a46b856feb778a190f9d5b47"
+    	],
         "3.11.2.5": [
             "qLFGoqPtPL",
-            "a86afd842c6f1e5b33f4bbc10ec8360ce1789ab1c6caef75324619e0ab859cdb",
-            "This version changes the update mechanism, which codexctl currently does not support. If you install this version, you will not be able to downgrade using codexctl."
+            "a86afd842c6f1e5b33f4bbc10ec8360ce1789ab1c6caef75324619e0ab859cdb"
         ],
         "3.10.2.2063": [
             "zKnOgdh8c5",
@@ -264,6 +314,25 @@
             "JLB6Ax3hnJ-",
             "abde0fac3d12f7599a167414e2871fd340fe10312bc5cb1b65af958b4f5f0736"
         ]
+    }, 
+    "remarkablepp": {
+        "3.15.4.2": [
+            "remarkable-ct-prototype-image-3.15.4.2-ferrari-public.swu",
+            "e0db4681888d2294c768906e7a564bc06d936dbb5e9fefc1529cf7a438dae628"
+        ],
+    	"3.14.4.0": [
+    		"remarkable-ct-prototype-image-3.14.4.0-ferrari-public.swu",
+    		"4c93cbc85c061520421c71a4b99ec30ef25e41c077e40d542e068db272900a1e"
+    	],
+    	"3.14.3.0": [
+    		"remarkable-ct-prototype-image-3.14.3.0-ferrari-public.swu",
+    		"ad1c28c9031f0b14a6a897b50ccfd402e6c0711d5d129edd8cfa03879d473073"
+    	],
+    	"3.14.1.10": [
+    		"remarkable-ct-prototype-image-3.14.1.10-ferrari-public.swu",
+    		"8c92f589900e7e355697206c71e2256d909313fcd96aa2c5fd9910ff04b062f1"
+    	]
     },
-    "last-updated": 1718496385
+    "last-updated": 1733663974,
+    "external-provider-url": "https://storage.googleapis.com/remarkable-versions/REPLACE_ID"
 }
