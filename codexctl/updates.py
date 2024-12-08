@@ -1,4 +1,10 @@
-import os, time, requests, re, uuid, sys, json, hashlib
+import os
+import requests
+import uuid
+import sys
+import json
+import hashlib
+import logging
 
 from pathlib import Path
 from datetime import datetime
@@ -7,60 +13,46 @@ import xml.etree.ElementTree as ET
 
 
 class UpdateManager:
-    def __init__(self, device_version=None, logger=None):
-        self.updates_url = (
-            "https://updates.cloud.remarkable.engineering/service/update2"
-        )
+    def __init__(self, logger=None) -> None:
+        """Manager for downloading update versions
+
+        Args:
+            logger (logger, optional): Logger object for logging. Defaults to None.
+        """
 
         self.logger = logger
-        self.DOWNLOAD_FOLDER = Path(
-            os.environ["XDG_DOWNLOAD_DIR"]
-            if (
-                "XDG_DOWNLOAD_DIR" in os.environ
-                and os.path.exists(os.environ["XDG_DOWNLOAD_DIR"])
-            )
-            else Path.home() / "Downloads"
-        )
-        self.device_version = (
-            device_version if device_version else "3.2.3.1595"
-        )  # Earliest 3.x.x version
 
-        self.logger.debug(f"Download folder is {self.DOWNLOAD_FOLDER}")
+        if self.logger is None:
+            self.logger = logging
 
-        versions = self.get_version_ids()
+        (
+            self.remarkablepp_versions,
+            self.remarkable2_versions,
+            self.remarkable1_versions,
+            self.external_provider_url,
+        ) = self.get_remarkable_versions()
 
-        self.id_lookups_rm1 = versions["remarkable1"]
-        self.id_lookups_rm2 = versions["remarkable2"]
+    def get_remarkable_versions(self) -> tuple[dict, dict, dict, str, str]:
+        """Gets the avaliable versions for the device, by checking the local version-ids.json file and then updating it if necessary
 
-    def update_version_ids(self, location):
-        with open(location, "w", newline="\n") as f:
-            try:
-                self.logger.debug("Downloading version-ids.json")
-                contents = requests.get(
-                    "https://raw.githubusercontent.com/Jayy001/codexctl/main/data/version-ids.json"
-                ).json()
-                json.dump(contents, f, indent=4)
-                f.write("\n")
-            except requests.exceptions.Timeout:
-                raise SystemExit(
-                    "Error: Connection timed out while downloading version-ids.json! Do you have an internet connection?"
-                )
-            except Exception as error:
-                raise SystemExit(
-                    f"Error: Unknown error while downloading version-ids.json! {error}"
-                )
+        Returns:
+            tuple: A tuple containing the version ids for the remarkablepp, remarkable2, remarkable1, toltec version and external provider (in that order)
+        """
 
-    def get_version_ids(self):
         if os.path.exists("data/version-ids.json"):
             file_location = "data/version-ids.json"
-            self.logger.debug("Found version-ids at data/version-ids.json")
-        else:
-            if os.name == "nt":
-                folder_location = os.getenv("APPDATA") + "/codexctl"
-            elif os.name == "posix":
-                folder_location = os.path.expanduser("~/.config/codexctl")
 
-            self.logger.debug(f"Folder location is {folder_location}")
+            self.logger.debug("Found version-ids at data/version-ids.json")
+
+        else:
+            if os.name == "nt":  # Windows
+                folder_location = os.getenv("APPDATA") + "/codexctl"
+            elif os.name in ("posix", "darwin"):  # Linux or MacOS
+                folder_location = os.path.expanduser("~/.config/codexctl")
+            else:
+                raise SystemError("Unsupported OS")
+
+            self.logger.debug(f"Version config folder location is {folder_location}")
             if not os.path.exists(folder_location):
                 os.makedirs(folder_location, exist_ok=True)
 
@@ -73,88 +65,181 @@ class UpdateManager:
             with open(file_location) as f:
                 contents = json.load(f)
         except ValueError:
-            raise SystemExit(
-                f"Error: version-ids.json @ {file_location} is corrupted! Please delete it and try again."
+            raise SystemError(
+                f"Version-ids.json @ {file_location} is corrupted! Please delete it and try again. Also, PLEASE open an issue on the repo showing the contents of the file."
             )
 
         if (
-            int(datetime.now().timestamp()) - contents["last-updated"] > 2628000
-        ):  # 1 month
+            int(datetime.now().timestamp()) - contents["last-updated"]
+            > 5256000  # 2 months
+        ):
             self.update_version_ids(file_location)
+
             with open(file_location) as f:
                 contents = json.load(f)
 
-        self.logger.debug(f"Contents are {contents}")
-        return contents
+        self.logger.debug(f"Version ids contents are {contents}")
 
-    def get_toltec_version(self, device=2):
+        return (
+            contents["remarkablepp"],
+            contents["remarkable2"],
+            contents["remarkable1"],
+            contents["external-provider-url"],
+        )
+
+    def update_version_ids(self, location: str) -> None:
+        """Updates the version-ids.json file
+
+        Args:
+            location (str): Location to save the file
+
+        Raises:
+            SystemExit: If the file cannot be updated
+        """
+        with open(location, "w", newline="\n") as f:
+            try:
+                self.logger.debug("Downloading version-ids.json")
+                contents = requests.get(
+                    "https://raw.githubusercontent.com/Jayy001/codexctl/main/data/version-ids.json"
+                ).json()
+                json.dump(contents, f, indent=4)
+                f.write("\n")
+            except requests.exceptions.Timeout:
+                raise SystemExit(
+                    "Connection timed out while downloading version-ids.json! Do you have an internet connection?"
+                )
+            except Exception as error:
+                raise SystemExit(
+                    f"Unknown error while downloading version-ids.json! {error}"
+                )
+
+    def get_latest_version(self, device_type: str) -> str:
+        """Gets the latest version available for the device
+
+        Args:
+            device_type (str): Type of the device (remarkablepp or remarkable2 or remarkable1)
+
+        Returns:
+            str: Latest version available for the device
+        """
+        if "1" in device_type:
+            versions = self.remarkable1_versions
+        elif "2" in device_type:
+            versions = self.remarkable2_versions
+        elif "ferrari" in device_type or "pp" in device_type:
+            versions = self.remarkablepp_versions
+        else:
+            return None  # Explicit?
+
+        return self.__max_version(versions.keys())
+
+    def get_toltec_version(self, device_type: str) -> str:
+        """Gets the latest version available toltec for the device
+
+        Args:
+            device_type (str): Type of the device (remarkablepp or remarkable2 or remarkable1)
+
+        Returns:
+            str: Latest version available for the device
+        """
+
+        if "ferrari" in device_type:
+            raise SystemExit("ReMarkable Paper Pro does not support toltec")
+        elif "1" in device_type:
+            device_type = "rm1"
+        else:
+            device_type = "rm2"
+
         response = requests.get("https://toltec-dev.org/stable/Compatibility")
         if response.status_code != 200:
             raise SystemExit(
-                f"Error: Failed to get toltec compatibility table: {response.status_code} {response.reason}"
+                f"Error: Failed to get toltec compatibility table: {response.status_code}"
             )
 
         return self.__max_version(
             [
                 x.split("=")[1]
                 for x in response.text.splitlines()
-                if x.startswith(f"rm{device}=")
+                if x.startswith(f"{device_type}=")
             ]
         )
 
-    def get_version(self, device=2, version=None, download_folder=None):
+    def download_version(
+        self, device_type: str, update_version: str, download_folder: str = None
+    ) -> str | None:
+        """Downloads the specified version of the update
+
+        Args:
+            device_type (str): Type of the device (remarkable2 or remarkable1)
+            update_version (str): Id of version to download.
+            download_folder (str, optional): Location of download folder. Defaults to download folder for OS.
+
+        Returns:
+            str | None: Location of the file if the download was successful, None otherwise
+        """
+
         if download_folder is None:
-            download_folder = self.DOWNLOAD_FOLDER
+            download_folder = Path(
+                os.environ["XDG_DOWNLOAD_DIR"]
+                if (
+                    "XDG_DOWNLOAD_DIR" in os.environ
+                    and os.path.exists(os.environ["XDG_DOWNLOAD_DIR"])
+                )
+                else Path.home() / "Downloads"
+            )
 
-        # Check if download folder exists
         if not os.path.exists(download_folder):
-            return "Download folder does not exist"
+            self.logger.error(
+                f"Download folder {download_folder} does not exist! Creating it now."
+            )
+            os.makedirs(download_folder)
 
-        if device == 1:
-            versionDict = self.id_lookups_rm1
+        BASE_URL = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device%20Beta/RM110"  # Default URL for v2 versions
+        BASE_URL_V3 = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device/reMarkable"
+
+        if device_type in ("rm1", "reMarkable 1", "remarkable1"):
+            version_lookup = self.remarkable1_versions
+        elif device_type in ("rm2", "reMarkable 2", "remarkable2"):
+            version_lookup = self.remarkable2_versions
+            BASE_URL_V3 += "2"
+        elif device_type in ("rmpp", "rmpro", "reMarkable Ferrari", "ferrari"):
+            version_lookup = self.remarkablepp_versions
         else:
-            versionDict = self.id_lookups_rm2
+            raise SystemError("Hardware version does not exist! (rm1,rm2,rmpp)")
 
-        if version is None:
-            version = self.get_latest_version(device)
+        if update_version not in version_lookup:
+            self.logger.error(
+                f"Version {update_version} not found in version-ids.json! Please update your version-ids.json file."
+            )
+            return
 
-        if version not in versionDict:
-            return "Not in version list"
+        version_major, version_minor, version_patch, version_build = (
+            update_version.split(".")
+        )
+        version_id, version_checksum = version_lookup[update_version]
+        version_external = False
 
-        BASE_URL = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device%20Beta/RM110"
+        if int(version_major) >= 3:
+            BASE_URL = BASE_URL_V3
 
-        BASE_URL_V3 = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device/reMarkable2"
-        BASE_URL_RM1_V3 = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device/reMarkable"
+            if int(version_minor) >= 11:
+                version_external = True
 
-        if int(version.split(".")[0]) > 2:
-            if device == 1:
-                BASE_URL = BASE_URL_RM1_V3
-            else:
-                BASE_URL = BASE_URL_V3
-
-        data = versionDict[version]
-        id = f"-{data[0]}"
-        checksum = data[1]
-        if len(data) > 2:
-            print(f"Warning for {version}: {data[2]}")
-
-        file_name = f"{version}_reMarkable{'2' if device == 2 else ''}{id}.signed"
-        file_url = f"{BASE_URL}/{version}/{file_name}"
+        if version_external:
+            file_url = self.external_provider_url.replace("REPLACE_ID", version_id)
+            file_name = f"remarkable-production-memfault-image-{update_version}-{device_type.replace(' ', '-')}-public"
+        else:
+            file_name = f"{update_version}_reMarkable{'2' if '2' in device_type else ''}-{version_id}.signed"
+            file_url = f"{BASE_URL}/{update_version}/{file_name}"
 
         self.logger.debug(f"File URL is {file_url}, File name is {file_name}")
-        return self.download_file(file_url, file_name, download_folder, checksum)
 
-    @staticmethod
-    def __max_version(versions):
-        return sorted(versions, key=lambda v: tuple(map(int, v.split("."))))[-1]
+        return self.__download_version_file(
+            file_url, file_name, download_folder, version_checksum
+        )
 
-    def get_latest_version(self, device):  # Hardcoded for now
-        if device == 2:
-            return self.__max_version(self.id_lookups_rm2.keys())
-
-        return self.__max_version(self.id_lookups_rm1.keys())
-
-    def _generate_xml_data(self):  # TODO: Support for remarkable1
+    def __generate_xml_data(self) -> str:
+        """Generates and returns XML data for the update request"""
         params = {
             "installsource": "scheduler",
             "requestid": str(uuid.uuid4()),
@@ -163,7 +248,7 @@ class UpdateManager:
             "oem": "RM100-753-12345",
             "appid": "98DA7DF2-4E3E-4744-9DE6-EC931886ABAB",
             "bootid": str(uuid.uuid4()),
-            "current": self.device_version,
+            "current": "3.2.3.1595",
             "group": "Prod",
             "platform": "reMarkable2",
         }
@@ -178,35 +263,19 @@ class UpdateManager:
             **params
         )
 
-    def _make_request(self, data):
-        tries = 1
+    def __parse_response(self, resp: str) -> tuple[str, str, str] | None:
+        """Parses the response from the update server and returns the file name, uri, and version if an update is available
 
-        while tries < 3:
-            tries += 1
+        Args:
+            resp (str): Response from the server
 
-            self.logger.debug(
-                f"Sending POST request to {self.updates_url} with data {data} [Try {tries}]"
-            )
-
-            response = requests.post(self.updates_url, data)
-
-            if response.status_code == 429:
-                print("Too many requests sent, retrying after 20")
-                time.sleep(20)
-
-                continue
-
-            response.raise_for_status()
-
-            break
-
-        return response.text
-
-    def _parse_response(self, resp):
+        Returns:
+            tuple[str, str, str] | None: File name, uri, and version if an update is available, None otherwise
+        """
         xml_data = ET.fromstring(resp)
 
-        if "noupdate" in resp or xml_data is None:  # Is none?
-            return None  # Or False maybe?
+        if "noupdate" in resp or xml_data is None:
+            return None
 
         file_name = xml_data.find("app/updatecheck/manifest/packages/package").attrib[
             "name"
@@ -221,51 +290,83 @@ class UpdateManager:
         )
         return file_version, file_uri, file_name
 
-    def download_file(
-        self, uri, name, download_folder, checksum
-    ):  # Credit to https://stackoverflow.com/questions/15644964/python-progress-bar-and-downloads
+    def __download_version_file(
+        self, uri: str, name: str, download_folder: str, checksum: str
+    ) -> str | None:
+        """Downloads the version file from the server and checks the checksum
+
+        Args:
+            uri (str): Location to the file
+            name (str): Name of the file
+            download_folder (str): Location of download folder
+            checksum (str): Sha256 Checksum of the file
+
+        Returns:
+            str | None: Location of the file if the checksum matches, None otherwise
+        """
         response = requests.get(uri, stream=True)
-        total_length = response.headers.get("content-length")
+        file_length = response.headers.get("content-length")
 
-        self.logger.debug(f"Downloading file from {uri} to {download_folder}/{name}")
+        self.logger.debug(f"Downloading {name} from {uri} to {download_folder}")
         try:
-            total_length = int(total_length)
+            file_length = int(file_length)
 
-            if int(total_length) < 10000000:  # 10MB
+            if int(file_length) < 10000000:  # 10MB, invalid version file
+                self.logger.error(
+                    f"File {name} is too small to be a valid version file"
+                )
                 return None
         except TypeError:
+            self.logger.error(
+                f"Could not get content length for {name}. Do you have an internet connection?"
+            )
             return None
 
-        self.logger.debug(f"Total length is {total_length}")
+        self.logger.debug(f"{name} is {file_length} bytes")
 
         filename = f"{download_folder}/{name}"
-        with open(filename, "wb") as f:
+        with open(filename, "wb") as out_file:
             dl = 0
 
             for data in response.iter_content(chunk_size=4096):
                 dl += len(data)
-                f.write(data)
+                out_file.write(data)
                 if sys.stdout.isatty():
-                    done = int(50 * dl / total_length)
+                    done = int(50 * dl / file_length)
                     sys.stdout.write("\r[%s%s]" % ("=" * done, " " * (50 - done)))
                     sys.stdout.flush()
 
         if sys.stdout.isatty():
             print(end="\r\n")
 
-        self.logger.debug("Downloaded filename")
-
-        if os.path.getsize(filename) != total_length:
-            os.remove(filename)
-            raise SystemExit("Error: File size mismatch! Is your connection stable?")
+        self.logger.debug(f"Downloaded {name}")
 
         with open(filename, "rb") as f:
             file_checksum = hashlib.sha256(f.read()).hexdigest()
 
-            if file_checksum != checksum:
-                os.remove(filename)
-                raise SystemExit(
-                    f"Error: File checksum mismatch! Expected {checksum}, got {file_checksum}"
-                )
+        if file_checksum != checksum:
+            os.remove(filename)
+            self.logger.error(
+                f"File checksum mismatch! Expected {checksum}, got {file_checksum}"
+            )
+            return None
 
-        return name
+        return filename
+
+    @staticmethod
+    def __max_version(versions: list) -> str:
+        """Returns the highest avaliable version from a list with semantic versioning"""
+        return sorted(versions, key=lambda v: tuple(map(int, v.split("."))))[-1]
+
+    @staticmethod
+    def uses_new_update_engine(version: str) -> bool:
+        """
+        Checks if the version given is above 3.11 and so requires the newer update engine
+
+        Args:
+            version (str): version to check against
+
+        Returns:
+            bool: If it uses the new update engine or not
+        """
+        return int(version.split(".")[0]) >= 3 and int(version.split(".")[1]) >= 11
