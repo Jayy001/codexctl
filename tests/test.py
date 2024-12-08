@@ -103,7 +103,7 @@ def test_ls(path, expected):
 def test_cat(path, expected):
     global FAILED
     global UPDATE_FILE_PATH
-    print(f"Testing ls {path}: ", end="")
+    print(f"Testing cat {path}: ", end="")
     with contextlib.redirect_stdout(BufferBytesIO()) as f:
         try:
             codexctl.call_func("cat", {'file': UPDATE_FILE_PATH, 'target_path': path})

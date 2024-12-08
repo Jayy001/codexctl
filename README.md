@@ -6,7 +6,7 @@ A utility program that helps to manage the remarkable device version utilizing [
 
 ## Caveat for downgrading to a version below 3.11 
 
-If youre remarkable device is above 3.11 and you want to downgrade to a version below 3.11, codexctl is not able to do this (at the moment). Please refer to #71 for manual instructions.
+If your reMarkable device is above 3.11 and you want to downgrade to a version below 3.11, codexctl cannot do this currently. Please refer to #71 for manual instructions.
 
 ## Installation 
 
@@ -45,13 +45,13 @@ options:
 ```
 
 ## Examples
-- Installing thge latest for device (will automatically figure out the version)
+- Installing the latest for device (will automatically figure out the version)
 ```
 codexctl install latest
 ```
 - Downloading rmpp version 3.15.4.2 to a folder named `out` and then installing it
 ```
-codexctl download 3.0.4.1305 -hw rm1 -o out
+codexctl download 3.0.4.1305 -hw rmpp -o out
 codexctl install ./out/remarkable-ct-prototype-image-3.15.4.2-ferrari-public.swu
 ```
 - Backing up all documents to the cwd

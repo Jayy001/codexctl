@@ -141,7 +141,7 @@ jobs:
             echo "[info] Installing build dependencies"
             apt update
             apt install -y \
-              libfuse-dev rustc cargo
+              libfuse-dev
             cd /src
             source /opt/lib/nuitka/bin/activate
             chmod +x ./scripts/github-make-executable.sh
