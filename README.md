@@ -1,5 +1,4 @@
-<p align="center">
-<img src="media/demoLocal.gif">
+
 
 # Codexctl
 A utility program that helps to manage the remarkable device version utilizing [ddvks update server](https://github.com/ddvk/remarkable-update) 
@@ -51,7 +50,7 @@ codexctl install latest
 ```
 - Downloading rmpp version 3.15.4.2 to a folder named `out` and then installing it
 ```
-codexctl download 3.0.4.1305 -hw rmpp -o out
+codexctl download 3.15.4.2 -hw rmpp -o out
 codexctl install ./out/remarkable-ct-prototype-image-3.15.4.2-ferrari-public.swu
 ```
 - Backing up all documents to the cwd
