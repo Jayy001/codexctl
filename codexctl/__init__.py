@@ -165,6 +165,16 @@ class Manager:
             else:
                 rmWeb.upload(input_paths=args["paths"], remoteFolder=args["remote"])
 
+        ### Transfer & Download functionalities
+        elif function in ("transfer", "download"):
+            remarkable = DeviceManager(
+                remote=remote,
+                address=args["address"],
+                logger=self.logger,
+                authentication=args["password"],
+            )
+
+
         ### Update & Version functionalities
         elif function in ("install", "status", "restore"):
             remote = False
@@ -254,9 +264,6 @@ class Manager:
                         raise SystemError("This version requires the new update engine, please upgrade your device to version 3.11.2.5 first.")
 
                 #############################################################
-
-                update_file_requires_new_engine = False 
-                device_version_uses_new_engine = False 
 
                 if not update_file_requires_new_engine:
                     if update_file: # Check if file exists
