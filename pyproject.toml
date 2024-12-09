@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "codexctl"
-version = "1.0.0"
+version = "1.1.0"
 description = "Automated update managment for the ReMarkable tablet"
 authors = ["Jayy001 <github@skii.dev>"]
 license = "GPLv3"
