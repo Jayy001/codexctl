@@ -316,6 +316,10 @@
         ]
     }, 
     "remarkablepp": {
+        "3.16.1.0": [
+            "remarkable-ct-prototype-image-3.16.1.0-ferrari-public.swu",
+            "730c76a9cbf16415f4c00a6b60a96cf0ffa0b61c092504dc79520efaa74f9bfc"
+        ],
         "3.15.4.2": [
             "remarkable-ct-prototype-image-3.15.4.2-ferrari-public.swu",
             "e0db4681888d2294c768906e7a564bc06d936dbb5e9fefc1529cf7a438dae628"
