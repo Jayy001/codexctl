@@ -197,9 +197,10 @@ class UpdateManager:
         BASE_URL = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device%20Beta/RM110"  # Default URL for v2 versions
         BASE_URL_V3 = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device/reMarkable"
 
-        if device_type in ("rm1", "reMarkable 1", "remarkable1"):
+        print(device_type)
+        if device_type in ("rm1", "reMarkable 1", "reMarkable1", "remarkable1"):
             version_lookup = self.remarkable1_versions
-        elif device_type in ("rm2", "reMarkable 2", "remarkable2"):
+        elif device_type in ("rm2", "reMarkable 2", "reMarkable2", "remarkable2"):
             version_lookup = self.remarkable2_versions
             BASE_URL_V3 += "2"
         elif device_type in ("rmpp", "rmpro", "reMarkable Ferrari", "ferrari"):
@@ -221,8 +222,7 @@ class UpdateManager:
 
         if int(version_major) >= 3:
             BASE_URL = BASE_URL_V3
-
-            if int(version_minor) >= 11:
+            if int(version_minor) > 11 or update_version == "3.11.3.3":
                 version_external = True
 
         if version_external:
