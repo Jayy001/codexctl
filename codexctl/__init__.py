@@ -95,7 +95,7 @@ class Manager:
                     args["out"] = os.getcwd() + "/extracted"
 
                 logger.debug(f"Extracting {args['file']} to {args['out']}")
-                image, volume = get_update_image(args["file"])
+                image, volume = get_update_image(args["file"], logger=logger)
                 image.seek(0)
 
                 with open(args["out"], "wb") as f:
@@ -128,7 +128,7 @@ class Manager:
                 )
 
             try:
-                image, volume = get_update_image(args["file"])
+                image, volume = get_update_image(args["file"], logger=logger)
                 inode = volume.inode_at(args["target_path"])
 
             except FileNotFoundError:
@@ -165,18 +165,8 @@ class Manager:
             else:
                 rmWeb.upload(input_paths=args["paths"], remoteFolder=args["remote"])
 
-        ### Transfer & Download functionalities
-        elif function in ("transfer", "download"):
-            remarkable = DeviceManager(
-                remote=remote,
-                address=args["address"],
-                logger=self.logger,
-                authentication=args["password"],
-            )
-
-
-        ### Update & Version functionalities
-        elif function in ("install", "status", "restore"):
+        ### Update, Transfer & Version functionalities
+        elif function in ("install", "status", "restore", "transfer"):
             remote = False
 
             if "remarkable" not in self.device:
@@ -189,6 +179,9 @@ class Manager:
                         "Psutil is required for SSH access. Please install it."
                     )
                 remote = True
+            else:
+                if function == "transfer":
+                    raise SystemError("You can't transfer files alredy on your device!")
 
             from .device import DeviceManager
             from .server import get_available_version
@@ -196,6 +189,7 @@ class Manager:
             remarkable = DeviceManager(
                 remote=remote,
                 address=args["address"],
+                port=args["port"],
                 logger=self.logger,
                 authentication=args["password"],
             )
@@ -205,7 +199,11 @@ class Manager:
             elif version == "toltec":
                 version = self.updater.get_toltec_version(remarkable.hardware)
 
-            if function == "status":
+            if function == "transfer":
+                remarkable.transfer_file_to_remote(args["file"], args["destination"])
+                print("Done!")
+
+            elif function == "status":
                 beta, prev, current, version_id = remarkable.get_device_status()
                 print(
                     f"\nCurrent version: {current}\nOld update engine: {prev}\nBeta active: {beta}\nVersion id: {version_id}"
@@ -229,6 +227,7 @@ class Manager:
                 # Do we have a specific update file to serve?
 
                 update_file = version if os.path.isfile(version) else None
+                manual_dd_update = False
                 
                 version_lookup = lambda version: re.search(r'\b\d+\.\d+\.\d+\.\d+\b', version)
                 version_number = version_lookup(version)
@@ -240,18 +239,21 @@ class Manager:
 
                 version_number = version_number.group()
 
-                update_file_requires_new_engine = UpdateManager.uses_new_update_engine(
-                    version_number
-                )
-                device_version_uses_new_engine = UpdateManager.uses_new_update_engine(
-                    remarkable.get_device_status()[2]
-                )
+                #update_file_requires_new_engine = UpdateManager.uses_new_update_engine(
+                #    version_number
+                #)
+                #device_version_uses_new_engine = UpdateManager.uses_new_update_engine(
+                #    remarkable.get_device_status()[2]
+                #)
+                device_version_uses_new_engine = True
+                update_file_requires_new_engine = False
 
                 #### PREVENT USERS FROM INSTALLING NON-COMPATIBLE IMAGES ####
 
                 if device_version_uses_new_engine:
                     if not update_file_requires_new_engine:
-                        raise SystemError("Cannot downgrade to this version as it uses the old update engine, please manually downgrade.")
+                        #raise SystemError("Cannot downgrade to this version as it uses the old update engine, please manually downgrade.")
+                        manual_dd_update = True
                         # TODO: Implement manual downgrading.
                         # `codexctl download --out . 3.11.2.5`
                         # `codexctl extract --out 3.11.2.5.img 3.11.2.5_reMarkable2-qLFGoqPtPL.signed`
@@ -303,7 +305,30 @@ class Manager:
                         )
 
                 if device_version_uses_new_engine:
-                    remarkable.install_sw_update(update_file)
+                    if not manual_dd_update:
+                        remarkable.install_sw_update(update_file)
+                    else:
+                        try:
+                            from .analysis import get_update_image
+                        except ImportError:
+                            raise ImportError(
+                                "remarkable_update_image is required for this update. Please install it!"
+                            )
+
+                        out_image_file = f"{version_number}.img"
+
+                        logger.debug(f"Extracting {update_file} to ./{out_image_file}")
+                        image, volume = get_update_image(update_file, logger=logger)
+                        image.seek(0)
+
+                        with open(out_image_file, "wb") as f:
+                            f.write(image.read())
+
+                        print("Now installing from .img")
+
+                        remarkable.install_manual_update(out_image_file)
+
+                        os.remove(out_image_file)
                 else:
                     remarkable.install_ohma_update(update_file)
 
@@ -342,8 +367,23 @@ def main() -> None:
         required=False,
         help="Specify password or path to SSH key for remote access",
     )
+    parser.add_argument(
+        "--port",
+        required=False,
+        type=int,
+        default=22,
+        help="Specify specific SSH port, shouldn't be needed unless you've changed it."
+    )
     subparsers = parser.add_subparsers(dest="command")
     subparsers.required = True  # This fixes a bug with older versions of python
+
+    ### Transfer subcommand
+    transfer = subparsers.add_parser(
+        "transfer",
+        help="Transfer a file from your host to the device",
+    )
+    transfer.add_argument("file", help="Location of file to transfer")
+    transfer.add_argument("destination", help="Where the file should be put on the device")
 
     ### Install subcommand
     install = subparsers.add_parser(
@@ -359,7 +399,7 @@ def main() -> None:
     download.add_argument("version", help="Version to download")
     download.add_argument("--out", "-o", help="Folder to download to", default=None)
     download.add_argument(
-        "--hardware", "-hd", help="Hardware to download for", required=True
+        "--hardware", "-d", help="Hardware to download for", required=True
     )
 
     ### Backup subcommand
