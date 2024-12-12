@@ -3,9 +3,9 @@
 # Codexctl
 A utility program that helps to manage the remarkable device version utilizing [ddvks update server](https://github.com/ddvk/remarkable-update) 
 
-## Caveat for downgrading to a version below 3.11 
+## Caveat for downgrading from 3.11.2.5 or greater to a version less than 3.11.2.5
 
-If your reMarkable device is above 3.11 and you want to downgrade to a version below 3.11, codexctl cannot do this currently. Please refer to https://github.com/Jayy001/codexctl/issues/95#issuecomment-2305529048 for manual instructions.
+If your reMarkable device is at or above 3.11.2.5 and you want to downgrade to a version below 3.11.2.5, codexctl cannot do this currently. Please refer to https://github.com/Jayy001/codexctl/issues/95#issuecomment-2305529048 for manual instructions.
 
 ## Installation 
 
