@@ -197,13 +197,14 @@ class UpdateManager:
         BASE_URL = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device%20Beta/RM110"  # Default URL for v2 versions
         BASE_URL_V3 = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device/reMarkable"
 
-        if device_type in ("rm1", "reMarkable 1", "remarkable1"):
+
+        if ("ferrari" in device_type.lower()) or ("pro" in device_type) or ("pp" in device_type):
+            version_lookup = self.remarkablepp_versions
+        elif "1" in device_type:
             version_lookup = self.remarkable1_versions
-        elif device_type in ("rm2", "reMarkable 2", "remarkable2"):
+        elif "2" in device_type:
             version_lookup = self.remarkable2_versions
             BASE_URL_V3 += "2"
-        elif device_type in ("rmpp", "rmpro", "reMarkable Ferrari", "ferrari"):
-            version_lookup = self.remarkablepp_versions
         else:
             raise SystemError(f"Hardware version does not exist!: {device_type} (rm1,rm2,rmpp)")
 
