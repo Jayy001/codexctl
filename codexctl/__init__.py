@@ -231,11 +231,12 @@ class Manager:
                 update_file = version if os.path.isfile(version) else None
                 
                 version_lookup = lambda version: re.search(r'\b\d+\.\d+\.\d+\.\d+\b', version)
+                
                 version_number = version_lookup(version)
 
                 if not version_number:
-                    version_number = input("Failed to get the version number from the filename, please enter it: ") 
-                    if not version_lookup(version_number):
+                    version_number = version_lookup(input("Failed to get the version number from the filename, please enter it: "))
+                    if not version_number:
                         raise SystemError("Invalid version!")
 
                 version_number = version_number.group()
