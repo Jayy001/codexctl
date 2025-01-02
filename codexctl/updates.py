@@ -223,7 +223,7 @@ class UpdateManager:
         if int(version_major) >= 3:
             BASE_URL = BASE_URL_V3
 
-            if int(version_minor) >= 11:
+            if int(version_minor) > 11 or update_version == "3.11.3.3":
                 version_external = True
 
         if version_external:
