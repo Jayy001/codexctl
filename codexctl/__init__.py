@@ -179,7 +179,7 @@ class Manager:
         elif function in ("install", "status", "restore"):
             remote = False
 
-            if "remarkable" not in self.device:
+            if "reMarkable" not in self.device:
                 if importlib.util.find_spec("paramiko") is None:
                     raise ImportError(
                         "Paramiko is required for SSH access. Please install it."
