@@ -194,10 +194,6 @@ class DeviceManager:
             while True:
                 key_path = input("Enter path to SSH key: ")
 
-                if not os.path.isfile(key_path):
-                    print("Invalid path given")
-
-                    continue
                 try:
                     self.logger.debug(
                         f"Attempting to connect to {remote_address} with key file {key_path}"
