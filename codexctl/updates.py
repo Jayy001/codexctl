@@ -197,8 +197,11 @@ class UpdateManager:
         BASE_URL = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device%20Beta/RM110"  # Default URL for v2 versions
         BASE_URL_V3 = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device/reMarkable"
 
-
-        if ("ferrari" in device_type.lower()) or ("pro" in device_type) or ("pp" in device_type):
+        if (
+            ("ferrari" in device_type.lower())
+            or ("pro" in device_type)
+            or ("pp" in device_type)
+        ):
             version_lookup = self.remarkablepp_versions
         elif "1" in device_type:
             version_lookup = self.remarkable1_versions
@@ -206,7 +209,9 @@ class UpdateManager:
             version_lookup = self.remarkable2_versions
             BASE_URL_V3 += "2"
         else:
-            raise SystemError(f"Hardware version does not exist!: {device_type} (rm1,rm2,rmpp)")
+            raise SystemError(
+                f"Hardware version does not exist!: {device_type} (rm1,rm2,rmpp)"
+            )
 
         if update_version not in version_lookup:
             self.logger.error(
@@ -214,24 +219,18 @@ class UpdateManager:
             )
             return
 
-        version_major, version_minor, version_patch, version_build = (
-            update_version.split(".")
-        )
         version_id, version_checksum = version_lookup[update_version]
-        version_external = False
-
-        if int(version_major) >= 3:
+        version = tuple([int(x) for x in update_version.split(".")])
+        if version >= (3,):
             BASE_URL = BASE_URL_V3
 
-            if int(version_minor) >= 11 or update_version == "3.11.3.3":
-                version_external = True
-
-        if version_external:
-            file_url = self.external_provider_url.replace("REPLACE_ID", version_id)
-            file_name = f"remarkable-production-memfault-image-{update_version}-{device_type.replace(' ', '-')}-public"
-        else:
+        if version <= (3, 11, 2, 5):
             file_name = f"{update_version}_reMarkable{'2' if '2' in device_type else ''}-{version_id}.signed"
             file_url = f"{BASE_URL}/{update_version}/{file_name}"
+
+        else:
+            file_url = self.external_provider_url.replace("REPLACE_ID", version_id)
+            file_name = f"remarkable-production-memfault-image-{update_version}-{device_type.replace(' ', '-')}-public"
 
         self.logger.debug(f"File URL is {file_url}, File name is {file_name}")
 
@@ -306,6 +305,10 @@ class UpdateManager:
             str | None: Location of the file if the checksum matches, None otherwise
         """
         response = requests.get(uri, stream=True)
+        if response.status_code != 200:
+            self.logger.error(f"Unable to download update file: {response.status_code}")
+            return None
+
         file_length = response.headers.get("content-length")
 
         self.logger.debug(f"Downloading {name} from {uri} to {download_folder}")
