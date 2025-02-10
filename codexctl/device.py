@@ -538,7 +538,7 @@ echo "fallback: ${OLDPART}"
             return
 
         thread = threading.Thread(
-            target=startUpdate, args=(version_available, server_host), daemon=True
+            target=startUpdate, args=(version_available, server_host, 8085), daemon=True
         )
         thread.start()
 
