@@ -49,7 +49,7 @@ class DeviceManager:
         else:
             try:
                 with open("/sys/devices/soc0/machine") as file:
-                    machine_contents = file.read().decode("utf-8").strip("\n")
+                    machine_contents = file.read().strip("\n")
             except FileNotFoundError:
                 machine_contents = "tests"
 
