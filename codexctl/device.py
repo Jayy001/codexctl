@@ -414,13 +414,17 @@ echo "fallback: ${OLDPART}"
 
     def reboot_device(self) -> None:
         REBOOT_CODE = """
-
-        """
+if systemctl is-active --quiet tarnish.service; then
+    rot system call reboot
+else
+    systemctl reboot
+fi
+"""
         if self.client:
             self.logger.debug("Connecting to FTP")
             ftp = self.client.open_sftp()
             self.logger.debug("Connected")
-            with ftp.file("/tmp/rebootsh", "w") as file:
+            with ftp.file("/tmp/reboot.sh", "w") as file:
                 file.write(REBOOT_CODE)
 
             self.logger.debug("Running reboot.sh")
