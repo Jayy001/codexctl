@@ -279,10 +279,9 @@ class Manager:
 
                 if not update_file_requires_new_engine:
                     if update_file:  # Check if file exists
-                        if not (
-                            os.path.dirname(os.path.abspath(update_file))
-                            == os.path.abspath("updates")
-                        ):
+                        if os.path.dirname(
+                            os.path.abspath(update_file)
+                        ) != os.path.abspath("updates"):
                             if not os.path.exists("updates"):
                                 os.mkdir("updates")
                             shutil.move(update_file, "updates")
@@ -343,6 +342,7 @@ def main() -> None:
         required=False,
         help="Enable verbose logging",
         action="store_true",
+        dest="verbose",
     )
     parser.add_argument(
         "--address",
@@ -350,12 +350,14 @@ def main() -> None:
         required=False,
         help="Specify the address of the device",
         default=None,
+        dest="address",
     )
     parser.add_argument(
         "--password",
         "-p",
         required=False,
         help="Specify password or path to SSH key for remote access",
+        dest="password",
     )
     subparsers = parser.add_subparsers(dest="command")
     subparsers.required = True  # This fixes a bug with older versions of python
@@ -374,7 +376,12 @@ def main() -> None:
     download.add_argument("version", help="Version to download")
     download.add_argument("--out", "-o", help="Folder to download to", default=None)
     download.add_argument(
-        "--hardware", "--device", "-d", help="Hardware to download for", required=True
+        "--hardware",
+        "--device",
+        "-d",
+        help="Hardware to download for",
+        required=True,
+        dest="hardware",
     )
 
     ### Backup subcommand
@@ -386,21 +393,28 @@ def main() -> None:
         "--remote",
         help="Remote directory to backup. Defaults to download folder",
         default="",
+        dest="remote",
     )
     backup.add_argument(
         "-l",
         "--local",
         help="Local directory to backup to. Defaults to download folder",
         default="./",
+        dest="local",
     )
     backup.add_argument(
         "-R",
         "--no-recursion",
         help="Disables recursively backup remote directory",
         action="store_true",
+        dest="no_recursion",
     )
     backup.add_argument(
-        "-O", "--no-overwrite", help="Disables overwrite", action="store_true"
+        "-O",
+        "--no-overwrite",
+        help="Disables overwrite",
+        action="store_true",
+        dest="no_overwrite",
     )
 
     ### Cat subcommand
@@ -420,7 +434,7 @@ def main() -> None:
         "extract", help="Extract the specified version update file"
     )
     extract.add_argument("file", help="Path to update file to extract", default=None)
-    extract.add_argument("--out", help="Folder to extract to", default=None)
+    extract.add_argument("--out", help="Folder to extract to", default=None, dest="out")
 
     ### Mount subcommand
     mount = subparsers.add_parser(
@@ -445,6 +459,7 @@ def main() -> None:
         "--remote",
         help="Remote directory to upload to. Defaults to root folder",
         default="",
+        dest="remote",
     )
 
     ### Status subcommand
