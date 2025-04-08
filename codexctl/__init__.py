@@ -10,6 +10,7 @@ import shutil
 import json
 import re
 
+from typing import cast
 from os import listdir
 
 try:
@@ -54,7 +55,7 @@ class Manager:
         else:
             remarkable_version = self.device
 
-        version = args.get("version", None)
+        version = cast(str | None, args.get("version", None))
 
         if remarkable_version:
             if version == "latest":
@@ -231,9 +232,8 @@ class Manager:
 
                 update_file = version if os.path.isfile(version) else None
 
-                version_lookup = lambda version: re.search(
-                    r"\b\d+\.\d+\.\d+\.\d+\b", version
-                )
+                def version_lookup(version: str | None) -> re.Match[str] | None:
+                    return re.search(r"\b\d+\.\d+\.\d+\.\d+\b", cast(str, version))
 
                 version_number = version_lookup(version)
 
