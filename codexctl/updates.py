@@ -259,9 +259,7 @@ class UpdateManager:
     <app appid="{{{appid}}}" version="{current}" track="{group}" ap="{group}" bootid="{{{bootid}}}" oem="{oem}" oemversion="2.5.2" alephversion="{current}" machineid="{machineid}" lang="en-US" board="" hardware_class="" delta_okay="false" nextversion="" brand="" client="" >
         <updatecheck/>
     </app>
-</request>""".format(
-            **params
-        )
+</request>""".format(**params)
 
     def __parse_response(self, resp: str) -> tuple[str, str, str] | None:
         """Parses the response from the update server and returns the file name, uri, and version if an update is available

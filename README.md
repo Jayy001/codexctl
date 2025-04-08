@@ -7,7 +7,7 @@ A utility program that helps to manage the remarkable device version utilizing [
 
 If your reMarkable device is at or above 3.11.2.5 and you want to downgrade to a version below 3.11.2.5, codexctl cannot do this currently. Please refer to https://github.com/Jayy001/codexctl/issues/95#issuecomment-2305529048 for manual instructions.
 
-## Installation 
+## Installation
 
 You can find pre-compiled binaries on the [releases](https://github.com/Jayy001/codexctl/releases/) page. This includes a build for the reMarkable itself, as well as well as builds for linux, macOS, and Windows. Alternatively, you can install directly from pypi with `pip install codexctl`. Codexctl currently only has support for a **command line interfaces** but a graphical interface is soon to come.
 
@@ -25,9 +25,9 @@ positional arguments:
     install             Install the specified version (will download if not available on the device)
     download            Download the specified version firmware file
     backup              Download remote files to local directory
-    cat                 Cat the contents of a file inside a firmware image
+    cat                 Cat the contents of a file inside a firmwareimage
     ls                  List files inside a firmware image
-    extract             Extract the specified version firmware file
+    extract             Extract the specified version update file
     mount               Mount the specified version firmware filesystem
     upload              Upload folder/files to device (pdf only)
     status              Get the current version of the device and other information
@@ -50,7 +50,7 @@ codexctl install latest
 ```
 - Downloading rmpp version 3.15.4.2 to a folder named `out` and then installing it
 ```
-codexctl download 3.15.4.2 -hd rmpp -o out
+codexctl download 3.15.4.2 --hardware rmpp -o out
 codexctl install ./out/remarkable-ct-prototype-image-3.15.4.2-ferrari-public.swu
 ```
 - Backing up all documents to the cwd
