@@ -64,7 +64,9 @@ class Manager:
 
         ### Download functionalities
         if function == "list":
-            remarkable_pp_versions = "\n".join(self.updater.remarkablepp_versions.keys())
+            remarkable_pp_versions = "\n".join(
+                self.updater.remarkablepp_versions.keys()
+            )
             remarkable_2_versions = "\n".join(self.updater.remarkable2_versions.keys())
             remarkable_1_versions = "\n".join(self.updater.remarkable1_versions.keys())
 
@@ -174,7 +176,6 @@ class Manager:
                 authentication=args["password"],
             )
 
-
         ### Update & Version functionalities
         elif function in ("install", "status", "restore"):
             remote = False
@@ -229,13 +230,19 @@ class Manager:
                 # Do we have a specific update file to serve?
 
                 update_file = version if os.path.isfile(version) else None
-                
-                version_lookup = lambda version: re.search(r'\b\d+\.\d+\.\d+\.\d+\b', version)
-                
+
+                version_lookup = lambda version: re.search(
+                    r"\b\d+\.\d+\.\d+\.\d+\b", version
+                )
+
                 version_number = version_lookup(version)
 
                 if not version_number:
-                    version_number = version_lookup(input("Failed to get the version number from the filename, please enter it: "))
+                    version_number = version_lookup(
+                        input(
+                            "Failed to get the version number from the filename, please enter it: "
+                        )
+                    )
                     if not version_number:
                         raise SystemError("Invalid version!")
 
@@ -252,23 +259,30 @@ class Manager:
 
                 if device_version_uses_new_engine:
                     if not update_file_requires_new_engine:
-                        raise SystemError("Cannot downgrade to this version as it uses the old update engine, please manually downgrade.")
+                        raise SystemError(
+                            "Cannot downgrade to this version as it uses the old update engine, please manually downgrade."
+                        )
                         # TODO: Implement manual downgrading.
                         # `codexctl download --out . 3.11.2.5`
                         # `codexctl extract --out 3.11.2.5.img 3.11.2.5_reMarkable2-qLFGoqPtPL.signed`
                         # `codexctl transfer 3.11.2.5.img ~/root`
                         # `dd if=/home/root/3.11.2.5.img of=/dev/mmcblk2p2` (depending on fallback partition)
                         # `codexctl restore`
-                        
+
                 else:
                     if update_file_requires_new_engine:
-                        raise SystemError("This version requires the new update engine, please upgrade your device to version 3.11.2.5 first.")
+                        raise SystemError(
+                            "This version requires the new update engine, please upgrade your device to version 3.11.2.5 first."
+                        )
 
                 #############################################################
 
                 if not update_file_requires_new_engine:
-                    if update_file: # Check if file exists
-                        if not (os.path.dirname(os.path.abspath(update_file)) == os.path.abspath("updates")):
+                    if update_file:  # Check if file exists
+                        if not (
+                            os.path.dirname(os.path.abspath(update_file))
+                            == os.path.abspath("updates")
+                        ):
                             if not os.path.exists("updates"):
                                 os.mkdir("updates")
                             shutil.move(update_file, "updates")
@@ -360,7 +374,7 @@ def main() -> None:
     download.add_argument("version", help="Version to download")
     download.add_argument("--out", "-o", help="Folder to download to", default=None)
     download.add_argument(
-        "--hardware", "-hd", help="Hardware to download for", required=True
+        "--hardware", "--device", "-d", help="Hardware to download for", required=True
     )
 
     ### Backup subcommand
@@ -380,13 +394,13 @@ def main() -> None:
         default="./",
     )
     backup.add_argument(
-        "-nr",
+        "-R",
         "--no-recursion",
         help="Disables recursively backup remote directory",
         action="store_true",
     )
     backup.add_argument(
-        "-no-ow", "--no-overwrite", help="Disables overwrite", action="store_true"
+        "-O", "--no-overwrite", help="Disables overwrite", action="store_true"
     )
 
     ### Cat subcommand
