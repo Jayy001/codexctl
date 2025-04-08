@@ -57,6 +57,10 @@ codexctl install ./out/remarkable-ct-prototype-image-3.15.4.2-ferrari-public.swu
 ```
 codexctl backup 
 ```
+- Backing up modified/newer documents only, overwrites out-of-date files on disk
+```
+codexctl backup --incremental
+```
 - Backing up only documents in a folder named "FM" to cwd, without overwriting any current files
 ```
 codexctl backup -l root -r FM --no-recursion --no-overwrite
@@ -71,6 +75,3 @@ codexctl restore
 codexctl download 3.8.0.1944 --hardware rm2
 codexctl cat 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed /etc/version
 ```
-
-
-
