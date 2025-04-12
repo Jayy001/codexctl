@@ -1,8 +1,9 @@
-import requests
-import os
 import glob
-
 import logging
+import os
+import time
+
+import requests
 
 
 class RmWebInterfaceAPI:  # TODO: Add docstrings
@@ -154,8 +155,6 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
             return False
 
     def __is_newer(self, document, fileLocation):
-        import time
-
         remote_ts = document[self.MTIME_ATTRIBUTE]
 
         local_mtime = os.path.getmtime(fileLocation)
