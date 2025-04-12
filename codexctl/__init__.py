@@ -161,6 +161,7 @@ class Manager:
                     remoteFolder=args["remote"],
                     recursive=not args["no_recursion"],
                     overwrite=not args["no_overwrite"],
+                    incremental=args["incremental"],
                 )
             else:
                 rmWeb.upload(input_paths=args["paths"], remoteFolder=args["remote"])
@@ -387,6 +388,12 @@ def main() -> None:
     )
     backup.add_argument(
         "-no-ow", "--no-overwrite", help="Disables overwrite", action="store_true"
+    )
+    backup.add_argument(
+        "-i",
+        "--incremental",
+        help="Overwrite out-of-date files only",
+        action="store_true",
     )
 
     ### Cat subcommand
