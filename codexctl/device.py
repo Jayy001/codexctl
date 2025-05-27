@@ -389,6 +389,19 @@ echo "fallback: ${OLDPART}"
 /sbin/fw_setenv "fallback_partition" "${OLDPART}"
 /sbin/fw_setenv "active_partition" "${NEWPART}\""""
 
+        if self.hardware == "ferrari":
+            RESTORE_CODE = """#!/bin/bash
+OLDPART=$(< /sys/devices/platform/lpgpr/root_part)
+if [[ $OLDPART  ==  "a" ]]; then
+    NEWPART="b"
+else
+    NEWPART="a"
+fi
+echo "new: ${NEWPART}"
+echo "fallback: ${OLDPART}"
+echo $NEWPART > /sys/devices/platform/lpgpr/root_part
+"""
+
         if self.client:
             self.logger.debug("Connecting to FTP")
             ftp = self.client.open_sftp()
