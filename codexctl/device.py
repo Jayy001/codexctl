@@ -390,7 +390,7 @@ echo "fallback: ${OLDPART}"
 /sbin/fw_setenv "active_partition" "${NEWPART}\""""
 
         if self.hardware == "ferrari":
-            RESTORE_CODE = """#/bin/bash
+            RESTORE_CODE = """#!/bin/bash
 OLDPART=$(< /sys/devices/platform/lpgpr/root_part)
 if [[ $OLDPART  ==  "a" ]]; then
     NEWPART="b"
