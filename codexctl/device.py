@@ -49,7 +49,7 @@ class DeviceManager:
         else:
             try:
                 with open("/sys/devices/soc0/machine") as file:
-                    machine_contents = file.read().decode("utf-8").strip("\n")
+                    machine_contents = file.read().strip("\n")
             except FileNotFoundError:
                 machine_contents = "tests"
 
@@ -159,7 +159,7 @@ class DeviceManager:
 
         if remote_address is None:
             remote_address = self.get_remarkable_address()
-            self.address = remote_address # For future reference
+            self.address = remote_address  # For future reference
         else:
             if self.check_is_address_reachable(remote_address) is False:
                 raise SystemError(f"Error: Device {remote_address} is not reachable!")
@@ -389,28 +389,68 @@ echo "fallback: ${OLDPART}"
 /sbin/fw_setenv "fallback_partition" "${OLDPART}"
 /sbin/fw_setenv "active_partition" "${NEWPART}\""""
 
+        if self.hardware == "ferrari":
+            RESTORE_CODE = """#!/bin/bash
+OLDPART=$(< /sys/devices/platform/lpgpr/root_part)
+if [[ $OLDPART  ==  "a" ]]; then
+    NEWPART="b"
+else
+    NEWPART="a"
+fi
+echo "new: ${NEWPART}"
+echo "fallback: ${OLDPART}"
+echo $NEWPART > /sys/devices/platform/lpgpr/root_part
+"""
+
         if self.client:
             self.logger.debug("Connecting to FTP")
             ftp = self.client.open_sftp()
             self.logger.debug("Connected")
 
-            with ftp.file("/usr/bin/restore.sh", "w") as file:
+            with ftp.file("/tmp/restore.sh", "w") as file:
                 file.write(RESTORE_CODE)
 
             self.logger.debug("Setting permissions and running restore.sh")
 
-            self.client.exec_command("chmod +x /usr/bin/restore.sh")
-            self.client.exec_command("bash /usr/bin/restore.sh")
+            self.client.exec_command("chmod +x /tmp/restore.sh")
+            self.client.exec_command("bash /tmp/restore.sh")
         else:
-            with open("/usr/bin/restore.sh", "w") as file:
+            with open("/tmp/restore.sh", "w") as file:
                 file.write(RESTORE_CODE)
 
             self.logger.debug("Setting permissions and running restore.sh")
 
-            os.system("chmod +x /usr/bin/restore.sh")
-            os.system("/usr/bin/restore.sh")
+            os.system("chmod +x /tmp/restore.sh")
+            os.system("/tmp/restore.sh")
 
         self.logger.debug("Restore script ran")
+
+    def reboot_device(self) -> None:
+        REBOOT_CODE = """
+if systemctl is-active --quiet tarnish.service; then
+    rot system call reboot
+else
+    systemctl reboot
+fi
+"""
+        if self.client:
+            self.logger.debug("Connecting to FTP")
+            ftp = self.client.open_sftp()
+            self.logger.debug("Connected")
+            with ftp.file("/tmp/reboot.sh", "w") as file:
+                file.write(REBOOT_CODE)
+
+            self.logger.debug("Running reboot.sh")
+            self.client.exec_command("sh /tmp/reboot.sh")
+
+        else:
+            with open("/tmp/reboot.sh", "w") as file:
+                file.write(REBOOT_CODE)
+
+            self.logger.debug("Running reboot.sh")
+            os.system("sh /tmp/reboot.sh")
+
+        self.logger.debug("Device rebooted")
 
     def install_sw_update(self, version_file: str) -> None:
         """
@@ -430,7 +470,7 @@ echo "fallback: ${OLDPART}"
 
             print(f"Uploading {version_file} image")
 
-            out_location = f'/tmp/{os.path.basename(version_file)}.swu'
+            out_location = f"/tmp/{os.path.basename(version_file)}.swu"
             ftp_client.put(
                 version_file, out_location, callback=self.output_put_progress
             )
@@ -510,7 +550,7 @@ echo "fallback: ${OLDPART}"
                             raise SystemError("Update failed")
 
                     self.logger.debug(
-                        f'Stdout of update checking service is {"".join(process.stdout.readlines())}'
+                        f"Stdout of update checking service is {''.join(process.stdout.readlines())}"
                     )
 
             print("Update complete and device rebooting")
@@ -572,7 +612,7 @@ echo "fallback: ${OLDPART}"
                 raise SystemError("There was an error updating :(")
 
             self.logger.debug(
-                f'Stdout of update checking service is {"".join(_stderr.readlines())}'
+                f"Stdout of update checking service is {''.join(_stderr.readlines())}"
             )
 
             #### Now disable automatic updates
@@ -623,7 +663,7 @@ echo "fallback: ${OLDPART}"
                     raise SystemError("There was an error updating :(")
 
                 self.logger.debug(
-                    f'Stdout of update checking service is {"".join(process.stderr.readlines())}'
+                    f"Stdout of update checking service is {''.join(process.stderr.readlines())}"
                 )
 
             print("Update complete and device rebooting")
@@ -634,6 +674,6 @@ echo "fallback: ${OLDPART}"
         """Used for displaying progress for paramiko ftp.put function"""
 
         print(
-            f"Transferring progress{int((transferred/toBeTransferred)*100)}%",
+            f"Transferring progress{int((transferred / toBeTransferred) * 100)}%",
             end="\r",
         )
