@@ -10,6 +10,7 @@ import shutil
 import json
 import re
 
+from typing import cast
 from os import listdir
 
 try:
@@ -49,12 +50,12 @@ class Manager:
             args: What arguments to pass into the function
         """
 
-        if "remarkable" not in self.device:
+        if "reMarkable" not in self.device:
             remarkable_version = args.get("hardware")
         else:
             remarkable_version = self.device
 
-        version = args.get("version", None)
+        version = cast(str | None, args.get("version", None))
 
         if remarkable_version:
             if version == "latest":
@@ -64,7 +65,9 @@ class Manager:
 
         ### Download functionalities
         if function == "list":
-            remarkable_pp_versions = "\n".join(self.updater.remarkablepp_versions.keys())
+            remarkable_pp_versions = "\n".join(
+                self.updater.remarkablepp_versions.keys()
+            )
             remarkable_2_versions = "\n".join(self.updater.remarkable2_versions.keys())
             remarkable_1_versions = "\n".join(self.updater.remarkable1_versions.keys())
 
@@ -161,15 +164,25 @@ class Manager:
                     remoteFolder=args["remote"],
                     recursive=not args["no_recursion"],
                     overwrite=not args["no_overwrite"],
+                    incremental=args["incremental"],
                 )
             else:
                 rmWeb.upload(input_paths=args["paths"], remoteFolder=args["remote"])
 
-        ### Update, Transfer & Version functionalities
-        elif function in ("install", "status", "restore", "transfer"):
+        ### Transfer & Download functionalities
+        elif function in ("transfer", "download"):
+            remarkable = DeviceManager(
+                remote=remote,
+                address=args["address"],
+                logger=self.logger,
+                authentication=args["password"],
+            )
+
+        ### Update & Version functionalities
+        elif function in ("install", "status", "restore"):
             remote = False
 
-            if "remarkable" not in self.device:
+            if "reMarkable" not in self.device:
                 if importlib.util.find_spec("paramiko") is None:
                     raise ImportError(
                         "Paramiko is required for SSH access. Please install it."
@@ -228,48 +241,48 @@ class Manager:
 
                 update_file = version if os.path.isfile(version) else None
                 manual_dd_update = False
-                
-                version_lookup = lambda version: re.search(r'\b\d+\.\d+\.\d+\.\d+\b', version)
+
+                def version_lookup(version: str | None) -> re.Match[str] | None:
+                    return re.search(r"\b\d+\.\d+\.\d+\.\d+\b", cast(str, version))
+                  
                 version_number = version_lookup(version)
 
                 if not version_number:
-                    version_number = input("Failed to get the version number from the filename, please enter it: ") 
-                    if not version_lookup(version_number):
+                    version_number = version_lookup(
+                        input(
+                            "Failed to get the version number from the filename, please enter it: "
+                        )
+                    )
+                    if not version_number:
                         raise SystemError("Invalid version!")
 
                 version_number = version_number.group()
 
-                #update_file_requires_new_engine = UpdateManager.uses_new_update_engine(
-                #    version_number
-                #)
-                #device_version_uses_new_engine = UpdateManager.uses_new_update_engine(
-                #    remarkable.get_device_status()[2]
-                #)
-                device_version_uses_new_engine = True
-                update_file_requires_new_engine = False
+                update_file_requires_new_engine = UpdateManager.uses_new_update_engine(
+                    version_number
+                )
+                device_version_uses_new_engine = UpdateManager.uses_new_update_engine(
+                    remarkable.get_device_status()[2]
+                )
 
                 #### PREVENT USERS FROM INSTALLING NON-COMPATIBLE IMAGES ####
 
                 if device_version_uses_new_engine:
                     if not update_file_requires_new_engine:
-                        #raise SystemError("Cannot downgrade to this version as it uses the old update engine, please manually downgrade.")
                         manual_dd_update = True
-                        # TODO: Implement manual downgrading.
                         # `codexctl download --out . 3.11.2.5`
                         # `codexctl extract --out 3.11.2.5.img 3.11.2.5_reMarkable2-qLFGoqPtPL.signed`
                         # `codexctl transfer 3.11.2.5.img ~/root`
                         # `dd if=/home/root/3.11.2.5.img of=/dev/mmcblk2p2` (depending on fallback partition)
                         # `codexctl restore`
-                        
-                else:
-                    if update_file_requires_new_engine:
-                        raise SystemError("This version requires the new update engine, please upgrade your device to version 3.11.2.5 first.")
 
                 #############################################################
 
                 if not update_file_requires_new_engine:
-                    if update_file: # Check if file exists
-                        if not (os.path.dirname(os.path.abspath(update_file)) == os.path.abspath("updates")):
+                    if update_file:  # Check if file exists
+                        if os.path.dirname(
+                            os.path.abspath(update_file)
+                        ) != os.path.abspath("updates"):
                             if not os.path.exists("updates"):
                                 os.mkdir("updates")
                             shutil.move(update_file, "updates")
@@ -353,6 +366,7 @@ def main() -> None:
         required=False,
         help="Enable verbose logging",
         action="store_true",
+        dest="verbose",
     )
     parser.add_argument(
         "--address",
@@ -360,12 +374,14 @@ def main() -> None:
         required=False,
         help="Specify the address of the device",
         default=None,
+        dest="address",
     )
     parser.add_argument(
         "--password",
         "-p",
         required=False,
         help="Specify password or path to SSH key for remote access",
+        dest="password",
     )
     parser.add_argument(
         "--port",
@@ -399,7 +415,12 @@ def main() -> None:
     download.add_argument("version", help="Version to download")
     download.add_argument("--out", "-o", help="Folder to download to", default=None)
     download.add_argument(
-        "--hardware", "-d", help="Hardware to download for", required=True
+        "--hardware",
+        "--device",
+        "-d",
+        help="Hardware to download for",
+        required=True,
+        dest="hardware"
     )
 
     ### Backup subcommand
@@ -411,21 +432,34 @@ def main() -> None:
         "--remote",
         help="Remote directory to backup. Defaults to download folder",
         default="",
+        dest="remote",
     )
     backup.add_argument(
         "-l",
         "--local",
         help="Local directory to backup to. Defaults to download folder",
         default="./",
+        dest="local",
     )
     backup.add_argument(
-        "-nr",
+        "-R",
         "--no-recursion",
         help="Disables recursively backup remote directory",
         action="store_true",
+        dest="no_recursion",
     )
     backup.add_argument(
-        "-no-ow", "--no-overwrite", help="Disables overwrite", action="store_true"
+        "-O",
+        "--no-overwrite",
+        help="Disables overwrite",
+        action="store_true",
+        dest="no_overwrite",
+    )
+    backup.add_argument(
+        "-i",
+        "--incremental",
+        help="Overwrite out-of-date files only",
+        action="store_true",
     )
 
     ### Cat subcommand
@@ -445,7 +479,7 @@ def main() -> None:
         "extract", help="Extract the specified version update file"
     )
     extract.add_argument("file", help="Path to update file to extract", default=None)
-    extract.add_argument("--out", help="Folder to extract to", default=None)
+    extract.add_argument("--out", help="Folder to extract to", default=None, dest="out")
 
     ### Mount subcommand
     mount = subparsers.add_parser(
@@ -470,6 +504,7 @@ def main() -> None:
         "--remote",
         help="Remote directory to upload to. Defaults to root folder",
         default="",
+        dest="remote",
     )
 
     ### Status subcommand

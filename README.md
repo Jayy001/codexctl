@@ -3,11 +3,11 @@
 # Codexctl
 A utility program that helps to manage the remarkable device version utilizing [ddvks update server](https://github.com/ddvk/remarkable-update) 
 
-## Caveat for downgrading to a version below 3.11 
+## Caveat for downgrading from 3.11.2.5 or greater to a version less than 3.11.2.5
 
-If your reMarkable device is above 3.11 and you want to downgrade to a version below 3.11, codexctl cannot do this currently. Please refer to #71 for manual instructions.
+If your reMarkable device is at or above 3.11.2.5 and you want to downgrade to a version below 3.11.2.5, codexctl cannot do this currently. Please refer to https://github.com/Jayy001/codexctl/issues/95#issuecomment-2305529048 for manual instructions.
 
-## Installation 
+## Installation
 
 You can find pre-compiled binaries on the [releases](https://github.com/Jayy001/codexctl/releases/) page. This includes a build for the reMarkable itself, as well as well as builds for linux, macOS, and Windows. Alternatively, you can install directly from pypi with `pip install codexctl`. Codexctl currently only has support for a **command line interfaces** but a graphical interface is soon to come.
 
@@ -25,9 +25,9 @@ positional arguments:
     install             Install the specified version (will download if not available on the device)
     download            Download the specified version firmware file
     backup              Download remote files to local directory
-    cat                 Cat the contents of a file inside a firmware image
+    cat                 Cat the contents of a file inside a firmwareimage
     ls                  List files inside a firmware image
-    extract             Extract the specified version firmware file
+    extract             Extract the specified version update file
     mount               Mount the specified version firmware filesystem
     upload              Upload folder/files to device (pdf only)
     status              Get the current version of the device and other information
@@ -50,12 +50,16 @@ codexctl install latest
 ```
 - Downloading rmpp version 3.15.4.2 to a folder named `out` and then installing it
 ```
-codexctl download 3.15.4.2 -d rmpp -o out
+codexctl download 3.15.4.2 --hardware rmpp -o out
 codexctl install ./out/remarkable-ct-prototype-image-3.15.4.2-ferrari-public.swu
 ```
 - Backing up all documents to the cwd
 ```
 codexctl backup 
+```
+- Backing up modified/newer documents only, overwrites out-of-date files on disk
+```
+codexctl backup --incremental
 ```
 - Backing up only documents in a folder named "FM" to cwd, without overwriting any current files
 ```
@@ -71,6 +75,3 @@ codexctl restore
 codexctl download 3.8.0.1944 --hardware rm2
 codexctl cat 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed /etc/version
 ```
-
-
-

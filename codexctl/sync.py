@@ -1,8 +1,9 @@
-import requests
-import os
 import glob
-
 import logging
+import os
+import time
+
+import requests
 
 
 class RmWebInterfaceAPI:  # TODO: Add docstrings
@@ -13,8 +14,9 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
             self.logger = logging
 
         self.BASE = BASE
-        self.NAME_ATTRIBUTE = "VissibleName"
         self.ID_ATTRIBUTE = "ID"
+        self.NAME_ATTRIBUTE = "VissibleName"
+        self.MTIME_ATTRIBUTE = "ModifiedClient"
 
         self.logger.debug(f"Base is: {BASE}")
 
@@ -112,7 +114,7 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
 
         return [item for item in data if "fileType" in item]
 
-    def download(self, document, location="", overwrite=False):
+    def download(self, document, location="", overwrite=False, incremental=False):
         filename = document[self.NAME_ATTRIBUTE]
         if "/" in filename:
             filename = filename.replace("/", "_")
@@ -125,9 +127,14 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
 
         try:
             fileLocation = f"{location}/{filename}.pdf"
+            isFile = os.path.isfile(fileLocation)
 
-            if os.path.isfile(fileLocation) and overwrite is False:
+            if isFile and not overwrite:
                 self.logger.debug("Not overwriting file")
+                return True
+
+            if isFile and incremental and not self.__is_newer(document, fileLocation):
+                self.logger.debug("Local file already exists and is newer, skipping")
                 return True
 
             binaryData = self.__POST(
@@ -146,6 +153,14 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
         except Exception as error:
             print(f"Error trying to download {filename}: {error}")
             return False
+
+    def __is_newer(self, document, fileLocation):
+        remote_ts = document[self.MTIME_ATTRIBUTE]
+
+        local_mtime = os.path.getmtime(fileLocation)
+        local_ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(local_mtime))
+
+        return remote_ts > local_ts
 
     def upload(self, input_paths, remoteFolder):
         folderId = ""
@@ -196,7 +211,14 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
 
         print(f"Done! {len(documents)-len(errors)} files were uploaded.")
 
-    def sync(self, localFolder, remoteFolder="", overwrite=False, recursive=True):
+    def sync(
+        self,
+        localFolder,
+        remoteFolder="",
+        overwrite=False,
+        incremental=False,
+        recursive=True,
+    ):
         count = 0
 
         if not os.path.exists(localFolder):
@@ -213,6 +235,9 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
                 self.logger.debug(f"Processing {doc}")
                 count += 1
                 self.download(
-                    doc, f"{localFolder}/{doc['location']}", overwrite=overwrite
+                    document=doc,
+                    location=f"{localFolder}/{doc['location']}",
+                    overwrite=overwrite,
+                    incremental=incremental,
                 )
             print(f"Done! {count} files were exported.")
