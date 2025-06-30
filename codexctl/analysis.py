@@ -1,12 +1,10 @@
 import ext4
-import warnings 
-import errno
 
 from remarkable_update_image import UpdateImage
 from remarkable_update_image import UpdateImageSignatureException
 
 
-def get_update_image(file: str):
+def get_update_image(file: str, logger):
     """Extracts files from an update image (<3.11 currently)"""
 
     image = UpdateImage(file)
@@ -20,14 +18,14 @@ def get_update_image(file: str):
         image.verify(inode.open().read())
 
     except UpdateImageSignatureException:
-        warnings.warn("Signature doesn't match contents", RuntimeWarning)
+        logger.warning("Signature doesn't match contents", RuntimeWarning)
 
     except FileNotFoundError:
-        warnings.warn("Public key missing", RuntimeWarning)
+        logger.warning("Public key missing", RuntimeWarning)
 
     except OSError as e:
         if e.errno != errno.ENOTDIR:
             raise
-        warnings.warn("Unable to open public key", RuntimeWarning)
+        logger.warning("Unable to open public key", RuntimeWarning)
 
     return image, volume
