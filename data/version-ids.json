@@ -1,5 +1,33 @@
 {
     "remarkable1": {
+        "3.20.0.92": [
+            "remarkable-production-image-3.20.0.92-rm1-public.swu",
+            "a7558d9ef4b2bcc41d9a9219822a1e7e34bff46851658dcfd9666856401e9728"
+        ],
+        "3.19.0.82": [
+            "remarkable-production-image-3.19.0.82-rm1-public.swu",
+            "210a1ba88135fb1027e9267cb357909380ce00672f646cc3f2005118e31612fd"
+        ],
+        "3.18.1.1": [
+            "remarkable-production-image-3.18.1.1-rm1-public.swu",
+            "2290a526eb9599e3f65a6b538080eb870a4e5440627c1044a82ef17a981b4e4a"
+        ],
+        "3.17.0.72": [
+            "remarkable-production-memfault-image-3.17.0.72-rm1-public.swu",
+            "05d4b64e3919be29c531790dc38db4ea1236ae6557bcc6444f7316388224c2bc"
+        ],
+        "3.16.2.3": [
+            "remarkable-production-memfault-image-3.16.2.3-rm1-public.swu",
+            "f43f6b5a55c828dd0912cd4fe6e9e46e03ce841a04e292abeaa15eb60c884fd1"
+        ],
+        "3.16.1.0": [
+            "remarkable-production-memfault-image-3.16.1.0-rm1-public.swu",
+            "89350eecdc8185d0814cdd13ae2330fc7f91069b2bbd6268a48f31cdc9e94861"
+        ],
+        "3.15.4.2": [
+            "remarkable-production-memfault-image-3.15.4.2-rm1-public.swu",
+            "6e8e581cc12de4bf2f46bfebd785aaea2f9a88ebf770d191dbad49a341c270bd"
+        ],
         "3.15.3.1": [
             "remarkable-production-memfault-image-3.15.3.1-rm1-public.swu",
             "03a6ff64df69da292ebf82286e361b95d3ddeb1958618fe1c9e302bc6403c7f4"
@@ -154,6 +182,38 @@
         ]
     },
     "remarkable2": {
+        "3.17.0.72": [
+            "remarkable-production-memfault-image-3.17.0.72-rm2-public.swu",
+            "508f63bcae0b43e812d7afb4fbea42d11947e57abd63bc2538adb2884cbfba78"
+        ],
+        "3.20.0.92": [
+            "remarkable-production-image-3.20.0.92-rm2-public.swu",
+            "18adc25ff3f63176d7e0066cbbc76fbb4d3f89df11d4507d695bea1ce8d3268b"
+        ],
+        "3.19.0.82": [
+            "remarkable-production-image-3.19.0.82-rm2-public.swu",
+            "0e8700b3cc99edf37af7c7311792d6fa1f9f43823b7183ee2036f49b896d0158"
+        ],
+        "3.18.2.3": [
+            "remarkable-production-image-3.18.2.3-rm2-public.swu",
+            "a2eafb2f9736c6f0ed43608880de293b8b9ecca2317a534bd8dd3e58ad87d39d"
+        ],
+        "3.18.1.1": [
+            "remarkable-production-image-3.18.1.1-rm2-public.swu",
+            "5cbc3e09e9663ce4611aeec12207d7f69a3d13ebe572949c382c9796580c67b1"
+        ],
+        "3.16.2.3": [
+            "remarkable-production-memfault-image-3.16.2.3-rm2-public.swu",
+            "2a92f37c8b5ac66afb6d0702fa76b5ff7d34a4b852bcb4d2a5085b2a6b4053fd"
+        ],
+        "3.16.1.0": [
+            "remarkable-production-memfault-image-3.16.1.0-rm2-public.swu",
+            "a5bee59c3eeedbfbb79ba4c485b335bf310e75f64a86002015fb4c5859207bca"
+        ],
+        "3.15.4.2": [
+            "remarkable-production-memfault-image-3.15.4.2-rm2-public.swu",
+            "c2e1107508114f9289ccbed86a3ece475ddfb54a825780a2548e3237cf3976a2"
+        ],
         "3.14.1.9": [
             "remarkable-production-memfault-image-3.14.1.9-rm2-public.swu",
             "f3394019dbfec3628eec1aee4502d00bd8af1921ed2bcd9edfa01221e445df32"
@@ -316,6 +376,30 @@
         ]
     },
     "remarkablepp": {
+        "3.20.0.92": [
+            "remarkable-production-image-3.20.0.92-ferrari-public.swu",
+            "a63c1573aa26ed3e1f7e5dded3eb4adc09710515b2d2b1964ff397c94243ba89"
+        ],
+        "3.19.0.82": [
+            "remarkable-production-image-3.19.0.82-ferrari-public.swu",
+            "484af7a81c4a4a37f57fda4936c4aa1cc1b5e3d6ffd1c22c756f832b95e41de6"
+        ],
+        "3.18.2.3": [
+            "remarkable-production-image-3.18.2.3-ferrari-public.swu",
+            "ab770acb4f16a606b69e3057b96e226d10d402abe41f423d8ff5dcbb6e73601c"
+        ],
+        "3.18.1.1": [
+            "remarkable-production-image-3.18.1.1-ferrari-public.swu",
+            "8ab001cecf0ad7d1ec3c7c595fcdaa1709a062accece0943f23ddfd8e4565d41"
+        ],
+        "3.17.0.72": [
+            "remarkable-production-image-3.17.0.72-ferrari-public.swu",
+            "398f0490d41d08603b4984f66a73c4e2b1ab8d6a8148af833279e6af9989d6d3"
+        ],
+        "3.16.2.3": [
+            "remarkable-ct-prototype-image-3.16.2.3-ferrari-public.swu",
+            "b76579c03fc2e91ecdc30a175b9eb50d403a4bfbc9657cdcefe8aa2c3c9a3b9a"
+        ],
         "3.16.1.0": [
             "remarkable-ct-prototype-image-3.16.1.0-ferrari-public.swu",
             "730c76a9cbf16415f4c00a6b60a96cf0ffa0b61c092504dc79520efaa74f9bfc"
@@ -337,6 +421,6 @@
             "8c92f589900e7e355697206c71e2256d909313fcd96aa2c5fd9910ff04b062f1"
         ]
     },
-    "last-updated": 1733663974,
+    "last-updated": 1751286637,
     "external-provider-url": "https://storage.googleapis.com/remarkable-versions/REPLACE_ID"
 }
