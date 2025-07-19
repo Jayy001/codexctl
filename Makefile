@@ -98,7 +98,8 @@ executable: $(VENV_BIN_ACTIVATE)
 	. $(VENV_BIN_ACTIVATE); \
 	python -m pip install \
 		--extra-index-url=https://wheels.eeems.codes/ \
-	    nuitka==2.4.8
+	    nuitka==2.7.12 \
+	    setuptools
 	@echo "[info] Building codexctl"
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
