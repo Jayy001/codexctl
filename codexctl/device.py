@@ -6,6 +6,8 @@ import re
 import os
 import time
 
+from typing import cast
+
 from .server import startUpdate
 
 try:
@@ -17,7 +19,11 @@ except ImportError:
 
 class DeviceManager:
     def __init__(
-        self, logger=None, remote=False, address=None, authentication=None
+        self,
+        logger: logging.Logger | None = None,
+        remote: bool = False,
+        address: str | None = None,
+        authentication: str | None = None,
     ) -> None:
         """Initializes the DeviceManager for codexctl
 
@@ -27,13 +33,10 @@ class DeviceManager:
             logger (logger, optional): Logger object for logging. Defaults to None.
             Authentication (str, optional): Authentication method. Defaults to None.
         """
-        self.logger = logger
-        self.address = address
-        self.authentication = authentication
-        self.client = None
-
-        if self.logger is None:
-            self.logger = logging
+        self.logger: logging.Logger = logger or cast(logging.Logger, logging)  # pyright:ignore [reportInvalidCast]
+        self.address: str | None = address
+        self.authentication: str | None = authentication
+        self.client: paramiko.client.SSHClient | None = None
 
         if remote:
             self.client = self.connect_to_device(
@@ -54,20 +57,19 @@ class DeviceManager:
                 machine_contents = "tests"
 
         if "reMarkable Ferrari" in machine_contents:
-            self.hardware = "ferrari"
+            self.hardware: str = "ferrari"
         elif "reMarkable 1" in machine_contents:
             self.hardware = "reMarkable1"
         else:
             self.hardware = "reMarkable2"
 
-    def get_host_address(self) -> list[str] | list | None:  # Interaction required
+    def get_host_address(self) -> str:  # Interaction required
         """Gets the IP address of the host machine
 
         Returns:
             str | None: IP address of the host machine, or None if not found
         """
-
-        possible_ips = []
+        possible_ips: list[str] = []
         try:
             for interface, snics in psutil.net_if_addrs().items():
                 self.logger.debug(f"New interface found: {interface}")
@@ -121,7 +123,7 @@ class DeviceManager:
 
             print(f"Error: Device {remote_ip} is not reachable. Please try again.")
 
-    def check_is_address_reachable(self, remote_ip="10.11.99.1") -> bool:
+    def check_is_address_reachable(self, remote_ip: str | None = "10.11.99.1") -> bool:
         """Checks if the given IP address is reachable over SSH
 
         Args:
@@ -145,7 +147,7 @@ class DeviceManager:
             return False
 
     def connect_to_device(
-        self, remote_address=None, authentication=None
+        self, remote_address: str | None = None, authentication: str | None = None
     ) -> paramiko.client.SSHClient:
         """Connects to the device using the given IP address
 
@@ -156,7 +158,6 @@ class DeviceManager:
         Returns:
             paramiko.client.SSHClient: SSH client object for the device.
         """
-
         if remote_address is None:
             remote_address = self.get_remarkable_address()
             self.address = remote_address  # For future reference
@@ -225,7 +226,7 @@ class DeviceManager:
 
         return client
 
-    def get_device_status(self) -> tuple[str | None, str, str]:
+    def get_device_status(self) -> tuple[str, bool, str, str | None]:
         """Gets the status of the device
 
         Returns:
@@ -233,6 +234,7 @@ class DeviceManager:
         """
         old_update_engine = True
 
+        version_id: str | None = None
         if self.client:
             self.logger.debug("Connecting to FTP")
             ftp = self.client.open_sftp()
@@ -254,10 +256,10 @@ class DeviceManager:
                     old_update_engine = False
 
             with ftp.file("/etc/version") as file:
-                version_id = file.read().decode("utf-8").strip("\n")
+                version_id = cast(str, file.read().decode("utf-8").strip("\n"))
 
             with ftp.file("/home/root/.config/remarkable/xochitl.conf") as file:
-                beta_contents = file.read().decode("utf-8")
+                beta_contents = cast(str, file.read().decode("utf-8"))
 
         else:
             if os.path.exists("/usr/share/remarkable/update.conf"):
@@ -327,12 +329,12 @@ class DeviceManager:
 
         return converted
 
-    def edit_update_conf(self, server_ip: str, server_port: str) -> bool:
+    def edit_update_conf(self, server_ip: str, server_port: int) -> bool:
         """Edits the update.conf file to point to the given server IP and port
 
         Args:
             server_ip (str): IP of update server
-            server_port (str): Port of update service
+            server_port (int): Port of update service
 
         Returns:
             bool: True if successful, False otherwise
@@ -350,7 +352,7 @@ class DeviceManager:
                     )
 
                 with open("/usr/share/remarkable/update.conf", "w") as file:
-                    file.write(modified_conf_version)
+                    _ = file.write(modified_conf_version)
 
                 return True
 
@@ -374,7 +376,20 @@ class DeviceManager:
     def restore_previous_version(self) -> None:
         """Restores the previous version of the device"""
 
-        RESTORE_CODE = """/sbin/fw_setenv "upgrade_available" "1"
+        RESTORE_CODE = (
+            """#!/bin/bash
+OLDPART=$(< /sys/devices/platform/lpgpr/root_part)
+if [[ $OLDPART  ==  "a" ]]; then
+    NEWPART="b"
+else
+    NEWPART="a"
+fi
+echo "new: ${NEWPART}"
+echo "fallback: ${OLDPART}"
+echo $NEWPART > /sys/devices/platform/lpgpr/root_part
+"""
+            if self.hardware == "ferrari"
+            else """/sbin/fw_setenv "upgrade_available" "1"
 /sbin/fw_setenv "bootcount" "0"
 
 OLDPART=$(/sbin/fw_printenv -n active_partition)
@@ -388,19 +403,7 @@ echo "fallback: ${OLDPART}"
 
 /sbin/fw_setenv "fallback_partition" "${OLDPART}"
 /sbin/fw_setenv "active_partition" "${NEWPART}\""""
-
-        if self.hardware == "ferrari":
-            RESTORE_CODE = """#!/bin/bash
-OLDPART=$(< /sys/devices/platform/lpgpr/root_part)
-if [[ $OLDPART  ==  "a" ]]; then
-    NEWPART="b"
-else
-    NEWPART="a"
-fi
-echo "new: ${NEWPART}"
-echo "fallback: ${OLDPART}"
-echo $NEWPART > /sys/devices/platform/lpgpr/root_part
-"""
+        )
 
         if self.client:
             self.logger.debug("Connecting to FTP")
@@ -416,12 +419,12 @@ echo $NEWPART > /sys/devices/platform/lpgpr/root_part
             self.client.exec_command("bash /tmp/restore.sh")
         else:
             with open("/tmp/restore.sh", "w") as file:
-                file.write(RESTORE_CODE)
+                _ = file.write(RESTORE_CODE)
 
             self.logger.debug("Setting permissions and running restore.sh")
 
-            os.system("chmod +x /tmp/restore.sh")
-            os.system("/tmp/restore.sh")
+            _ = os.system("chmod +x /tmp/restore.sh")
+            _ = os.system("/tmp/restore.sh")
 
         self.logger.debug("Restore script ran")
 
@@ -445,10 +448,10 @@ fi
 
         else:
             with open("/tmp/reboot.sh", "w") as file:
-                file.write(REBOOT_CODE)
+                _ = file.write(REBOOT_CODE)
 
             self.logger.debug("Running reboot.sh")
-            os.system("sh /tmp/reboot.sh")
+            _ = os.system("sh /tmp/reboot.sh")
 
         self.logger.debug("Device rebooted")
 
@@ -554,9 +557,11 @@ fi
                     )
 
             print("Update complete and device rebooting")
-            os.system("reboot")
+            _ = os.system("reboot")
 
-    def install_ohma_update(self, version_available: dict) -> None:
+    def install_ohma_update(
+        self, version_available: dict[str, tuple[str, str]]
+    ) -> None:
         """Installs version from update folder on the device
 
         Args:
@@ -643,7 +648,7 @@ fi
         else:
             print("Enabling update service")
 
-            subprocess.run(
+            _ = subprocess.run(
                 ["/bin/systemctl", "start", "update-engine"],
                 text=True,
                 check=True,
@@ -667,7 +672,7 @@ fi
                 )
 
             print("Update complete and device rebooting")
-            os.system("reboot")
+            _ = os.system("reboot")
 
     @staticmethod
     def output_put_progress(transferred: int, toBeTransferred: int) -> None:
