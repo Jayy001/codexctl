@@ -5,22 +5,31 @@ import time
 
 import requests
 
+from typing import IO, Any, cast
+
 
 class RmWebInterfaceAPI:  # TODO: Add docstrings
-    def __init__(self, BASE="http://10.11.99.1/", logger=None):
-        self.logger = logger
+    def __init__(
+        self, BASE: str = "http://10.11.99.1/", logger: logging.Logger | None = None
+    ):
+        self.logger: logging.Logger = logger or cast(logging.Logger, logging)  # pyright:ignore [reportInvalidCast]
 
-        if self.logger is None:
-            self.logger = logging
-
-        self.BASE = BASE
-        self.ID_ATTRIBUTE = "ID"
-        self.NAME_ATTRIBUTE = "VissibleName"
-        self.MTIME_ATTRIBUTE = "ModifiedClient"
+        self.BASE: str = BASE
+        self.ID_ATTRIBUTE: str = "ID"
+        self.NAME_ATTRIBUTE: str = "VissibleName"
+        self.MTIME_ATTRIBUTE: str = "ModifiedClient"
 
         self.logger.debug(f"Base is: {BASE}")
 
-    def __POST(self, endpoint, data={}, fileUpload=False):
+    def __POST(
+        self,
+        endpoint: str,
+        data: dict[str, str | IO[bytes]] | None = None,
+        fileUpload: bool = False,
+    ) -> bytes | Any:
+        if data is None:
+            data = {}
+
         try:
             logging.debug(
                 f"Sending POST request to {self.BASE + endpoint} with data {data}"
@@ -43,11 +52,16 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
             return None
 
     def __get_documents_recursive(
-        self, folderId="", currentLocation="", currentDocuments=[]
+        self,
+        folderId: str = "",
+        currentLocation: str = "",
+        currentDocuments: list[dict[str, Any]] = [],
     ):
         data = self.__POST(f"documents/{folderId}")
+        if not isinstance(data, list):
+            raise Exception("Unexpected result from server")
 
-        for item in data:
+        for item in cast(list[dict[str, Any]], data):
             self.logger.debug(f"Checking item: {item}")
 
             if "fileType" in item:
@@ -57,49 +71,51 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
                 self.logger.debug(
                     f"Getting documents over {item[self.ID_ATTRIBUTE]}, current location is {currentLocation}/{item[self.NAME_ATTRIBUTE]}"
                 )
-                self.__get_documents_recursive(
-                    item[self.ID_ATTRIBUTE],
+                _ = self.__get_documents_recursive(
+                    cast(str, item[self.ID_ATTRIBUTE]),
                     f"{currentLocation}/{item[self.NAME_ATTRIBUTE]}",
                     currentDocuments,
                 )
 
         return currentDocuments
 
-    def __get_folder_id(self, folderName, _from=""):
+    def __get_folder_id(self, folderName: str, _from: str = "") -> str | None:
         results = self.__POST(f"documents/{_from}")
 
         if results is None:
             return None
 
+        if not isinstance(results, list):
+            raise Exception("Unexpected result from server")
+
         results.reverse()  # We only want folders
 
-        for data in results:
+        for data in cast(list[dict[str, Any]], results):
             self.logger.debug(f"Folder: {data}")
 
             if "fileType" in data:
                 return None
 
-            if data[self.NAME_ATTRIBUTE].strip() == folderName.strip():
-                return data[self.ID_ATTRIBUTE]
+            identifier = cast(str, data[self.ID_ATTRIBUTE])
+            if cast(str, data[self.NAME_ATTRIBUTE]).strip() == folderName.strip():
+                return identifier
 
-            self.logger.debug(
-                f"Getting folders over {folderName}, {data[self.ID_ATTRIBUTE]}"
-            )
+            self.logger.debug(f"Getting folders over {folderName}, {identifier}")
 
-            recursiveResults = self.__get_folder_id(folderName, data[self.ID_ATTRIBUTE])
-            if recursiveResults is None:
-                continue
-            else:
+            recursiveResults = self.__get_folder_id(folderName, identifier)
+            if recursiveResults is not None:
                 return recursiveResults
 
-    def __get_docs(self, folderName="", recursive=True):
+    def __get_docs(
+        self, folderName: str = "", recursive: bool = True
+    ) -> list[dict[str, Any]]:
         folderId = ""
 
         if folderName:
             folderId = self.__get_folder_id(folderName)
 
             if folderId is None:
-                return {}
+                return []
 
         if recursive:
             self.logger.debug(f"Calling recursive function on {folderName}")
@@ -109,13 +125,23 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
 
         data = self.__POST(f"documents/{folderId}")
 
+        if not isinstance(data, list):
+            raise Exception("Unexpected result from server")
+
+        data = cast(list[dict[str, Any]], data)
         for item in data:
             item["location"] = ""
 
         return [item for item in data if "fileType" in item]
 
-    def download(self, document, location="", overwrite=False, incremental=False):
-        filename = document[self.NAME_ATTRIBUTE]
+    def download(
+        self,
+        document: dict[str, Any],
+        location: str = "",
+        overwrite: bool = False,
+        incremental: bool = False,
+    ):
+        filename = cast(str, document[self.NAME_ATTRIBUTE])
         if "/" in filename:
             filename = filename.replace("/", "_")
 
@@ -146,7 +172,7 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
                 return False
 
             with open(fileLocation, "wb") as outFile:
-                outFile.write(binaryData)
+                _ = outFile.write(binaryData)
 
             return True
 
@@ -154,15 +180,15 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
             print(f"Error trying to download {filename}: {error}")
             return False
 
-    def __is_newer(self, document, fileLocation):
-        remote_ts = document[self.MTIME_ATTRIBUTE]
+    def __is_newer(self, document: dict[str, Any], fileLocation: str):
+        remote_ts = cast(str, document[self.MTIME_ATTRIBUTE])
 
         local_mtime = os.path.getmtime(fileLocation)
         local_ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(local_mtime))
 
         return remote_ts > local_ts
 
-    def upload(self, input_paths, remoteFolder):
+    def upload(self, input_paths: list[str], remoteFolder: str):
         folderId = ""
         if remoteFolder:
             folderId = self.__get_folder_id(remoteFolder)
@@ -170,9 +196,10 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
             if folderId is None:
                 raise SystemError(f"Error: Folder {remoteFolder} does not exist!")
 
-        self.__POST(f"documents/{folderId}")  # Setting up for upload...
+        _ = self.__POST(f"documents/{folderId}")  # Setting up for upload...
 
-        errors, documents = [], []
+        errors: list[str] = []
+        documents: list[str] = []
 
         for document in input_paths:  # This needs improvement...
             if os.path.isdir(document):
@@ -209,15 +236,15 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
         if len(errors) > 0:
             print("The following files failed to upload: " + ",".join(errors))
 
-        print(f"Done! {len(documents)-len(errors)} files were uploaded.")
+        print(f"Done! {len(documents) - len(errors)} files were uploaded.")
 
     def sync(
         self,
-        localFolder,
-        remoteFolder="",
-        overwrite=False,
-        incremental=False,
-        recursive=True,
+        localFolder: str,
+        remoteFolder: str = "",
+        overwrite: bool = False,
+        incremental: bool = False,
+        recursive: bool = True,
     ):
         count = 0
 
@@ -227,17 +254,17 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
 
         documents = self.__get_docs(remoteFolder, recursive)
 
-        if documents == {}:
+        if not documents:
             print("No documents were found!")
+            return
 
-        else:
-            for doc in documents:
-                self.logger.debug(f"Processing {doc}")
-                count += 1
-                self.download(
-                    document=doc,
-                    location=f"{localFolder}/{doc['location']}",
-                    overwrite=overwrite,
-                    incremental=incremental,
-                )
-            print(f"Done! {count} files were exported.")
+        for doc in documents:
+            self.logger.debug(f"Processing {doc}")
+            count += 1
+            _ = self.download(
+                document=doc,
+                location=f"{localFolder}/{doc['location']}",
+                overwrite=overwrite,
+                incremental=incremental,
+            )
+        print(f"Done! {count} files were exported.")
