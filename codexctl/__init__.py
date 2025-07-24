@@ -76,9 +76,15 @@ class Manager:
             remarkable_2_versions = "\n".join(self.updater.remarkable2_versions.keys())
             remarkable_1_versions = "\n".join(self.updater.remarkable1_versions.keys())
 
-            print(
-                f"ReMarkable Paper Pro:\n{remarkable_pp_versions}\n\nReMarkable 2:\n{remarkable_2_versions}\n\nReMarkable 1:\n{remarkable_1_versions}"
-            )
+            version_blocks = []
+            if remarkable_version is None or remarkable_version == HardwareType.RMPP:
+                version_blocks.append(f"ReMarkable Paper Pro:\n{remarkable_pp_versions}")
+            if remarkable_version is None or remarkable_version == HardwareType.RM2:
+                version_blocks.append(f"ReMarkable 2:\n{remarkable_2_versions}")
+            if remarkable_version is None or remarkable_version == HardwareType.RM1:
+                version_blocks.append(f"ReMarkable 1:\n{remarkable_1_versions}")
+
+            print("\n\n".join(version_blocks))
 
         elif function == "download":
             logger.debug(f"Downloading version {version}")
@@ -486,7 +492,14 @@ def main() -> None:
     )
 
     ### List subcommand
-    subparsers.add_parser("list", help="List all available versions")
+    list_ = subparsers.add_parser("list", help="List all available versions")
+    list_.add_argument(
+        "--hardware",
+        "--device",
+        "-d",
+        help="Hardware to list for",
+        dest="hardware",
+    )
 
     ### Setting logging level
     args = parser.parse_args()
