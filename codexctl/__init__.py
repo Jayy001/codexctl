@@ -23,6 +23,7 @@ if importlib.util.find_spec("requests") is None:
         "Requests is required for accessing remote files. Please install it."
     )
 
+from .device import HardwareType
 from .updates import UpdateManager
 
 
@@ -50,10 +51,14 @@ class Manager:
             args: What arguments to pass into the function
         """
 
-        if "reMarkable" not in self.device:
-            remarkable_version = args.get("hardware")
-        else:
-            remarkable_version = self.device
+        try:
+            remarkable_version = HardwareType.parse(self.device)
+        except ValueError:
+            hw = args.get("hardware")
+            if hw:
+                remarkable_version = HardwareType.parse(hw)
+            else:
+                remarkable_version = None
 
         version = cast(str | None, args.get("version", None))
 
@@ -77,6 +82,7 @@ class Manager:
 
         elif function == "download":
             logger.debug(f"Downloading version {version}")
+            assert remarkable_version is not None
             filename = self.updater.download_version(
                 remarkable_version, version, args["out"]
             )
@@ -215,7 +221,7 @@ class Manager:
                 )
 
             elif function == "restore":
-                if remarkable.hardware == "ferrari":
+                if remarkable.hardware == HardwareType.RMPP:
                     raise SystemError("Restore not available for rmpro.")
                 remarkable.restore_previous_version()
                 print(
