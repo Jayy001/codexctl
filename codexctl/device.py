@@ -22,15 +22,15 @@ class HardwareType(enum.Enum):
     RMPP = enum.auto()
 
     @classmethod
-    def parse(cls, device_type: str):
+    def parse(cls, device_type: str) -> "HardwareType":
         if device_type.lower() in ("pp", "pro", "rmpp", "ferrari", "remarkable ferrari"):
             return cls.RMPP
         elif device_type.lower() in ("2", "rm2", "remarkable 2", "tests"):
             return cls.RM2
         elif device_type.lower() in ("1", "rm1", "remarkable 1"):
             return cls.RM1
-        else:
-            raise ValueError(f"Unknown hardware version: {device_type} (rm1, rm2, rmpp)")
+
+        raise ValueError(f"Unknown hardware version: {device_type} (rm1, rm2, rmpp)")
 
     @property
     def old_download_hw(self):

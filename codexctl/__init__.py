@@ -55,10 +55,7 @@ class Manager:
             remarkable_version = HardwareType.parse(self.device)
         except ValueError:
             hw = args.get("hardware")
-            if hw:
-                remarkable_version = HardwareType.parse(hw)
-            else:
-                remarkable_version = None
+            remarkable_version = HardwareType.parse(hw) if hw else None
 
         version = cast(str | None, args.get("version", None))
 
