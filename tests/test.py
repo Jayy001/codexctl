@@ -6,7 +6,7 @@ import logging
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from codexctl.device import DeviceManager
+from codexctl.device import HardwareType, DeviceManager
 from codexctl.updates import UpdateManager
 from codexctl import Manager
 
@@ -178,18 +178,18 @@ test_ls(
 
 test_cat("/etc/version", b"20221026104022\n")
 
-# assert_value("latest rm1 version", updater.get_latest_version("reMarkable 1"), "3.11.2.5")
-# assert_value("latest rm2 version", updater.get_latest_version("reMarkable 2"), "3.11.2.5")
+# assert_value("latest rm1 version", updater.get_latest_version(HardwareType.RM1), "3.11.2.5")
+# assert_value("latest rm2 version", updater.get_latest_version(HardwareType.RM2), "3.11.2.5")
 # Don't think this test is needed.
 
 assert_gt(
     "toltec rm1 version",
-    updater.get_toltec_version("reMarkable 1"),
+    updater.get_toltec_version(HardwareType.RM1),
     "3.3.2.1666"
 )
 assert_gt(
     "toltec rm2 version",
-    updater.get_toltec_version("reMarkable 2"),
+    updater.get_toltec_version(HardwareType.RM2),
     "3.3.2.1666"
 )
 
