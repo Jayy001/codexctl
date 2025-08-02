@@ -71,7 +71,7 @@ class UpdateManager:
         except ValueError:
             raise SystemError(
                 f"Version-ids.json @ {file_location} is corrupted! Please delete it and try again. Also, PLEASE open an issue on the repo showing the contents of the file."
-            )
+            ) from None
 
         if (
             int(datetime.now().timestamp()) - contents["last-updated"]
@@ -88,7 +88,7 @@ class UpdateManager:
                 except ValueError:
                     raise SystemError(
                         f"Version-ids.json @ {file_location} is corrupted! Please delete it and try again. Also, PLEASE open an issue on the repo showing the contents of the file."
-                    )
+                    ) from None
 
         self.logger.debug(f"Version ids contents are {contents}")
 
