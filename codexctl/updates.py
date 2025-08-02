@@ -64,7 +64,10 @@ class UpdateManager:
 
         try:
             with open(file_location) as f:
-                contents = json.load(f)
+                contents = json.load(f)  # pyright:ignore [reportAny]
+                if not isinstance(contents, dict):
+                    raise ValueError()
+
         except ValueError:
             raise SystemError(
                 f"Version-ids.json @ {file_location} is corrupted! Please delete it and try again. Also, PLEASE open an issue on the repo showing the contents of the file."
@@ -77,15 +80,23 @@ class UpdateManager:
             self.update_version_ids(file_location)
 
             with open(file_location) as f:
-                contents = json.load(f)
+                try:
+                    contents = json.load(f)  # pyright:ignore [reportAny]
+                    if not isinstance(contents, dict):
+                        raise ValueError()
+
+                except ValueError:
+                    raise SystemError(
+                        f"Version-ids.json @ {file_location} is corrupted! Please delete it and try again. Also, PLEASE open an issue on the repo showing the contents of the file."
+                    )
 
         self.logger.debug(f"Version ids contents are {contents}")
 
         return (
-            contents["remarkablepp"],
-            contents["remarkable2"],
-            contents["remarkable1"],
-            contents["external-provider-url"],
+            cast(dict[str, list[str]], contents["remarkablepp"]),
+            cast(dict[str, list[str]], contents["remarkable2"]),
+            cast(dict[str, list[str]], contents["remarkable1"]),
+            cast(str, contents["external-provider-url"]),
         )
 
     def update_version_ids(self, location: str) -> None:
@@ -100,7 +111,7 @@ class UpdateManager:
         try:
             with open(location, "w", newline="\n") as f:
                 self.logger.debug("Downloading version-ids.json")
-                contents = requests.get(
+                contents = requests.get(  # pyright:ignore [reportAny]
                     "https://raw.githubusercontent.com/Jayy001/codexctl/main/data/version-ids.json"
                 ).json()
                 json.dump(contents, f, indent=4)
@@ -108,11 +119,12 @@ class UpdateManager:
         except requests.exceptions.Timeout:
             raise SystemExit(
                 "Connection timed out while downloading version-ids.json! Do you have an internet connection?"
-            )
+            ) from None
+
         except Exception as error:
             raise SystemExit(
                 f"Unknown error while downloading version-ids.json! {error}"
-            )
+            ) from error
 
     def get_latest_version(self, device_type: str) -> str | None:
         """Gets the latest version available for the device
@@ -284,13 +296,14 @@ class UpdateManager:
         with open(filename, "wb") as out_file:
             dl = 0
 
-            for data in response.iter_content(chunk_size=4096):
+            data: bytes
+            for data in response.iter_content(chunk_size=4096):  # pyright:ignore [reportAny]
                 dl += len(data)
-                out_file.write(data)
+                _ = out_file.write(data)
                 if sys.stdout.isatty():
                     done = int(50 * dl / file_length)
-                    sys.stdout.write("\r[%s%s]" % ("=" * done, " " * (50 - done)))
-                    sys.stdout.flush()
+                    _ = sys.stdout.write("\r[%s%s]" % ("=" * done, " " * (50 - done)))
+                    _ = sys.stdout.flush()
 
         if sys.stdout.isatty():
             print(end="\r\n")

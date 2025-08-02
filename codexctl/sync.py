@@ -1,4 +1,6 @@
 import glob
+from inspect import currentframe
+from locale import currency
 import logging
 import os
 import time
@@ -55,11 +57,14 @@ class RmWebInterfaceAPI:  # TODO: Add docstrings
         self,
         folderId: str = "",
         currentLocation: str = "",
-        currentDocuments: list[dict[str, Any]] = [],
+        currentDocuments: list[dict[str, Any]] | None = None,
     ):
         data = self.__POST(f"documents/{folderId}")
         if not isinstance(data, list):
             raise Exception("Unexpected result from server")
+
+        if currentDocuments is None:
+            currentDocuments = []
 
         for item in cast(list[dict[str, Any]], data):
             self.logger.debug(f"Checking item: {item}")
