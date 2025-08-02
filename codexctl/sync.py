@@ -1,6 +1,4 @@
 import glob
-from inspect import currentframe
-from locale import currency
 import logging
 import os
 import time
