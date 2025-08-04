@@ -144,7 +144,10 @@ class UpdateManager:
             str: Latest version available for the device
         """
 
-        toltec_type = hardware_type.toltec_type
+        try:
+            toltec_type = hardware_type.toltec_type
+        except ValueError as ex:
+            raise SystemExit(*ex.args)
 
         response = requests.get("https://toltec-dev.org/stable/Compatibility")
         if response.status_code != 200:

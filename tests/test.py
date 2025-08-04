@@ -59,6 +59,22 @@ def assert_gt(msg, value, expected):
     print("fail")
     print(f"  {value} != {expected}")
 
+@contextlib.contextmanager
+def assert_raises(msg, expected):
+    global FAILED
+    print(f"Testing {msg}: ", end="")
+    try:
+        yield
+        got = "no exception"
+    except expected as e:
+        print("pass")
+        return
+    except Exception as e:
+        got = e.__class__.__name__
+
+    FAILED = True
+    print("fail")
+    print(f"  {got} != {expected.__name__}")
 
 def test_set_server_config(original, expected):
     global FAILED
@@ -178,8 +194,8 @@ test_ls(
 
 test_cat("/etc/version", b"20221026104022\n")
 
-# assert_value("latest rm1 version", updater.get_latest_version(HardwareType.RM1), "3.11.2.5")
-# assert_value("latest rm2 version", updater.get_latest_version(HardwareType.RM2), "3.11.2.5")
+assert_value("latest rm1 version", updater.get_latest_version(HardwareType.RM1), "3.20.0.92")
+assert_value("latest rm2 version", updater.get_latest_version(HardwareType.RM2), "3.20.0.92")
 # Don't think this test is needed.
 
 assert_gt(
@@ -192,6 +208,8 @@ assert_gt(
     updater.get_toltec_version(HardwareType.RM2),
     "3.3.2.1666"
 )
+with assert_raises("toltec rmpp version", SystemExit):
+    updater.get_toltec_version(HardwareType.RMPP)
 
 if FAILED:
     sys.exit(1)
