@@ -70,7 +70,7 @@ def assert_raises(msg, expected):
     try:
         yield
         got = "no exception"
-    except expected as e:
+    except expected:
         print("pass")
         return
     except Exception as e:
