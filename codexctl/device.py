@@ -25,7 +25,7 @@ class HardwareType(enum.Enum):
     def parse(cls, device_type: str) -> "HardwareType":
         if device_type.lower() in ("pp", "pro", "rmpp", "ferrari", "remarkable ferrari"):
             return cls.RMPP
-        elif device_type.lower() in ("2", "rm2", "remarkable 2", "tests"):
+        elif device_type.lower() in ("2", "rm2", "remarkable 2"):
             return cls.RM2
         elif device_type.lower() in ("1", "rm1", "remarkable 1"):
             return cls.RM1
@@ -104,11 +104,8 @@ class DeviceManager:
             with ftp.file("/sys/devices/soc0/machine") as file:
                 machine_contents = file.read().decode("utf-8").strip("\n")
         else:
-            try:
-                with open("/sys/devices/soc0/machine") as file:
-                    machine_contents = file.read().strip("\n")
-            except FileNotFoundError:
-                machine_contents = "tests"
+            with open("/sys/devices/soc0/machine") as file:
+                machine_contents = file.read().strip("\n")
 
         self.hardware = HardwareType.parse(machine_contents)
 

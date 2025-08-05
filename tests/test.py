@@ -3,6 +3,7 @@ import sys
 import difflib
 import contextlib
 import logging
+from unittest.mock import NonCallableMock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -10,7 +11,10 @@ from codexctl.device import HardwareType, DeviceManager
 from codexctl.updates import UpdateManager
 from codexctl import Manager
 
-set_server_config = DeviceManager().set_server_config
+# Mock device manager object, only the `logger` field is accessed by `set_server_config`
+device_manager = NonCallableMock(["logger"])
+
+set_server_config = DeviceManager.set_server_config
 codexctl = Manager(device="reMarkable2", logger=logging.getLogger(__name__))
 updater = UpdateManager(logger=logging.getLogger(__name__))
 
@@ -79,7 +83,7 @@ def assert_raises(msg, expected):
 def test_set_server_config(original, expected):
     global FAILED
     print("Testing set_server_config: ", end="")
-    result = set_server_config(original, "test")
+    result = set_server_config(device_manager, original, "test")
     if result == expected:
         print("pass")
         return
