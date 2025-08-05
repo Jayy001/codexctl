@@ -178,15 +178,6 @@ class Manager:
             else:
                 rmWeb.upload(input_paths=args["paths"], remoteFolder=args["remote"])
 
-        ### Transfer & Download functionalities
-        elif function in ("transfer", "download"):
-            remarkable = DeviceManager(
-                remote=remote,
-                address=args["address"],
-                logger=self.logger,
-                authentication=args["password"],
-            )
-
         ### Update & Version functionalities
         elif function in ("install", "status", "restore"):
             remote = False
