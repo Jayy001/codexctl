@@ -10,6 +10,7 @@ import shutil
 import re
 
 from typing import Any, Callable, cast
+from .device import HardwareType
 
 from .updates import UpdateManager
 
@@ -22,7 +23,6 @@ if importlib.util.find_spec("requests") is None:
     raise ImportError(
         "Requests is required for accessing remote files. Please install it."
     )
-
 
 class Manager:
     """
@@ -48,10 +48,11 @@ class Manager:
             args: What arguments to pass into the function
         """
 
-        if "reMarkable" not in self.device:
-            remarkable_version = cast(str, args.get("hardware"))
-        else:
-            remarkable_version = self.device
+        try:
+            remarkable_version = HardwareType.parse(self.device)
+        except ValueError:
+            hw = args.get("hardware")
+            remarkable_version = cast(str, HardwareType.parse(hw)) if hw else None
 
         version = cast(Callable[[str, None], str | None], args.get)("version", None)
 
@@ -69,12 +70,19 @@ class Manager:
             remarkable_2_versions = "\n".join(self.updater.remarkable2_versions.keys())
             remarkable_1_versions = "\n".join(self.updater.remarkable1_versions.keys())
 
-            print(
-                f"ReMarkable Paper Pro:\n{remarkable_pp_versions}\n\nReMarkable 2:\n{remarkable_2_versions}\n\nReMarkable 1:\n{remarkable_1_versions}"
-            )
+            version_blocks = []
+            if remarkable_version is None or remarkable_version == HardwareType.RMPP:
+                version_blocks.append(f"ReMarkable Paper Pro:\n{remarkable_pp_versions}")
+            if remarkable_version is None or remarkable_version == HardwareType.RM2:
+                version_blocks.append(f"ReMarkable 2:\n{remarkable_2_versions}")
+            if remarkable_version is None or remarkable_version == HardwareType.RM1:
+                version_blocks.append(f"ReMarkable 1:\n{remarkable_1_versions}")
+
+            print("\n\n".join(version_blocks))
 
         elif function == "download":
             logger.debug(f"Downloading version {version}")
+            assert remarkable_version is not None
             filename = self.updater.download_version(
                 remarkable_version, version, args["out"]
             )
@@ -166,18 +174,8 @@ class Manager:
                 )
             else:
                 rmWeb.upload(input_paths=args["paths"], remoteFolder=args["remote"])
-
-        ### Transfer & Download functionalities
-        elif function in ("transfer", "download"):
-            from .device import DeviceManager
-
-            remarkable = DeviceManager(
-                remote="reMarkable" not in self.device,
-                address=cast(str, args["address"]),
-                logger=self.logger,
-                authentication=cast(str, args["password"]),
-            )
-
+              
+            
         ### Update & Version functionalities
         elif function in ("install", "status", "restore"):
             remote = False
@@ -215,7 +213,7 @@ class Manager:
                 )
 
             elif function == "restore":
-                if remarkable.hardware == "ferrari":
+                if remarkable.hardware == HardwareType.RMPP:
                     raise SystemError("Restore not available for rmpro.")
                 remarkable.restore_previous_version()
                 print(
@@ -488,7 +486,14 @@ def main() -> None:
     )
 
     ### List subcommand
-    _ = subparsers.add_parser("list", help="List all available versions")
+    list_ = subparsers.add_parser("list", help="List all available versions")
+    list_.add_argument(
+        "--hardware",
+        "--device",
+        "-d",
+        help="Hardware to list for",
+        dest="hardware",
+    )
 
     ### Setting logging level
     args = parser.parse_args()

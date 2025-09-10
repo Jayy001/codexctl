@@ -9,6 +9,8 @@ from pathlib import Path
 from datetime import datetime
 from typing import cast
 
+from .device import HardwareType
+
 
 class UpdateManager:
     def __init__(self, logger: logging.Logger | None = None) -> None:
@@ -120,48 +122,45 @@ class UpdateManager:
             raise SystemExit(
                 "Connection timed out while downloading version-ids.json! Do you have an internet connection?"
             ) from None
-
+            
         except Exception as error:
             raise SystemExit(
                 f"Unknown error while downloading version-ids.json! {error}"
             ) from error
 
-    def get_latest_version(self, device_type: str) -> str | None:
+    def get_latest_version(self, hardware_type: HardwareType) -> str:
         """Gets the latest version available for the device
 
         Args:
-            device_type (str): Type of the device (remarkablepp or remarkable2 or remarkable1)
+            hardware_type (HardwareType enum): Type of the device
 
         Returns:
             str: Latest version available for the device
         """
-        if "1" in device_type:
-            versions = self.remarkable1_versions
-        elif "2" in device_type:
-            versions = self.remarkable2_versions
-        elif "ferrari" in device_type or "pp" in device_type:
-            versions = self.remarkablepp_versions
-        else:
-            return None  # Explicit?
+        match hardware_type:
+            case HardwareType.RM1:
+                versions = self.remarkable1_versions
+            case HardwareType.RM2:
+                versions = self.remarkable2_versions
+            case HardwareType.RMPP:
+                versions = self.remarkablepp_versions
 
         return self.__max_version(list(versions.keys()))
 
-    def get_toltec_version(self, device_type: str) -> str:
+    def get_toltec_version(self, hardware_type: HardwareType) -> str:
         """Gets the latest version available toltec for the device
 
         Args:
-            device_type (str): Type of the device (remarkablepp or remarkable2 or remarkable1)
+            hardware_type (HardwareType enum): Type of the device
 
         Returns:
             str: Latest version available for the device
         """
 
-        if "ferrari" in device_type:
-            raise SystemExit("ReMarkable Paper Pro does not support toltec")
-        elif "1" in device_type:
-            device_type = "rm1"
-        else:
-            device_type = "rm2"
+        try:
+            toltec_type = hardware_type.toltec_type
+        except ValueError as ex:
+            raise SystemExit(*ex.args)
 
         response = requests.get("https://toltec-dev.org/stable/Compatibility")
         if response.status_code != 200:
@@ -173,20 +172,17 @@ class UpdateManager:
             [
                 x.split("=")[1]
                 for x in response.text.splitlines()
-                if x.startswith(f"{device_type}=")
+                if x.startswith(f"{toltec_type}=")
             ]
         )
 
     def download_version(
-        self,
-        device_type: str,
-        update_version: str,
-        download_folder: str | Path | None = None,
+        self, hardware_type: HardwareType, update_version: str, download_folder: str|None = None
     ) -> str | None:
         """Downloads the specified version of the update
 
         Args:
-            device_type (str): Type of the device (remarkable2 or remarkable1)
+            hardware_type (HardwareType enum): Type of the device
             update_version (str): Id of version to download.
             download_folder (str, optional): Location of download folder. Defaults to download folder for OS.
 
@@ -195,14 +191,14 @@ class UpdateManager:
         """
 
         if download_folder is None:
-            download_folder = Path(
+            download_folder = str(Path(
                 os.environ["XDG_DOWNLOAD_DIR"]
                 if (
                     "XDG_DOWNLOAD_DIR" in os.environ
                     and os.path.exists(os.environ["XDG_DOWNLOAD_DIR"])
                 )
                 else Path.home() / "Downloads"
-            )
+            ))
 
         if not os.path.exists(download_folder):
             self.logger.error(
@@ -213,21 +209,16 @@ class UpdateManager:
         BASE_URL = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device%20Beta/RM110"  # Default URL for v2 versions
         BASE_URL_V3 = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device/reMarkable"
 
-        if (
-            ("ferrari" in device_type.lower())
-            or ("pro" in device_type)
-            or ("pp" in device_type)
-        ):
-            version_lookup = self.remarkablepp_versions
-        elif "1" in device_type:
-            version_lookup = self.remarkable1_versions
-        elif "2" in device_type:
-            version_lookup = self.remarkable2_versions
-            BASE_URL_V3 += "2"
-        else:
-            raise SystemError(
-                f"Hardware version does not exist!: {device_type} (rm1,rm2,rmpp)"
-            )
+        match hardware_type:
+            case HardwareType.RMPP:
+                version_lookup = self.remarkablepp_versions
+
+            case HardwareType.RM2:
+                version_lookup = self.remarkable2_versions
+                BASE_URL_V3 += "2"
+
+            case HardwareType.RM1:
+                version_lookup = self.remarkable1_versions
 
         if update_version not in version_lookup:
             self.logger.error(
@@ -241,12 +232,12 @@ class UpdateManager:
             BASE_URL = BASE_URL_V3
 
         if version <= (3, 11, 2, 5):
-            file_name = f"{update_version}_reMarkable{'2' if '2' in device_type else ''}-{version_id}.signed"
+            file_name = f"{update_version}_{hardware_type.old_download_hw}-{version_id}.signed"
             file_url = f"{BASE_URL}/{update_version}/{file_name}"
 
         else:
             file_url = self.external_provider_url.replace("REPLACE_ID", version_id)
-            file_name = f"remarkable-production-memfault-image-{update_version}-{device_type.replace(' ', '-')}-public"
+            file_name = f"remarkable-production-memfault-image-{update_version}-{hardware_type.new_download_hw}-public"
 
         self.logger.debug(f"File URL is {file_url}, File name is {file_name}")
 

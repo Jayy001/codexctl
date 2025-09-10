@@ -3,14 +3,18 @@ import sys
 import difflib
 import contextlib
 import logging
+from unittest.mock import NonCallableMock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from codexctl.device import DeviceManager
+from codexctl.device import HardwareType, DeviceManager
 from codexctl.updates import UpdateManager
 from codexctl import Manager
 
-set_server_config = DeviceManager().set_server_config
+# Mock device manager object, only the `logger` field is accessed by `set_server_config`
+device_manager = NonCallableMock(["logger"])
+
+set_server_config = DeviceManager.set_server_config
 codexctl = Manager(device="reMarkable2", logger=logging.getLogger(__name__))
 updater = UpdateManager(logger=logging.getLogger(__name__))
 
@@ -59,11 +63,27 @@ def assert_gt(msg, value, expected):
     print("fail")
     print(f"  {value} != {expected}")
 
+@contextlib.contextmanager
+def assert_raises(msg, expected):
+    global FAILED
+    print(f"Testing {msg}: ", end="")
+    try:
+        yield
+        got = "no exception"
+    except expected:
+        print("pass")
+        return
+    except Exception as e:
+        got = e.__class__.__name__
+
+    FAILED = True
+    print("fail")
+    print(f"  {got} != {expected.__name__}")
 
 def test_set_server_config(original, expected):
     global FAILED
     print("Testing set_server_config: ", end="")
-    result = set_server_config(original, "test")
+    result = set_server_config(device_manager, original, "test")
     if result == expected:
         print("pass")
         return
@@ -178,20 +198,22 @@ test_ls(
 
 test_cat("/etc/version", b"20221026104022\n")
 
-# assert_value("latest rm1 version", updater.get_latest_version("reMarkable 1"), "3.11.2.5")
-# assert_value("latest rm2 version", updater.get_latest_version("reMarkable 2"), "3.11.2.5")
+assert_value("latest rm1 version", updater.get_latest_version(HardwareType.RM1), "3.20.0.92")
+assert_value("latest rm2 version", updater.get_latest_version(HardwareType.RM2), "3.20.0.92")
 # Don't think this test is needed.
 
 assert_gt(
     "toltec rm1 version",
-    updater.get_toltec_version("reMarkable 1"),
+    updater.get_toltec_version(HardwareType.RM1),
     "3.3.2.1666"
 )
 assert_gt(
     "toltec rm2 version",
-    updater.get_toltec_version("reMarkable 2"),
+    updater.get_toltec_version(HardwareType.RM2),
     "3.3.2.1666"
 )
+with assert_raises("toltec rmpp version", SystemExit):
+    updater.get_toltec_version(HardwareType.RMPP)
 
 if FAILED:
     sys.exit(1)
