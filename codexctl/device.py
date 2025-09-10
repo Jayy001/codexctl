@@ -1,3 +1,4 @@
+import enum
 import socket
 import subprocess
 import logging
@@ -14,6 +15,62 @@ try:
 except ImportError:
     pass
 
+
+class HardwareType(enum.Enum):
+    RM1 = enum.auto()
+    RM2 = enum.auto()
+    RMPP = enum.auto()
+
+    @classmethod
+    def parse(cls, device_type: str) -> "HardwareType":
+        if device_type.lower() in ("pp", "pro", "rmpp", "ferrari", "remarkable ferrari"):
+            return cls.RMPP
+        elif device_type.lower() in ("2", "rm2", "remarkable 2"):
+            return cls.RM2
+        elif device_type.lower() in ("1", "rm1", "remarkable 1"):
+            return cls.RM1
+
+        raise ValueError(f"Unknown hardware version: {device_type} (rm1, rm2, rmpp)")
+
+    @property
+    def old_download_hw(self):
+        match self:
+            case HardwareType.RM1:
+                return "reMarkable"
+            case HardwareType.RM2:
+                return "reMarkable2"
+            case HardwareType.RMPP:
+                raise ValueError("ReMarkable Paper Pro does not support the old update engine")
+
+    @property
+    def new_download_hw(self):
+        match self:
+            case HardwareType.RM1:
+                return "rm1"
+            case HardwareType.RM2:
+                return "rm2"
+            case HardwareType.RMPP:
+                return "rmpp"
+
+    @property
+    def swupdate_hw(self):
+        match self:
+            case HardwareType.RM1:
+                return "reMarkable1"
+            case HardwareType.RM2:
+                return "reMarkable2"
+            case HardwareType.RMPP:
+                return "ferrari"
+
+    @property
+    def toltec_type(self):
+        match self:
+            case HardwareType.RM1:
+                return "rm1"
+            case HardwareType.RM2:
+                return "rm2"
+            case HardwareType.RMPP:
+                raise ValueError("ReMarkable Paper Pro does not support toltec")
 
 class DeviceManager:
     def __init__(
@@ -47,18 +104,10 @@ class DeviceManager:
             with ftp.file("/sys/devices/soc0/machine") as file:
                 machine_contents = file.read().decode("utf-8").strip("\n")
         else:
-            try:
-                with open("/sys/devices/soc0/machine") as file:
-                    machine_contents = file.read().strip("\n")
-            except FileNotFoundError:
-                machine_contents = "tests"
+            with open("/sys/devices/soc0/machine") as file:
+                machine_contents = file.read().strip("\n")
 
-        if "reMarkable Ferrari" in machine_contents:
-            self.hardware = "ferrari"
-        elif "reMarkable 1" in machine_contents:
-            self.hardware = "reMarkable1"
-        else:
-            self.hardware = "reMarkable2"
+        self.hardware = HardwareType.parse(machine_contents)
 
     def get_host_address(self) -> list[str] | list | None:  # Interaction required
         """Gets the IP address of the host machine
@@ -389,7 +438,7 @@ echo "fallback: ${OLDPART}"
 /sbin/fw_setenv "fallback_partition" "${OLDPART}"
 /sbin/fw_setenv "active_partition" "${NEWPART}\""""
 
-        if self.hardware == "ferrari":
+        if self.hardware == HardwareType.RMPP:
             RESTORE_CODE = """#!/bin/bash
 OLDPART=$(< /sys/devices/platform/lpgpr/root_part)
 if [[ $OLDPART  ==  "a" ]]; then
@@ -463,7 +512,7 @@ fi
             SystemExit: If there was an error installing the update
 
         """
-        command = f'/usr/bin/swupdate -v -i VERSION_FILE -k /usr/share/swupdate/swupdate-payload-key-pub.pem -H "{self.hardware}:1.0" -e "stable,copy1"'
+        command = f'/usr/bin/swupdate -v -i VERSION_FILE -k /usr/share/swupdate/swupdate-payload-key-pub.pem -H "{self.hardware.swupdate_hw}:1.0" -e "stable,copy1"'
 
         if self.client:
             ftp_client = self.client.open_sftp()
