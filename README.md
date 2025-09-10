@@ -50,7 +50,11 @@ codexctl install latest
 ```
 - Downloading rmpp version 3.15.4.2 to a folder named `out` and then installing it
 ```
+<<<<<<< HEAD
 codexctl download 3.15.4.2 --hardware rmpp -o out
+=======
+codexctl download 3.15.4.2 -d rmpp -o out
+>>>>>>> manual_update
 codexctl install ./out/remarkable-ct-prototype-image-3.15.4.2-ferrari-public.swu
 ```
 - Backing up all documents to the cwd

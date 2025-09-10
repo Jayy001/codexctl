@@ -20,14 +20,14 @@ def get_update_image(file: str) -> tuple[UpdateImage, ext4.Volume]:
         image.verify(inode.open().read())
 
     except UpdateImageSignatureException:
-        warnings.warn("Signature doesn't match contents", RuntimeWarning)
+        logger.warning("Signature doesn't match contents", RuntimeWarning)
 
     except FileNotFoundError:
-        warnings.warn("Public key missing", RuntimeWarning)
+        logger.warning("Public key missing", RuntimeWarning)
 
     except OSError as e:
         if e.errno != errno.ENOTDIR:
             raise
-        warnings.warn("Unable to open public key", RuntimeWarning)
+        logger.warning("Unable to open public key", RuntimeWarning)
 
     return image, volume

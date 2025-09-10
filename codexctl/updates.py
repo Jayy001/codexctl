@@ -208,11 +208,9 @@ class UpdateManager:
 
         BASE_URL = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device%20Beta/RM110"  # Default URL for v2 versions
         BASE_URL_V3 = "https://updates-download.cloud.remarkable.engineering/build/reMarkable%20Device/reMarkable"
-
         match hardware_type:
             case HardwareType.RMPP:
                 version_lookup = self.remarkablepp_versions
-
             case HardwareType.RM2:
                 version_lookup = self.remarkable2_versions
                 BASE_URL_V3 += "2"
@@ -228,14 +226,21 @@ class UpdateManager:
 
         version_id, version_checksum = version_lookup[update_version]
         version = tuple([int(x) for x in update_version.split(".")])
-        if version >= (3,):
-            BASE_URL = BASE_URL_V3
 
         if version <= (3, 11, 2, 5):
             file_name = f"{update_version}_{hardware_type.old_download_hw}-{version_id}.signed"
+
+            if int(version_minor) > 11 or update_version == "3.11.3.3":
+                version_external = True
+
+        if version_external:
+            file_url = self.external_provider_url.replace("REPLACE_ID", version_id)
+            file_name = f"remarkable-production-memfault-image-{update_version}-{device_type.replace(' ', '-')}-public"
+        else:
+            file_name = f"{update_version}_reMarkable{'2' if '2' in device_type else ''}-{version_id}.signed"
+
             file_url = f"{BASE_URL}/{update_version}/{file_name}"
 
-        else:
             file_url = self.external_provider_url.replace("REPLACE_ID", version_id)
             file_name = f"remarkable-production-memfault-image-{update_version}-{hardware_type.new_download_hw}-public"
 
