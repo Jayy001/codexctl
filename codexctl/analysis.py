@@ -1,12 +1,12 @@
 import ext4
-import warnings 
+import warnings
 import errno
 
 from remarkable_update_image import UpdateImage
 from remarkable_update_image import UpdateImageSignatureException
 
 
-def get_update_image(file: str):
+def get_update_image(file: str) -> tuple[UpdateImage, ext4.Volume]:
     """Extracts files from an update image (<3.11 currently)"""
 
     image = UpdateImage(file)

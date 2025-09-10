@@ -7,11 +7,12 @@ import logging
 import importlib.util
 import tempfile
 import shutil
-import json
 import re
 
-from typing import cast
-from os import listdir
+from typing import Any, Callable, cast
+from .device import HardwareType
+
+from .updates import UpdateManager
 
 try:
     from loguru import logger
@@ -22,10 +23,6 @@ if importlib.util.find_spec("requests") is None:
     raise ImportError(
         "Requests is required for accessing remote files. Please install it."
     )
-
-from .device import HardwareType
-from .updates import UpdateManager
-
 
 class Manager:
     """
@@ -39,11 +36,11 @@ class Manager:
             device (str): Type of device that is running the script
             logger (logger): Logger object
         """
-        self.device = device
-        self.logger = logger
-        self.updater = UpdateManager(logger)
+        self.device: str = device
+        self.logger: logging.Logger = logger
+        self.updater: UpdateManager = UpdateManager(logger)
 
-    def call_func(self, function: str, args: dict) -> None:
+    def call_func(self, function: str, args: dict[str, Any]) -> None:
         """Runs a command based on the function name and arguments provided
 
         Args:
@@ -55,9 +52,9 @@ class Manager:
             remarkable_version = HardwareType.parse(self.device)
         except ValueError:
             hw = args.get("hardware")
-            remarkable_version = HardwareType.parse(hw) if hw else None
+            remarkable_version = cast(str, HardwareType.parse(hw)) if hw else None
 
-        version = cast(str | None, args.get("version", None))
+        version = cast(Callable[[str, None], str | None], args.get)("version", None)
 
         if remarkable_version:
             if version == "latest":
@@ -177,7 +174,8 @@ class Manager:
                 )
             else:
                 rmWeb.upload(input_paths=args["paths"], remoteFolder=args["remote"])
-
+              
+            
         ### Update & Version functionalities
         elif function in ("install", "status", "restore"):
             remote = False
@@ -198,9 +196,9 @@ class Manager:
 
             remarkable = DeviceManager(
                 remote=remote,
-                address=args["address"],
+                address=cast(str, args["address"]),
                 logger=self.logger,
-                authentication=args["password"],
+                authentication=cast(str, args["password"]),
             )
 
             if version == "latest":
@@ -285,7 +283,7 @@ class Manager:
                         ) != os.path.abspath("updates"):
                             if not os.path.exists("updates"):
                                 os.mkdir("updates")
-                            shutil.move(update_file, "updates")
+                            _ = shutil.move(update_file, "updates")
                             update_file = get_available_version(version)
                             made_update_folder = True  # Delete at end
 
@@ -323,7 +321,7 @@ class Manager:
                     remarkable.install_ohma_update(update_file)
 
                 if made_update_folder:  # Move update file back out
-                    shutil.move(os.listdir("updates")[0], "../")
+                    _ = shutil.move(os.listdir("updates")[0], "../")
                     shutil.rmtree("updates")
 
                 os.chdir(orig_cwd)
@@ -337,7 +335,7 @@ def main() -> None:
 
     ### Setting up the argument parser
     parser = argparse.ArgumentParser("Codexctl")
-    parser.add_argument(
+    _ = parser.add_argument(
         "--verbose",
         "-v",
         required=False,
@@ -345,7 +343,7 @@ def main() -> None:
         action="store_true",
         dest="verbose",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--address",
         "-a",
         required=False,
@@ -353,7 +351,7 @@ def main() -> None:
         default=None,
         dest="address",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--password",
         "-p",
         required=False,
@@ -374,9 +372,9 @@ def main() -> None:
     download = subparsers.add_parser(
         "download", help="Download the specified version firmware file"
     )
-    download.add_argument("version", help="Version to download")
-    download.add_argument("--out", "-o", help="Folder to download to", default=None)
-    download.add_argument(
+    _ = download.add_argument("version", help="Version to download")
+    _ = download.add_argument("--out", "-o", help="Folder to download to", default=None)
+    _ = download.add_argument(
         "--hardware",
         "--device",
         "-d",
@@ -389,35 +387,35 @@ def main() -> None:
     backup = subparsers.add_parser(
         "backup", help="Download remote files to local directory"
     )
-    backup.add_argument(
+    _ = backup.add_argument(
         "-r",
         "--remote",
         help="Remote directory to backup. Defaults to download folder",
         default="",
         dest="remote",
     )
-    backup.add_argument(
+    _ = backup.add_argument(
         "-l",
         "--local",
         help="Local directory to backup to. Defaults to download folder",
         default="./",
         dest="local",
     )
-    backup.add_argument(
+    _ = backup.add_argument(
         "-R",
         "--no-recursion",
         help="Disables recursively backup remote directory",
         action="store_true",
         dest="no_recursion",
     )
-    backup.add_argument(
+    _ = backup.add_argument(
         "-O",
         "--no-overwrite",
         help="Disables overwrite",
         action="store_true",
         dest="no_overwrite",
     )
-    backup.add_argument(
+    _ = backup.add_argument(
         "-i",
         "--incremental",
         help="Overwrite out-of-date files only",
@@ -428,40 +426,48 @@ def main() -> None:
     cat = subparsers.add_parser(
         "cat", help="Cat the contents of a file inside a firmwareimage"
     )
-    cat.add_argument("file", help="Path to update file to cat", default=None)
-    cat.add_argument("target_path", help="Path inside the image to list", default=None)
+    _ = cat.add_argument("file", help="Path to update file to cat", default=None)
+    _ = cat.add_argument(
+        "target_path", help="Path inside the image to list", default=None
+    )
 
     ### Ls subcommand
     ls = subparsers.add_parser("ls", help="List files inside a firmware image")
-    ls.add_argument("file", help="Path to update file to extract", default=None)
-    ls.add_argument("target_path", help="Path inside the image to list", default=None)
+    _ = ls.add_argument("file", help="Path to update file to extract", default=None)
+    _ = ls.add_argument(
+        "target_path", help="Path inside the image to list", default=None
+    )
 
     ### Extract subcommand
     extract = subparsers.add_parser(
         "extract", help="Extract the specified version update file"
     )
-    extract.add_argument("file", help="Path to update file to extract", default=None)
-    extract.add_argument("--out", help="Folder to extract to", default=None, dest="out")
+    _ = extract.add_argument(
+        "file", help="Path to update file to extract", default=None
+    )
+    _ = extract.add_argument(
+        "--out", help="Folder to extract to", default=None, dest="out"
+    )
 
     ### Mount subcommand
     mount = subparsers.add_parser(
         "mount", help="Mount the specified version firmware filesystem"
     )
-    mount.add_argument(
+    _ = mount.add_argument(
         "filesystem",
         help="Path to version firmware filesystem to extract",
         default=None,
     )
-    mount.add_argument("--out", help="Folder to mount to", default=None)
+    _ = mount.add_argument("--out", help="Folder to mount to", default=None)
 
     ### Upload subcommand
     upload = subparsers.add_parser(
         "upload", help="Upload folder/files to device (pdf only)"
     )
-    upload.add_argument(
+    _ = upload.add_argument(
         "paths", help="Path to file(s)/folder to upload", default=None, nargs="+"
     )
-    upload.add_argument(
+    _ = upload.add_argument(
         "-r",
         "--remote",
         help="Remote directory to upload to. Defaults to root folder",
@@ -470,12 +476,12 @@ def main() -> None:
     )
 
     ### Status subcommand
-    subparsers.add_parser(
+    _ = subparsers.add_parser(
         "status", help="Get the current version of the device and other information"
     )
 
     ### Restore subcommand
-    subparsers.add_parser(
+    _ = subparsers.add_parser(
         "restore", help="Restores to previous version installed on device"
     )
 
