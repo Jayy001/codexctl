@@ -5,6 +5,7 @@
 # nuitka-project: --lto=yes
 # nuitka-project: --include-package=google
 # nuitka-project: --noinclude-unittest-mode=allow
+# nuitka-project: --nofollow-import-to=setuptools
 
 from codexctl import main
 
