@@ -49,7 +49,7 @@ class Manager:
             args: What arguments to pass into the function
         """
 
-        if "remarkable" not in self.device:
+        if "reMarkable" not in self.device:
             remarkable_version = args.get("hardware")
         else:
             remarkable_version = self.device

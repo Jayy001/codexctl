@@ -205,7 +205,7 @@ class UpdateManager:
         elif device_type in ("rmpp", "rmpro", "reMarkable Ferrari", "ferrari"):
             version_lookup = self.remarkablepp_versions
         else:
-            raise SystemError("Hardware version does not exist! (rm1,rm2,rmpp)")
+            raise SystemError(f"Hardware version does not exist!: {device_type} (rm1,rm2,rmpp)")
 
         if update_version not in version_lookup:
             self.logger.error(
