@@ -23,11 +23,11 @@ class HardwareType(enum.Enum):
 
     @classmethod
     def parse(cls, device_type: str) -> "HardwareType":
-        if device_type.lower() in ("pp", "pro", "rmpp", "ferrari", "remarkable ferrari"):
+        if device_type.lower() in ("pp", "pro", "rmpp", "ferrari", "remarkable ferrari", "reMarkable Ferrari):
             return cls.RMPP
-        elif device_type.lower() in ("2", "rm2", "remarkable 2"):
+        elif device_type.lower() in ("2", "rm2", "remarkable 2", "reMarkable 2.0"):
             return cls.RM2
-        elif device_type.lower() in ("1", "rm1", "remarkable 1"):
+        elif device_type.lower() in ("1", "rm1", "remarkable 1", "reMarkable 1.0"):
             return cls.RM1
 
         raise ValueError(f"Unknown hardware version: {device_type} (rm1, rm2, rmpp)")
@@ -726,3 +726,4 @@ fi
             f"Transferring progress{int((transferred / toBeTransferred) * 100)}%",
             end="\r",
         )
+
