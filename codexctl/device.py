@@ -74,18 +74,20 @@ class HardwareType(enum.Enum):
 
 class DeviceManager:
     def __init__(
-        self, logger=None, remote=False, address=None, authentication=None
+        self, logger=None, remote=False, address=None, authentication=None, port=22
     ) -> None:
         """Initializes the DeviceManager for codexctl
 
         Args:
             remote (bool, optional): Whether the device is remote. Defaults to False.
             address (bool, optional): Known IP of remote device, if applicable. Defaults to None.
+            port (int, optional): Known port of remote device SSH service. Defaults to 22.
             logger (logger, optional): Logger object for logging. Defaults to None.
             Authentication (str, optional): Authentication method. Defaults to None.
         """
         self.logger = logger
         self.address = address
+        self.port = port
         self.authentication = authentication
         self.client = None
 
@@ -94,11 +96,8 @@ class DeviceManager:
 
         if remote:
             self.client = self.connect_to_device(
-                authentication=authentication, remote_address=address
+                authentication=authentication, remote_address=address, port=port
             )
-
-            self.client.authentication = authentication
-            self.client.address = address
 
             ftp = self.client.open_sftp()
             with ftp.file("/sys/devices/soc0/machine") as file:
@@ -159,42 +158,42 @@ class DeviceManager:
             str: IP address of the remarkable device
         """
 
-        if self.check_is_address_reachable("10.11.99.1"):
+        if self.check_if_address_reachable("10.11.99.1", self.port):
             return "10.11.99.1"
 
         while True:
             remote_ip = input("Please enter the IP of the remarkable device: ")
 
-            if self.check_is_address_reachable(remote_ip):
+            if self.check_if_address_reachable(remote_ip, self.port):
                 return remote_ip
 
             print(f"Error: Device {remote_ip} is not reachable. Please try again.")
 
-    def check_is_address_reachable(self, remote_ip="10.11.99.1") -> bool:
+    def check_if_address_reachable(self, remote_ip="10.11.99.1", remote_port=22) -> bool:
         """Checks if the given IP address is reachable over SSH
 
         Args:
             remote_ip (str, optional): IP to check. Defaults to '10.11.99.1'.
-
+            remote_port (int, optional): Port to check. Defaults to `22`.
         Returns:
             bool: True if reachable, False otherwise
         """
         self.logger.debug(f"Checking if {remote_ip} is reachable")
+
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(1)
 
-            sock.connect((remote_ip, 22))
+            sock.connect((remote_ip, remote_port))
             sock.shutdown(2)
 
             return True
-
-        except Exception:
+        except FileNotFoundError:
             self.logger.debug(f"Device {remote_ip} is not reachable")
             return False
 
     def connect_to_device(
-        self, remote_address=None, authentication=None
+        self, remote_address=None, authentication=None, port=22
     ) -> paramiko.client.SSHClient:
         """Connects to the device using the given IP address
 
@@ -210,13 +209,13 @@ class DeviceManager:
             remote_address = self.get_remarkable_address()
             self.address = remote_address  # For future reference
         else:
-            if self.check_is_address_reachable(remote_address) is False:
+            if self.check_if_address_reachable(remote_address, port) is False:
                 raise SystemError(f"Error: Device {remote_address} is not reachable!")
 
         client = paramiko.client.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        if authentication:
+        if authentication != None:
             self.logger.debug(f"Using authentication: {authentication}")
             try:
                 if os.path.isfile(authentication):
@@ -230,9 +229,16 @@ class DeviceManager:
                     self.logger.debug(
                         f"Attempting to connect to {remote_address} with password {authentication}"
                     )
-                    client.connect(
-                        remote_address, username="root", password=authentication
-                    )
+
+                    if authentication == " ":
+                        transport = paramiko.transport.Transport((remote_address, port))
+                        transport.start_client()
+                        transport.auth_none("root")
+                        client._transport = transport
+                    else:
+                        client.connect(
+                            remote_address, username="root", password=authentication, port=port
+                        )
 
             except paramiko.ssh_exception.AuthenticationException:
                 print("Incorrect password or ssh path given in arguments!")
@@ -474,6 +480,85 @@ echo $NEWPART > /sys/devices/platform/lpgpr/root_part
 
         self.logger.debug("Restore script ran")
 
+    def transfer_file_to_remote(self, file_location: str, destination: str):
+        """
+        Tranfers file at file_location to destination on devicec
+        """
+        ftp_client = self.client.open_sftp()
+
+        print(f"Uploading {file_location} to {destination}")
+
+        ftp_client.put(
+            file_location, destination, callback=self.output_put_progress
+        )
+
+    def install_manual_update(self, version_file: str) -> None:
+        if self.client:
+            print(f"Uploading {version_file} image")
+
+            out_image_file = f"/tmp/{out_image_file}"
+
+            self.transfer_file_to_remote(version_file, destination=out_image_file)
+
+            _stdin, stdout, _stderr = self.client.exec_command("/sbin/fw_printenv -n active_partition")
+            # TODO Before merge: Make this utilise the mount command instead
+
+            fallback_partition = f"mmcblk2p{stdout}"
+
+            print("Now running dd to overwrite the fallback partition")
+
+            _stdin, stdout, _stderr = self.client.exec_command(f"dd if={version_file} of=/dev/{fallback_partition}")
+            
+            self.logger.debug(
+                f'Stdout of dd is {_stderr.readlines()}'
+            )
+
+            #### Now disable automatic updates
+
+            self.client.exec_command("sleep 1 && reboot")  # Should be enough
+            self.client.close()
+
+            time.sleep(
+                2
+            )  # Somehow the code runs faster than the time it takes for the device to reboot
+
+            print("Trying to connect to device")
+
+            while not self.check_if_address_reachable(self.address, self.port):
+                time.sleep(1)
+
+            self.client = self.connect_to_device(
+                remote_address=self.address, authentication=self.authentication, port=self.port
+            )
+            self.client.exec_command("systemctl stop swupdate memfaultd")
+
+            print(
+                "Update complete and update service disabled, restart device to enable it"
+            )
+
+        else:
+            stdout = subprocess.run(['/sbin/fw_printenv', '-n', 'active_partition'], stdout=subprocess.PIPE).stdout.decode().strip()
+            # TODO Before merge: Make this utilise the mount command instead
+
+            fallback_partition = f"mmcblk2p{stdout}" 
+
+            print("Now running dd to overwrite the fallback partition")
+
+            with subprocess.Popen(
+                f"dd if={version_file} of=/dev/{fallback_partition}",
+                text=True,
+                shell=True, 
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env={"PATH": "/bin:/usr/bin:/sbin"},
+            ) as process:
+                self.logger.debug(
+                    f'Stdout of update checking service is {"".join(process.stderr.readlines())}'
+                )
+
+            print("Update complete and device rebooting")
+            os.system("reboot")
+            
     def reboot_device(self) -> None:
         REBOOT_CODE = """
 if systemctl is-active --quiet tarnish.service; then
@@ -515,8 +600,6 @@ fi
         command = f'/usr/bin/swupdate -v -i VERSION_FILE -k /usr/share/swupdate/swupdate-payload-key-pub.pem -H "{self.hardware.swupdate_hw}:1.0" -e "stable,copy1"'
 
         if self.client:
-            ftp_client = self.client.open_sftp()
-
             print(f"Uploading {version_file} image")
 
             out_location = f"/tmp/{os.path.basename(version_file)}.swu"
@@ -559,11 +642,11 @@ fi
 
             print("Trying to connect to device")
 
-            while not self.check_is_address_reachable(self.address):
+            while not self.check_if_address_reachable(self.address, self.port):
                 time.sleep(1)
 
             self.client = self.connect_to_device(
-                remote_address=self.address, authentication=self.authentication
+                remote_address=self.address, authentication=self.authentication, port=self.port
             )
             self.client.exec_command("systemctl stop swupdate memfaultd")
 
@@ -677,11 +760,11 @@ fi
 
             print("Trying to connect to device")
 
-            while not self.check_is_address_reachable(self.address):
+            while not self.check_if_address_reachable(self.address, self.port):
                 time.sleep(1)
 
             self.client = self.connect_to_device(
-                remote_address=self.address, authentication=self.authentication
+                remote_address=self.address, authentication=self.authentication, port=self.port
             )
             self.client.exec_command("systemctl stop update-engine")
 
@@ -723,7 +806,7 @@ fi
         """Used for displaying progress for paramiko ftp.put function"""
 
         print(
-            f"Transferring progress{int((transferred / toBeTransferred) * 100)}%",
+            f"Transferring progress {int((transferred/toBeTransferred)*100)}%",
             end="\r",
         )
 
