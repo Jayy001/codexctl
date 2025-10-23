@@ -1,6 +1,5 @@
 import os
 import requests
-import uuid
 import sys
 import json
 import hashlib
@@ -8,25 +7,25 @@ import logging
 
 from pathlib import Path
 from datetime import datetime
-
-import xml.etree.ElementTree as ET
+from typing import cast
 
 from .device import HardwareType
 
 
 class UpdateManager:
-    def __init__(self, logger=None) -> None:
+    def __init__(self, logger: logging.Logger | None = None) -> None:
         """Manager for downloading update versions
 
         Args:
             logger (logger, optional): Logger object for logging. Defaults to None.
         """
 
-        self.logger = logger
+        self.logger: logging.Logger = logger or cast(logging.Logger, logging)  # pyright:ignore [reportInvalidCast]
 
-        if self.logger is None:
-            self.logger = logging
-
+        self.remarkablepp_versions: dict[str, list[str]]
+        self.remarkable2_versions: dict[str, list[str]]
+        self.remarkable1_versions: dict[str, list[str]]
+        self.external_provider_url: str
         (
             self.remarkablepp_versions,
             self.remarkable2_versions,
@@ -34,7 +33,9 @@ class UpdateManager:
             self.external_provider_url,
         ) = self.get_remarkable_versions()
 
-    def get_remarkable_versions(self) -> tuple[dict, dict, dict, str, str]:
+    def get_remarkable_versions(
+        self,
+    ) -> tuple[dict[str, list[str]], dict[str, list[str]], dict[str, list[str]], str]:
         """Gets the avaliable versions for the device, by checking the local version-ids.json file and then updating it if necessary
 
         Returns:
@@ -48,7 +49,7 @@ class UpdateManager:
 
         else:
             if os.name == "nt":  # Windows
-                folder_location = os.getenv("APPDATA") + "/codexctl"
+                folder_location = (os.getenv("APPDATA") or "") + "/codexctl"
             elif os.name in ("posix", "darwin"):  # Linux or MacOS
                 folder_location = os.path.expanduser("~/.config/codexctl")
             else:
@@ -65,11 +66,14 @@ class UpdateManager:
 
         try:
             with open(file_location) as f:
-                contents = json.load(f)
+                contents = json.load(f)  # pyright:ignore [reportAny]
+                if not isinstance(contents, dict):
+                    raise ValueError()
+
         except ValueError:
             raise SystemError(
                 f"Version-ids.json @ {file_location} is corrupted! Please delete it and try again. Also, PLEASE open an issue on the repo showing the contents of the file."
-            )
+            ) from None
 
         if (
             int(datetime.now().timestamp()) - contents["last-updated"]
@@ -78,15 +82,23 @@ class UpdateManager:
             self.update_version_ids(file_location)
 
             with open(file_location) as f:
-                contents = json.load(f)
+                try:
+                    contents = json.load(f)  # pyright:ignore [reportAny]
+                    if not isinstance(contents, dict):
+                        raise ValueError()
+
+                except ValueError:
+                    raise SystemError(
+                        f"Version-ids.json @ {file_location} is corrupted! Please delete it and try again. Also, PLEASE open an issue on the repo showing the contents of the file."
+                    ) from None
 
         self.logger.debug(f"Version ids contents are {contents}")
 
         return (
-            contents["remarkablepp"],
-            contents["remarkable2"],
-            contents["remarkable1"],
-            contents["external-provider-url"],
+            cast(dict[str, list[str]], contents["remarkablepp"]),
+            cast(dict[str, list[str]], contents["remarkable2"]),
+            cast(dict[str, list[str]], contents["remarkable1"]),
+            cast(str, contents["external-provider-url"]),
         )
 
     def update_version_ids(self, location: str) -> None:
@@ -98,22 +110,23 @@ class UpdateManager:
         Raises:
             SystemExit: If the file cannot be updated
         """
-        with open(location, "w", newline="\n") as f:
-            try:
+        try:
+            with open(location, "w", newline="\n") as f:
                 self.logger.debug("Downloading version-ids.json")
-                contents = requests.get(
+                contents = requests.get(  # pyright:ignore [reportAny]
                     "https://raw.githubusercontent.com/Jayy001/codexctl/main/data/version-ids.json"
                 ).json()
                 json.dump(contents, f, indent=4)
-                f.write("\n")
-            except requests.exceptions.Timeout:
-                raise SystemExit(
-                    "Connection timed out while downloading version-ids.json! Do you have an internet connection?"
-                )
-            except Exception as error:
-                raise SystemExit(
-                    f"Unknown error while downloading version-ids.json! {error}"
-                )
+                _ = f.write("\n")
+        except requests.exceptions.Timeout:
+            raise SystemExit(
+                "Connection timed out while downloading version-ids.json! Do you have an internet connection?"
+            ) from None
+            
+        except Exception as error:
+            raise SystemExit(
+                f"Unknown error while downloading version-ids.json! {error}"
+            ) from error
 
     def get_latest_version(self, hardware_type: HardwareType) -> str:
         """Gets the latest version available for the device
@@ -132,7 +145,7 @@ class UpdateManager:
             case HardwareType.RMPP:
                 versions = self.remarkablepp_versions
 
-        return self.__max_version(versions.keys())
+        return self.__max_version(list(versions.keys()))
 
     def get_toltec_version(self, hardware_type: HardwareType) -> str:
         """Gets the latest version available toltec for the device
@@ -232,58 +245,8 @@ class UpdateManager:
             file_url, file_name, download_folder, version_checksum
         )
 
-    def __generate_xml_data(self) -> str:
-        """Generates and returns XML data for the update request"""
-        params = {
-            "installsource": "scheduler",
-            "requestid": str(uuid.uuid4()),
-            "sessionid": str(uuid.uuid4()),
-            "machineid": "00".zfill(32),
-            "oem": "RM100-753-12345",
-            "appid": "98DA7DF2-4E3E-4744-9DE6-EC931886ABAB",
-            "bootid": str(uuid.uuid4()),
-            "current": "3.2.3.1595",
-            "group": "Prod",
-            "platform": "reMarkable2",
-        }
-
-        return """<?xml version="1.0" encoding="UTF-8"?>
-<request protocol="3.0" version="{current}" requestid="{{{requestid}}}" sessionid="{{{sessionid}}}" updaterversion="0.4.2" installsource="{installsource}" ismachine="1">
-    <os version="zg" platform="{platform}" sp="{current}_armv7l" arch="armv7l"></os>
-    <app appid="{{{appid}}}" version="{current}" track="{group}" ap="{group}" bootid="{{{bootid}}}" oem="{oem}" oemversion="2.5.2" alephversion="{current}" machineid="{machineid}" lang="en-US" board="" hardware_class="" delta_okay="false" nextversion="" brand="" client="" >
-        <updatecheck/>
-    </app>
-</request>""".format(**params)
-
-    def __parse_response(self, resp: str) -> tuple[str, str, str] | None:
-        """Parses the response from the update server and returns the file name, uri, and version if an update is available
-
-        Args:
-            resp (str): Response from the server
-
-        Returns:
-            tuple[str, str, str] | None: File name, uri, and version if an update is available, None otherwise
-        """
-        xml_data = ET.fromstring(resp)
-
-        if "noupdate" in resp or xml_data is None:
-            return None
-
-        file_name = xml_data.find("app/updatecheck/manifest/packages/package").attrib[
-            "name"
-        ]
-        file_uri = (
-            f"{xml_data.find('app/updatecheck/urls/url').attrib['codebase']}{file_name}"
-        )
-        file_version = xml_data.find("app/updatecheck/manifest").attrib["version"]
-
-        self.logger.debug(
-            f"File version is {file_version}, file uri is {file_uri}, file name is {file_name}"
-        )
-        return file_version, file_uri, file_name
-
     def __download_version_file(
-        self, uri: str, name: str, download_folder: str, checksum: str
+        self, uri: str, name: str, download_folder: str | Path, checksum: str
     ) -> str | None:
         """Downloads the version file from the server and checks the checksum
 
@@ -305,7 +268,7 @@ class UpdateManager:
 
         self.logger.debug(f"Downloading {name} from {uri} to {download_folder}")
         try:
-            file_length = int(file_length)
+            file_length = int(file_length or 0)
 
             if int(file_length) < 10000000:  # 10MB, invalid version file
                 self.logger.error(
@@ -324,13 +287,14 @@ class UpdateManager:
         with open(filename, "wb") as out_file:
             dl = 0
 
-            for data in response.iter_content(chunk_size=4096):
+            data: bytes
+            for data in response.iter_content(chunk_size=4096):  # pyright:ignore [reportAny]
                 dl += len(data)
-                out_file.write(data)
+                _ = out_file.write(data)
                 if sys.stdout.isatty():
                     done = int(50 * dl / file_length)
-                    sys.stdout.write("\r[%s%s]" % ("=" * done, " " * (50 - done)))
-                    sys.stdout.flush()
+                    _ = sys.stdout.write("\r[%s%s]" % ("=" * done, " " * (50 - done)))
+                    _ = sys.stdout.flush()
 
         if sys.stdout.isatty():
             print(end="\r\n")
@@ -350,7 +314,7 @@ class UpdateManager:
         return filename
 
     @staticmethod
-    def __max_version(versions: list) -> str:
+    def __max_version(versions: list[str]) -> str:
         """Returns the highest avaliable version from a list with semantic versioning"""
         return sorted(versions, key=lambda v: tuple(map(int, v.split("."))))[-1]
 

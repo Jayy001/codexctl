@@ -38,10 +38,10 @@ response_template = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
-def getupdateinfo(platform, version, update_name):
+def getupdateinfo(update_name: str) -> tuple[str, str, int]:
     full_path = os.path.join("updates", update_name)
 
-    update_size = str(os.path.getsize(full_path))
+    update_size = os.path.getsize(full_path)
 
     BUF_SIZE = 8192
 
@@ -59,7 +59,7 @@ def getupdateinfo(platform, version, update_name):
     return (update_sha1, update_sha256, update_size)
 
 
-def get_available_version(version):
+def get_available_version(version: str):
     available_versions = scanUpdates()
 
     for device, ids in available_versions.items():
@@ -69,9 +69,9 @@ def get_available_version(version):
             return available_version
 
 
-def scanUpdates():
+def scanUpdates() -> dict[str, tuple[str, str]]:
     files = os.listdir("updates")
-    versions = {}
+    versions: dict[str, tuple[str, str]] = {}
 
     for f in files:
         p = f.split("_")
@@ -95,7 +95,7 @@ def scanUpdates():
 
 class MySimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
-        length = int(self.headers.get("Content-Length"))
+        length = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(length).decode("utf-8")
         # print(body)
         print("Updating...")
@@ -105,21 +105,23 @@ class MySimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
         # check for update
         if updatecheck_node is not None:
             version = xml.attrib["version"]
-            platform = xml.find("os").attrib["platform"]
+            os = xml.find("os")
+            if os is None:
+                raise Exception("os tag missing from results")
+
+            platform = os.attrib["platform"]
             print("requested: ", version)
             print("platform: ", platform)
 
             version, update_name = available_versions[platform]
 
-            update_sha1, update_sha256, update_size = getupdateinfo(
-                platform, version, update_name
-            )
+            update_sha1, update_sha256, update_size = getupdateinfo(update_name)
             params = {
                 "version": version,
                 "update_name": f"updates/{update_name}",
                 "update_sha1": update_sha1,
                 "update_sha256": update_sha256,
-                "update_size": update_size,
+                "update_size": str(update_size),
                 "codebase_url": host_url,
             }
 
@@ -128,10 +130,13 @@ class MySimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
             # print(response)
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(response.encode())
+            _ = self.wfile.write(response.encode())
             return
 
         event_node = xml.find("app/event")
+        if event_node is None:
+            raise Exception("app/event tag missing from results")
+
         event_type = int(event_node.attrib["eventtype"])
         event_result = int(event_node.attrib["eventresult"])
 
@@ -148,11 +153,11 @@ class MySimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
             print(response_ok)
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(response_ok.encode())
+            _ = self.wfile.write(response_ok.encode())
             return
 
 
-def startUpdate(versionsGiven, host, port=8080):
+def startUpdate(versionsGiven: dict[str, tuple[str, str]], host: str, port: int = 8080):
     global available_versions
     global host_url  # I am aware globals are generally bad practice, but this is a quick and dirty solution
 
