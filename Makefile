@@ -19,6 +19,13 @@ else
 	CODEXCTL_BIN := codexctl
 endif
 
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    SHA256SUM := gsha256sum
+else
+    SHA256SUM := sha256sum
+endif
+
 OBJ := $(wildcard codexctl/**)
 OBJ += $(wildcard data/*)
 OBJ += README.md
@@ -57,7 +64,7 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	  umount -ql .venv/mnt; \
 	fi; \
 	python -m codexctl extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
-	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
+	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | $(SHA256SUM) -c; \
 	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
 	set -o pipefail; \
 	if ! diff --color <(python -m codexctl ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" / | tr -d "\n\r") <(echo -n ${LS_DATA}) | cat -te; then \
@@ -73,7 +80,7 @@ test-executable: .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
 	dist/${CODEXCTL_BIN} extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
-	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | sha256sum --check; \
+	echo "${IMG_SHA}  .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" | $(SHA256SUM) -c; \
 	rm -f ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img"; \
 	set -o pipefail; \
 	if ! diff --color <(dist/${CODEXCTL_BIN} ls ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed" / | tr -d "\n\r") <(echo -n ${LS_DATA}) | cat -te; then \
