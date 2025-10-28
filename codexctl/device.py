@@ -23,7 +23,7 @@ class HardwareType(enum.Enum):
 
     @classmethod
     def parse(cls, device_type: str) -> "HardwareType":
-        if device_type.lower() in ("pp", "pro", "rmpp", "ferrari", "remarkable ferrari", "remarkable ferrari"):
+        if device_type.lower() in ("pp", "pro", "rmpp", "ferrari", "remarkable ferrari"):
             return cls.RMPP
         elif device_type.lower() in ("2", "rm2", "remarkable 2", "remarkable 2.0"):
             return cls.RM2
