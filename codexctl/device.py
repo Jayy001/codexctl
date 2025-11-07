@@ -27,7 +27,7 @@ class HardwareType(enum.Enum):
             return cls.RMPP
         elif device_type.lower() in ("2", "rm2", "remarkable 2", "remarkable 2.0"):
             return cls.RM2
-        elif device_type.lower() in ("1", "rm1", "remarkable 1", "remarkable 1.0"):
+        elif device_type.lower() in ("1", "rm1", "remarkable 1", "remarkable 1.0", "remarkable prototype 1"):
             return cls.RM1
 
         raise ValueError(f"Unknown hardware version: {device_type} (rm1, rm2, rmpp)")
