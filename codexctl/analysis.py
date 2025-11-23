@@ -57,7 +57,7 @@ def get_swu_metadata(swu_file: str) -> Tuple[str, HardwareType]:
         if b"sw-description" not in archive.keys():
             raise ValueError(f"Not a valid SWU file: {swu_file}")
 
-        sw_desc = archive["sw-description"].read().decode("utf-8")
+        sw_desc = archive[b"sw-description"].read().decode("utf-8")
         info = libconf.loads(sw_desc)["software"]
 
         version = info.get("version")
@@ -104,7 +104,7 @@ def extract_swu_files(
     archive.open()
     try:
         if output_dir is not None:
-            output_path = Path(output_dir)
+            output_path = Path(output_dir).resolve()
             output_path.mkdir(parents=True, exist_ok=True)
 
             for name in archive.keys():
@@ -112,7 +112,11 @@ def extract_swu_files(
                     continue
 
                 filename = name.decode('utf-8')
-                file_path = output_path / filename
+                file_path = (output_path / filename).resolve()
+
+                if not file_path.is_relative_to(output_path):
+                    raise ValueError(f"Path traversal detected: {filename} resolves outside output directory")
+
                 file_path.parent.mkdir(parents=True, exist_ok=True)
 
                 with open(file_path, 'wb') as f:
@@ -129,7 +133,7 @@ def extract_swu_files(
                         extracted[name.decode('utf-8')] = archive[name].read()
             else:
                 for filename in filter_files:
-                    entry = archive.get(filename)
+                    entry = archive.get(filename.encode('utf-8'))
                     if entry:
                         extracted[filename] = entry.read()
 

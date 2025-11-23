@@ -367,20 +367,25 @@ class Manager:
                                 "./"
                             )
 
-                        if current_swu_path:
-                            print("Extracting bootloader files...")
-                            from .analysis import extract_swu_files
-                            bootloader_files_for_install = extract_swu_files(
-                                current_swu_path,
-                                filter_files=['update-bootloader.sh', 'imx-boot']
+                        if not current_swu_path:
+                            raise SystemError(
+                                f"Failed to download current version {current_version} for bootloader extraction. "
+                                f"This is required for safe downgrade across bootloader boundary."
                             )
 
-                            if not bootloader_files_for_install or len(bootloader_files_for_install) != 2:
-                                raise SystemError("Failed to extract bootloader files from current version")
+                        print("Extracting bootloader files...")
+                        from .analysis import extract_swu_files
+                        bootloader_files_for_install = extract_swu_files(
+                            current_swu_path,
+                            filter_files=['update-bootloader.sh', 'imx-boot']
+                        )
 
-                            print(f"✓ Extracted update-bootloader.sh ({len(bootloader_files_for_install['update-bootloader.sh'])} bytes)")
-                            print(f"✓ Extracted imx-boot ({len(bootloader_files_for_install['imx-boot'])} bytes)")
-                            print()
+                        if not bootloader_files_for_install or len(bootloader_files_for_install) != 2:
+                            raise SystemError("Failed to extract bootloader files from current version")
+
+                        print(f"✓ Extracted update-bootloader.sh ({len(bootloader_files_for_install['update-bootloader.sh'])} bytes)")
+                        print(f"✓ Extracted imx-boot ({len(bootloader_files_for_install['imx-boot'])} bytes)")
+                        print()
 
                 if not update_file_requires_new_engine:
                     if update_file:  # Check if file exists

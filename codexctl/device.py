@@ -380,7 +380,7 @@ class DeviceManager:
             tuple: (current_partition, inactive_partition, next_boot_partition)
         """
         if not self.client:
-            raise RuntimeError("SSH client required for partition detection")
+            raise SystemError("SSH client required for partition detection")
 
         _stdin, stdout, _stderr = self.client.exec_command("swupdate -g")
         active_device = stdout.read().decode("utf-8").strip()
@@ -578,13 +578,18 @@ echo "fallback: ${OLDPART}"
             if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
                 current_is_new = [int(parts[0]), int(parts[1])] >= [3, 22]
             else:
-                raise ValueError(f"Cannot restore: unexpected current version format '{current_version}'")
+                raise SystemError(f"Cannot restore: unexpected current version format '{current_version}'")
+
+            if backup_version == "unknown":
+                raise SystemError(
+                    "Cannot restore: backup partition version could not be determined. "
+                )
 
             parts = backup_version.split('.')
             if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
                 target_is_new = [int(parts[0]), int(parts[1])] >= [3, 22]
             else:
-                raise ValueError(f"Cannot restore: unexpected backup version format '{backup_version}'")
+                raise SystemError(f"Cannot restore: unexpected backup version format '{backup_version}'")
 
             RESTORE_CODE = "#!/bin/bash\n"
             RESTORE_CODE += f"echo 'Switching from partition {current_part} to partition {inactive_part}'\n"
