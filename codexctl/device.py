@@ -285,11 +285,140 @@ class DeviceManager:
 
         return client
 
-    def get_device_status(self) -> tuple[str | None, str, str]:
+    def _read_version_from_path(self, ftp, base_path: str = "") -> tuple[str, bool]:
+        """Reads version from a given path (current partition or mounted backup)
+
+        Args:
+            ftp: SFTP client connection
+            base_path: Base path prefix (empty for current partition, /tmp/mount_pX for backup)
+
+        Returns:
+            tuple: (version_string, old_update_engine_boolean)
+        """
+        old_update_engine = True
+
+        try:
+            update_conf_path = f"{base_path}/usr/share/remarkable/update.conf" if base_path else "/usr/share/remarkable/update.conf"
+            with ftp.file(update_conf_path) as file:
+                version = re.search(
+                    "(?<=REMARKABLE_RELEASE_VERSION=).*",
+                    file.read().decode("utf-8").strip("\n"),
+                ).group()
+        except Exception:
+            os_release_path = f"{base_path}/etc/os-release" if base_path else "/etc/os-release"
+            with ftp.file(os_release_path) as file:
+                version = (
+                    re.search("(?<=IMG_VERSION=).*", file.read().decode("utf-8"))
+                    .group()
+                    .strip('"')
+                )
+                old_update_engine = False
+
+        return version, old_update_engine
+
+    def _get_backup_partition_version(self) -> str:
+        """Gets the version installed on the backup (inactive) partition
+
+        Returns:
+            str: Version string or "unknown"
+        """
+        if not self.client:
+            return "unknown"
+
+        try:
+            ftp = self.client.open_sftp()
+
+            if self.hardware in (HardwareType.RMPP, HardwareType.RMPPM):
+                _stdin, stdout, _stderr = self.client.exec_command("swupdate -g")
+                active_device = stdout.read().decode("utf-8").strip()
+                active_part = int(active_device.split('p')[-1])
+                inactive_part = 3 if active_part == 2 else 2
+                device_base = re.sub(r'p\d+$', '', active_device)
+            else:
+                _stdin, stdout, _stderr = self.client.exec_command("rootdev")
+                active_device = stdout.read().decode("utf-8").strip()
+                active_part = int(active_device.split('p')[-1])
+                inactive_part = 3 if active_part == 2 else 2
+                device_base = re.sub(r'p\d+$', '', active_device)
+
+            mount_point = f"/tmp/mount_p{inactive_part}"
+
+            self.client.exec_command(f"mkdir -p {mount_point}")
+            _stdin, stdout, _stderr = self.client.exec_command(
+                f"mount -o ro {device_base}p{inactive_part} {mount_point}"
+            )
+            exit_status = stdout.channel.recv_exit_status()
+
+            if exit_status != 0:
+                self.logger.debug(f"Failed to mount backup partition: {_stderr.read().decode('utf-8')}")
+                return "unknown"
+
+            try:
+                version, _ = self._read_version_from_path(ftp, mount_point)
+            except Exception as e:
+                self.logger.debug(f"Failed to read version from backup partition: {e}")
+                version = "unknown"
+
+            self.client.exec_command(f"umount {mount_point}")
+            self.client.exec_command(f"rm -rf {mount_point}")
+
+            return version
+
+        except Exception as e:
+            self.logger.debug(f"Error getting backup partition version: {e}")
+            return "unknown"
+
+    def _get_paper_pro_partition_info(self, current_version: str) -> tuple[int, int, int]:
+        """Gets partition information for Paper Pro devices
+
+        Args:
+            current_version: Current OS version string for version-aware detection
+
+        Returns:
+            tuple: (current_partition, inactive_partition, next_boot_partition)
+        """
+        if not self.client:
+            raise RuntimeError("SSH client required for partition detection")
+
+        _stdin, stdout, _stderr = self.client.exec_command("swupdate -g")
+        active_device = stdout.read().decode("utf-8").strip()
+        current_part = int(active_device.split('p')[-1])
+        inactive_part = 3 if current_part == 2 else 2
+
+        try:
+            version_parts = [int(x) for x in current_version.split('.')[:2]]
+            is_new_version = version_parts >= [3, 22]
+        except Exception:
+            is_new_version = True
+
+        next_boot_part = current_part
+
+        if is_new_version:
+            try:
+                ftp = self.client.open_sftp()
+                with ftp.file("/sys/bus/mmc/devices/mmc0:0001/boot_part") as file:
+                    boot_part_value = file.read().decode("utf-8").strip()
+                    next_boot_part = 2 if boot_part_value == "1" else 3
+            except Exception:
+                is_new_version = False
+
+        if not is_new_version:
+            try:
+                ftp = self.client.open_sftp()
+                with ftp.file("/sys/devices/platform/lpgpr/root_part") as file:
+                    root_part_value = file.read().decode("utf-8").strip()
+                    next_boot_part = 2 if root_part_value == "a" else 3
+            except Exception as e:
+                self.logger.debug(f"Failed to read next boot partition: {e}")
+                pass
+
+        return current_part, inactive_part, next_boot_part
+
+    def get_device_status(self) -> tuple[str | None, str, str, str, str]:
         """Gets the status of the device
 
         Returns:
-            tuple: Beta status, previous version, and current version (in that order)
+            tuple: Beta status, old_update_engine, current version, version_id, backup version (in that order)
         """
         old_update_engine = True
 
@@ -298,20 +427,7 @@ class DeviceManager:
             ftp = self.client.open_sftp()
             self.logger.debug("Connected")
 
-            try:
-                with ftp.file("/usr/share/remarkable/update.conf") as file:
-                    xochitl_version = re.search(
-                        "(?<=REMARKABLE_RELEASE_VERSION=).*",
-                        file.read().decode("utf-8").strip("\n"),
-                    ).group()
-            except Exception:
-                with ftp.file("/etc/os-release") as file:
-                    xochitl_version = (
-                        re.search("(?<=IMG_VERSION=).*", file.read().decode("utf-8"))
-                        .group()
-                        .strip('"')
-                    )
-                    old_update_engine = False
+            xochitl_version, old_update_engine = self._read_version_from_path(ftp)
 
             with ftp.file("/etc/version") as file:
                 version_id = file.read().decode("utf-8").strip("\n")
@@ -353,7 +469,9 @@ class DeviceManager:
         if beta_possible is not None:
             beta = re.search("(?<=GROUP=).*", beta_contents).group()
 
-        return beta, old_update_engine, xochitl_version, version_id
+        backup_version = self._get_backup_partition_version()
+
+        return beta, old_update_engine, xochitl_version, version_id, backup_version
 
     def set_server_config(self, contents: str, server_host_name: str) -> str:
         """Converts the contents given to point to the given server IP and port
@@ -450,17 +568,44 @@ echo "fallback: ${OLDPART}"
 /sbin/fw_setenv "active_partition" "${NEWPART}\""""
 
         if self.hardware in (HardwareType.RMPP, HardwareType.RMPPM):
-            RESTORE_CODE = """#!/bin/bash
-OLDPART=$(< /sys/devices/platform/lpgpr/root_part)
-if [[ $OLDPART  ==  "a" ]]; then
-    NEWPART="b"
-else
-    NEWPART="a"
-fi
-echo "new: ${NEWPART}"
-echo "fallback: ${OLDPART}"
-echo $NEWPART > /sys/devices/platform/lpgpr/root_part
-"""
+            _, _, current_version, _, backup_version = self.get_device_status()
+            current_part, inactive_part, _ = self._get_paper_pro_partition_info(current_version)
+
+            new_part_label = "a" if inactive_part == 2 else "b"
+            old_part_label = "a" if current_part == 2 else "b"
+
+            try:
+                current_version_parts = [int(x) for x in current_version.split('.')[:2]]
+                current_is_new = current_version_parts >= [3, 22]
+            except Exception:
+                current_is_new = False
+
+            try:
+                target_version_parts = [int(x) for x in backup_version.split('.')[:2]]
+                target_is_new = target_version_parts >= [3, 22]
+            except Exception:
+                target_is_new = False
+
+            RESTORE_CODE = "#!/bin/bash\n"
+            RESTORE_CODE += f"echo 'Switching from partition {current_part} to partition {inactive_part}'\n"
+            RESTORE_CODE += f"echo 'Current version: {current_version}'\n"
+            RESTORE_CODE += f"echo 'Target version: {backup_version}'\n"
+
+            # Method 1: Legacy sysfs (if current OS < 3.22)
+            if not current_is_new:
+                RESTORE_CODE += f"echo '{new_part_label}' > /sys/devices/platform/lpgpr/root_part\n"
+                RESTORE_CODE += "echo 'Set next boot via sysfs (legacy method)'\n"
+
+            # Method 2: MMC bootpart (if target OS >= 3.22 OR current OS >= 3.22)
+            if target_is_new or current_is_new:
+                if inactive_part == 2:
+                    RESTORE_CODE += "mmc bootpart enable 1 0 /dev/mmcblk0boot0\n"
+                else:
+                    RESTORE_CODE += "mmc bootpart enable 2 0 /dev/mmcblk0boot1\n"
+                RESTORE_CODE += "echo 'Set next boot via mmc bootpart (new method)'\n"
+
+            RESTORE_CODE += f"echo '0' > /sys/devices/platform/lpgpr/root{new_part_label}_errcnt 2>/dev/null || true\n"
+            RESTORE_CODE += "echo 'Partition switch complete'\n"
 
         if self.client:
             self.logger.debug("Connecting to FTP")

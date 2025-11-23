@@ -214,14 +214,12 @@ class Manager:
                 version = self.updater.get_toltec_version(remarkable.hardware)
 
             if function == "status":
-                beta, prev, current, version_id = remarkable.get_device_status()
+                beta, prev, current, version_id, backup = remarkable.get_device_status()
                 print(
-                    f"\nCurrent version: {current}\nOld update engine: {prev}\nBeta active: {beta}\nVersion id: {version_id}"
+                    f"\nCurrent version: {current}\nBackup version: {backup}\nOld update engine: {prev}\nBeta active: {beta}\nVersion id: {version_id}"
                 )
 
             elif function == "restore":
-                if remarkable.hardware == HardwareType.RMPP:
-                    raise SystemError("Restore not available for rmpro.")
                 remarkable.restore_previous_version()
                 print(
                     f"Device restored to previous version [{remarkable.get_device_status()[1]}]"
