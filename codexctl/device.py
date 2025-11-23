@@ -301,18 +301,19 @@ class DeviceManager:
         try:
             update_conf_path = f"{base_path}/usr/share/remarkable/update.conf" if base_path else "/usr/share/remarkable/update.conf"
             with ftp.file(update_conf_path) as file:
-                version = re.search(
-                    "(?<=REMARKABLE_RELEASE_VERSION=).*",
-                    file.read().decode("utf-8").strip("\n"),
-                ).group()
-        except Exception:
+                contents = file.read().decode("utf-8").strip("\n")
+                match = re.search("(?<=REMARKABLE_RELEASE_VERSION=).*", contents)
+                if not match:
+                    raise ValueError(f"REMARKABLE_RELEASE_VERSION not found in {update_conf_path}")
+                version = match.group()
+        except (IOError, OSError):
             os_release_path = f"{base_path}/etc/os-release" if base_path else "/etc/os-release"
             with ftp.file(os_release_path) as file:
-                version = (
-                    re.search("(?<=IMG_VERSION=).*", file.read().decode("utf-8"))
-                    .group()
-                    .strip('"')
-                )
+                contents = file.read().decode("utf-8")
+                match = re.search("(?<=IMG_VERSION=).*", contents)
+                if not match:
+                    raise ValueError(f"IMG_VERSION not found in {os_release_path}")
+                version = match.group().strip('"')
                 old_update_engine = False
 
         return version, old_update_engine
@@ -386,11 +387,11 @@ class DeviceManager:
         current_part = int(active_device.split('p')[-1])
         inactive_part = 3 if current_part == 2 else 2
 
-        try:
-            version_parts = [int(x) for x in current_version.split('.')[:2]]
-            is_new_version = version_parts >= [3, 22]
-        except Exception:
-            is_new_version = True
+        parts = current_version.split('.')
+        if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
+            is_new_version = [int(parts[0]), int(parts[1])] >= [3, 22]
+        else:
+            raise ValueError(f"Cannot detect partition scheme: unexpected version format '{current_version}'")
 
         next_boot_part = current_part
 
@@ -400,7 +401,7 @@ class DeviceManager:
                 with ftp.file("/sys/bus/mmc/devices/mmc0:0001/boot_part") as file:
                     boot_part_value = file.read().decode("utf-8").strip()
                     next_boot_part = 2 if boot_part_value == "1" else 3
-            except Exception:
+            except (IOError, OSError):
                 is_new_version = False
 
         if not is_new_version:
@@ -409,9 +410,8 @@ class DeviceManager:
                 with ftp.file("/sys/devices/platform/lpgpr/root_part") as file:
                     root_part_value = file.read().decode("utf-8").strip()
                     next_boot_part = 2 if root_part_value == "a" else 3
-            except Exception as e:
+            except (IOError, OSError) as e:
                 self.logger.debug(f"Failed to read next boot partition: {e}")
-                pass
 
         return current_part, inactive_part, next_boot_part
 
@@ -573,19 +573,18 @@ echo "fallback: ${OLDPART}"
             current_part, inactive_part, _ = self._get_paper_pro_partition_info(current_version)
 
             new_part_label = "a" if inactive_part == 2 else "b"
-            old_part_label = "a" if current_part == 2 else "b"
 
-            try:
-                current_version_parts = [int(x) for x in current_version.split('.')[:2]]
-                current_is_new = current_version_parts >= [3, 22]
-            except Exception:
-                current_is_new = False
+            parts = current_version.split('.')
+            if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
+                current_is_new = [int(parts[0]), int(parts[1])] >= [3, 22]
+            else:
+                raise ValueError(f"Cannot restore: unexpected current version format '{current_version}'")
 
-            try:
-                target_version_parts = [int(x) for x in backup_version.split('.')[:2]]
-                target_is_new = target_version_parts >= [3, 22]
-            except Exception:
-                target_is_new = False
+            parts = backup_version.split('.')
+            if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
+                target_is_new = [int(parts[0]), int(parts[1])] >= [3, 22]
+            else:
+                raise ValueError(f"Cannot restore: unexpected backup version format '{backup_version}'")
 
             RESTORE_CODE = "#!/bin/bash\n"
             RESTORE_CODE += f"echo 'Switching from partition {current_part} to partition {inactive_part}'\n"
@@ -658,13 +657,13 @@ fi
 
         self.logger.debug("Device rebooted")
 
-    def install_sw_update(self, version_file: str, bootloader_files: Optional[Dict[str, bytes]] = None) -> None:
+    def install_sw_update(self, version_file: str, bootloader_files: dict[str, bytes] | None = None) -> None:
         """
         Installs new version from version file path, utilising swupdate
 
         Args:
             version_file (str): Path to img file
-            bootloader_files (Optional[Dict[str, bytes]]): Bootloader files for Paper Pro downgrade
+            bootloader_files (dict[str, bytes] | None): Bootloader files for Paper Pro downgrade
 
         Raises:
             SystemExit: If there was an error installing the update

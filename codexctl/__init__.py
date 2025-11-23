@@ -106,21 +106,16 @@ class Manager:
 
                 logger.debug(f"Extracting {args['file']} to {args['out']}")
 
+                # Check CPIO magic to route between SWU (CPIO) and old .signed format
                 with open(args["file"], "rb") as f:
                     magic = f.read(6)
 
-                if magic == b'070702':
+                if magic in (b'070701', b'070702'):
                     logger.info("Detected CPIO format (3.11+ SWU file)")
-                    from .cpio import extract_cpio_files
+                    from .analysis import extract_swu_files
 
-                    if os.path.isdir(args["out"]):
-                        output_dir = args["out"]
-                    else:
-                        output_dir = args["out"]
-                        os.makedirs(output_dir, exist_ok=True)
-
-                    extract_cpio_files(args["file"], output_dir=output_dir)
-                    logger.info(f"Extracted SWU contents to {output_dir}")
+                    extract_swu_files(args["file"], output_dir=args["out"])
+                    logger.info(f"Extracted SWU contents to {args['out']}")
                 else:
                     logger.info("Detected old format (<3.11 .signed file)")
                     try:
@@ -263,18 +258,44 @@ class Manager:
                 def version_lookup(version: str | None) -> re.Match[str] | None:
                     return re.search(r"\b\d+\.\d+\.\d+\.\d+\b", cast(str, version))
 
-                version_number = version_lookup(version)
+                version_number = None
+                swu_hardware = None
+
+                if update_file:
+                    try:
+                        # Quick magic check to skip expensive metadata extraction on old .signed files
+                        with open(update_file, "rb") as f:
+                            magic = f.read(6)
+
+                        if magic in (b'070701', b'070702'):
+                            from .analysis import get_swu_metadata
+                            version_number, swu_hardware = get_swu_metadata(update_file)
+                            logger.info(f"Extracted from SWU: version={version_number}, hardware={swu_hardware.name}")
+
+                            if swu_hardware != remarkable.hardware:
+                                raise SystemError(
+                                    f"Hardware mismatch!\n"
+                                    f"SWU file is for: {swu_hardware.name}\n"
+                                    f"Connected device is: {remarkable.hardware.name}\n"
+                                    f"Cannot install firmware for different hardware."
+                                )
+                    except ValueError as e:
+                        logger.warning(f"Could not extract metadata from SWU: {e}")
 
                 if not version_number:
-                    version_number = version_lookup(
-                        input(
-                            "Failed to get the version number from the filename, please enter it: "
+                    version_match = version_lookup(version)
+                    if not version_match:
+                        version_match = version_lookup(
+                            input(
+                                "Failed to get the version number from the filename, please enter it: "
+                            )
                         )
-                    )
-                    if not version_number:
-                        raise SystemError("Invalid version!")
+                        if not version_match:
+                            raise SystemError("Invalid version!")
 
-                version_number = version_number.group()
+                    version_number = version_match.group()
+                else:
+                    version_number = str(version_number)
 
                 update_file_requires_new_engine = UpdateManager.uses_new_update_engine(
                     version_number
@@ -308,8 +329,7 @@ class Manager:
                 bootloader_files_for_install = None
 
                 if (device_version_uses_new_engine and
-                    remarkable.hardware == HardwareType.RMPP and
-                    not update_file):
+                    remarkable.hardware == HardwareType.RMPP):
 
                     current_version = remarkable.get_device_status()[2]
 
@@ -349,8 +369,8 @@ class Manager:
 
                         if current_swu_path:
                             print("Extracting bootloader files...")
-                            from .cpio import extract_cpio_files
-                            bootloader_files_for_install = extract_cpio_files(
+                            from .analysis import extract_swu_files
+                            bootloader_files_for_install = extract_swu_files(
                                 current_swu_path,
                                 filter_files=['update-bootloader.sh', 'imx-boot']
                             )
@@ -604,4 +624,8 @@ def main() -> None:
 
     ### Call function
     man = Manager(device, logger)
-    man.call_func(args.command, vars(args))
+    try:
+        man.call_func(args.command, vars(args))
+    except SystemError as e:
+        print(f"\nError: {e}", file=sys.stderr)
+        sys.exit(1)
