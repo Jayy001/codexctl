@@ -20,17 +20,20 @@ class HardwareType(enum.Enum):
     RM1 = enum.auto()
     RM2 = enum.auto()
     RMPP = enum.auto()
+    RMPPM = enum.auto()
 
     @classmethod
     def parse(cls, device_type: str) -> "HardwareType":
-        if device_type.lower() in ("pp", "pro", "rmpp", "ferrari", "remarkable ferrari"):
+        if device_type.lower() in ("ppm", "rmppm", "chiappa", "remarkable chiappa"):
+            return cls.RMPPM
+        elif device_type.lower() in ("pp", "pro", "rmpp", "ferrari", "remarkable ferrari"):
             return cls.RMPP
         elif device_type.lower() in ("2", "rm2", "remarkable 2", "remarkable 2.0"):
             return cls.RM2
         elif device_type.lower() in ("1", "rm1", "remarkable 1", "remarkable 1.0", "remarkable prototype 1"):
             return cls.RM1
 
-        raise ValueError(f"Unknown hardware version: {device_type} (rm1, rm2, rmpp)")
+        raise ValueError(f"Unknown hardware version: {device_type} (rm1, rm2, rmpp, rmppm)")
 
     @property
     def old_download_hw(self):
@@ -41,6 +44,8 @@ class HardwareType(enum.Enum):
                 return "reMarkable2"
             case HardwareType.RMPP:
                 raise ValueError("ReMarkable Paper Pro does not support the old update engine")
+            case HardwareType.RMPPM:
+                raise ValueError("ReMarkable Paper Pro Move does not support the old update engine")
 
     @property
     def new_download_hw(self):
@@ -51,6 +56,8 @@ class HardwareType(enum.Enum):
                 return "rm2"
             case HardwareType.RMPP:
                 return "rmpp"
+            case HardwareType.RMPPM:
+                return "chiappa"
 
     @property
     def swupdate_hw(self):
@@ -61,6 +68,8 @@ class HardwareType(enum.Enum):
                 return "reMarkable2"
             case HardwareType.RMPP:
                 return "ferrari"
+            case HardwareType.RMPPM:
+                return "chiappa"
 
     @property
     def toltec_type(self):
@@ -71,6 +80,8 @@ class HardwareType(enum.Enum):
                 return "rm2"
             case HardwareType.RMPP:
                 raise ValueError("ReMarkable Paper Pro does not support toltec")
+            case HardwareType.RMPPM:
+                raise ValueError("ReMarkable Paper Pro Move does not support toltec")
 
 class DeviceManager:
     def __init__(
@@ -438,7 +449,7 @@ echo "fallback: ${OLDPART}"
 /sbin/fw_setenv "fallback_partition" "${OLDPART}"
 /sbin/fw_setenv "active_partition" "${NEWPART}\""""
 
-        if self.hardware == HardwareType.RMPP:
+        if self.hardware in (HardwareType.RMPP, HardwareType.RMPPM):
             RESTORE_CODE = """#!/bin/bash
 OLDPART=$(< /sys/devices/platform/lpgpr/root_part)
 if [[ $OLDPART  ==  "a" ]]; then

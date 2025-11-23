@@ -1,5 +1,13 @@
 {
     "remarkable1": {
+        "3.23.0.64": [
+            "remarkable-production-image-3.23.0.64-rm1-public.swu",
+            "88c35f0e52b08e9246677babe7163d7917f40bf133ea5b9dfa70a7fc09f548af"
+        ],
+        "3.22.0.64": [
+            "remarkable-production-image-3.22.0.64-rm1-public.swu",
+            "9f23e1309b801a9ba68897113dad2fda032f50d261202d5b1b4ce561204afe20"
+        ],
         "3.20.0.92": [
             "remarkable-production-image-3.20.0.92-rm1-public.swu",
             "a7558d9ef4b2bcc41d9a9219822a1e7e34bff46851658dcfd9666856401e9728"
@@ -182,9 +190,17 @@
         ]
     },
     "remarkable2": {
-        "3.17.0.72": [
-            "remarkable-production-memfault-image-3.17.0.72-rm2-public.swu",
-            "508f63bcae0b43e812d7afb4fbea42d11947e57abd63bc2538adb2884cbfba78"
+        "3.23.0.64": [
+            "remarkable-production-image-3.23.0.64-rm2-public.swu",
+            "6de624bc03f892b73f56e83d0fd3d49c3c69a6d63a5831509fee98416d776807"
+        ],
+        "3.22.4.2": [
+            "remarkable-production-image-3.22.4.2-rm2-public.swu",
+            "e714f7a48362fefa2b4b801d5f1b0fadfd8a272fdac9680b059c10dde6903319"
+        ],
+        "3.22.0.64": [
+            "remarkable-production-image-3.22.0.64-rm2-public.swu",
+            "3662e7f0e827d631c99a8447038fff7710b6d2c84049ca4d06162677f1b1aa8a"
         ],
         "3.20.0.92": [
             "remarkable-production-image-3.20.0.92-rm2-public.swu",
@@ -376,6 +392,18 @@
         ]
     },
     "remarkablepp": {
+        "3.23.0.64": [
+            "remarkable-production-image-3.23.0.64-ferrari-public.swu",
+            "c19301055b8cf4351d530a2f59a91fd6ebc8af8c36f0b8999c6557480c8554da"
+        ],
+        "3.22.4.2": [
+            "remarkable-production-image-3.22.4.2-ferrari-public.swu",
+            "6baa6f0e9f6a4ad949ef043c3e604021b8f6c897d624b435752c5128cfb410d6"
+        ],
+        "3.22.0.64": [
+            "remarkable-production-image-3.22.0.64-ferrari-public.swu",
+            "74b8a32e5aa6b9f1ae8d807e6a3595fed37d0d4e524e58b3a240b48de83d7e9c"
+        ],
         "3.20.0.92": [
             "remarkable-production-image-3.20.0.92-ferrari-public.swu",
             "a63c1573aa26ed3e1f7e5dded3eb4adc09710515b2d2b1964ff397c94243ba89"
@@ -421,6 +449,19 @@
             "8c92f589900e7e355697206c71e2256d909313fcd96aa2c5fd9910ff04b062f1"
         ]
     },
-    "last-updated": 1751286637,
-    "external-provider-url": "https://storage.googleapis.com/remarkable-versions/REPLACE_ID"
+    "remarkableppm": {
+        "3.23.0.64": [
+            "remarkable-production-image-3.23.0.64-chiappa-public.swu",
+            "0a10ba1dbd873a442f144cb346c9497b820604a98203478345343a01be0d417f"
+        ],
+        "3.22.0.65": [
+            "remarkable-production-image-3.22.0.65-chiappa-public.swu",
+            "b494b36e6c1749bbe205ef26f2cea31728f6fe82aa5abf5057e37a09ec326ffa"
+        ]
+    },
+    "last-updated": 1763843954,
+    "external-provider-urls": [
+        "https://storage.googleapis.com/remarkable-versions/REPLACE_ID",
+        "https://remarkable-software.s3.us-east-2.amazonaws.com/REPLACE_ID"
+    ]
 }

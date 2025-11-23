@@ -70,12 +70,17 @@ class Manager:
             remarkable_pp_versions = "\n".join(
                 self.updater.remarkablepp_versions.keys()
             )
+            remarkable_ppm_versions = "\n".join(
+                self.updater.remarkableppm_versions.keys()
+            )
             remarkable_2_versions = "\n".join(self.updater.remarkable2_versions.keys())
             remarkable_1_versions = "\n".join(self.updater.remarkable1_versions.keys())
 
             version_blocks = []
             if remarkable_version is None or remarkable_version == HardwareType.RMPP:
                 version_blocks.append(f"ReMarkable Paper Pro:\n{remarkable_pp_versions}")
+            if remarkable_version is None or remarkable_version == HardwareType.RMPPM:
+                version_blocks.append(f"ReMarkable Paper Pro Move:\n{remarkable_ppm_versions}")
             if remarkable_version is None or remarkable_version == HardwareType.RM2:
                 version_blocks.append(f"ReMarkable 2:\n{remarkable_2_versions}")
             if remarkable_version is None or remarkable_version == HardwareType.RM1:

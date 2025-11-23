@@ -29,16 +29,17 @@ class UpdateManager:
 
         (
             self.remarkablepp_versions,
+            self.remarkableppm_versions,
             self.remarkable2_versions,
             self.remarkable1_versions,
-            self.external_provider_url,
+            self.external_provider_urls,
         ) = self.get_remarkable_versions()
 
-    def get_remarkable_versions(self) -> tuple[dict, dict, dict, str, str]:
+    def get_remarkable_versions(self) -> tuple[dict, dict, dict, dict, list]:
         """Gets the avaliable versions for the device, by checking the local version-ids.json file and then updating it if necessary
 
         Returns:
-            tuple: A tuple containing the version ids for the remarkablepp, remarkable2, remarkable1, toltec version and external provider (in that order)
+            tuple: A tuple containing the version ids for the remarkablepp, remarkableppm, remarkable2, remarkable1, and external provider urls (in that order)
         """
 
         if os.path.exists("data/version-ids.json"):
@@ -82,11 +83,16 @@ class UpdateManager:
 
         self.logger.debug(f"Version ids contents are {contents}")
 
+        provider_urls = contents.get("external-provider-urls", contents.get("external-provider-url"))
+        if isinstance(provider_urls, str):
+            provider_urls = [provider_urls]
+
         return (
             contents["remarkablepp"],
+            contents["remarkableppm"],
             contents["remarkable2"],
             contents["remarkable1"],
-            contents["external-provider-url"],
+            provider_urls,
         )
 
     def update_version_ids(self, location: str) -> None:
@@ -131,6 +137,8 @@ class UpdateManager:
                 versions = self.remarkable2_versions
             case HardwareType.RMPP:
                 versions = self.remarkablepp_versions
+            case HardwareType.RMPPM:
+                versions = self.remarkableppm_versions
 
         return self.__max_version(versions.keys())
 
@@ -200,6 +208,9 @@ class UpdateManager:
             case HardwareType.RMPP:
                 version_lookup = self.remarkablepp_versions
 
+            case HardwareType.RMPPM:
+                version_lookup = self.remarkableppm_versions
+
             case HardwareType.RM2:
                 version_lookup = self.remarkable2_versions
                 BASE_URL_V3 += "2"
@@ -221,16 +232,30 @@ class UpdateManager:
         if version <= (3, 11, 2, 5):
             file_name = f"{update_version}_{hardware_type.old_download_hw}-{version_id}.signed"
             file_url = f"{BASE_URL}/{update_version}/{file_name}"
+            self.logger.debug(f"File URL is {file_url}, File name is {file_name}")
+            return self.__download_version_file(
+                file_url, file_name, download_folder, version_checksum
+            )
 
         else:
-            file_url = self.external_provider_url.replace("REPLACE_ID", version_id)
             file_name = f"remarkable-production-memfault-image-{update_version}-{hardware_type.new_download_hw}-public"
 
-        self.logger.debug(f"File URL is {file_url}, File name is {file_name}")
+            for provider_url in self.external_provider_urls:
+                file_url = provider_url.replace("REPLACE_ID", version_id)
+                self.logger.debug(f"Trying to download from {file_url}")
 
-        return self.__download_version_file(
-            file_url, file_name, download_folder, version_checksum
-        )
+                result = self.__download_version_file(
+                    file_url, file_name, download_folder, version_checksum
+                )
+
+                if result is not None:
+                    self.logger.debug(f"Successfully downloaded from {provider_url}")
+                    return result
+
+                self.logger.debug(f"Failed to download from {provider_url}, trying next source...")
+
+            self.logger.error(f"Failed to download {file_name} from all sources")
+            return None
 
     def __generate_xml_data(self) -> str:
         """Generates and returns XML data for the update request"""
@@ -298,7 +323,7 @@ class UpdateManager:
         """
         response = requests.get(uri, stream=True)
         if response.status_code != 200:
-            self.logger.error(f"Unable to download update file: {response.status_code}")
+            self.logger.debug(f"Unable to download update file: {response.status_code}")
             return None
 
         file_length = response.headers.get("content-length")
