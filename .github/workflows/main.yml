@@ -33,27 +33,8 @@ defaults:
     shell: bash
 
 jobs:
-  unit-tests:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-          cache-dependency-path: |
-            **/requirements*.txt
-      - name: Install dependencies
-        run: |
-          python -m pip install -r requirements.txt
-      - name: Run unit tests
-        run: python tests/test_unit.py
-
   remote:
     name: Build for ${{ matrix.os }}
-    needs: [unit-tests]
     strategy:
       fail-fast: false
       matrix:

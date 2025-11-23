@@ -198,8 +198,8 @@ test_ls(
 
 test_cat("/etc/version", b"20221026104022\n")
 
-assert_value("latest rm1 version", updater.get_latest_version(HardwareType.RM1), "3.20.0.92")
-assert_value("latest rm2 version", updater.get_latest_version(HardwareType.RM2), "3.20.0.92")
+assert_value("latest rm1 version", updater.get_latest_version(HardwareType.RM1), "3.23.0.64")
+assert_value("latest rm2 version", updater.get_latest_version(HardwareType.RM2), "3.23.0.64")
 # Don't think this test is needed.
 
 assert_gt(
@@ -214,6 +214,47 @@ assert_gt(
 )
 with assert_raises("toltec rmpp version", SystemExit):
     updater.get_toltec_version(HardwareType.RMPP)
+
+assert_value(
+    "boundary cross 3.23->3.20",
+    UpdateManager.is_bootloader_boundary_downgrade("3.23.0.64", "3.20.0.92"),
+    True
+)
+assert_value(
+    "boundary cross 3.22->3.20",
+    UpdateManager.is_bootloader_boundary_downgrade("3.22.0.64", "3.20.0.92"),
+    True
+)
+assert_value(
+    "no boundary 3.23->3.22",
+    UpdateManager.is_bootloader_boundary_downgrade("3.23.0.64", "3.22.0.64"),
+    False
+)
+assert_value(
+    "no boundary 3.20->3.19",
+    UpdateManager.is_bootloader_boundary_downgrade("3.20.0.92", "3.19.0.82"),
+    False
+)
+assert_value(
+    "upgrade 3.20->3.22",
+    UpdateManager.is_bootloader_boundary_downgrade("3.20.0.92", "3.22.0.64"),
+    False
+)
+assert_value(
+    "same version 3.22->3.22",
+    UpdateManager.is_bootloader_boundary_downgrade("3.22.0.64", "3.22.0.64"),
+    False
+)
+assert_value(
+    "empty string current",
+    UpdateManager.is_bootloader_boundary_downgrade("", "3.20.0.92"),
+    False
+)
+assert_value(
+    "non-numeric version",
+    UpdateManager.is_bootloader_boundary_downgrade("abc.def", "3.20.0.92"),
+    False
+)
 
 if FAILED:
     sys.exit(1)

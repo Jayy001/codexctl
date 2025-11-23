@@ -391,7 +391,7 @@ class DeviceManager:
         if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
             is_new_version = [int(parts[0]), int(parts[1])] >= [3, 22]
         else:
-            raise ValueError(f"Cannot detect partition scheme: unexpected version format '{current_version}'")
+            raise SystemError(f"Cannot detect partition scheme: unexpected version format '{current_version}'")
 
         next_boot_part = current_part
 
@@ -438,15 +438,15 @@ class DeviceManager:
 
         else:
             if os.path.exists("/usr/share/remarkable/update.conf"):
-                with open("/usr/share/remarkable/update.conf") as file:
+                with open("/usr/share/remarkable/update.conf", encoding="utf-8") as file:
                     xochitl_version = re.search(
                         "(?<=REMARKABLE_RELEASE_VERSION=).*",
-                        file.read().decode("utf-8").strip("\n"),
+                        file.read().strip("\n"),
                     ).group()
             else:
-                with open("/etc/os-release") as file:
+                with open("/etc/os-release", encoding="utf-8") as file:
                     xochitl_version = (
-                        re.search("(?<=IMG_VERSION=).*", file.read().decode("utf-8"))
+                        re.search("(?<=IMG_VERSION=).*", file.read())
                         .group()
                         .strip('"')
                     )

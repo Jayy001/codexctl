@@ -50,11 +50,7 @@ $(VENV_BIN_ACTIVATE): requirements.remote.txt requirements.txt
 	python -m codexctl download --hardware rm2 --out .venv ${FW_VERSION}
 
 test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed
-	@echo "[info] Running unit tests"
-	@set -e; \
-	. $(VENV_BIN_ACTIVATE); \
-	python tests/test_unit.py
-	@echo "[info] Running integration tests"
+	@echo "[info] Running tests"
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
 	python tests/test.py; \
