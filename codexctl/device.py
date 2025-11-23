@@ -296,27 +296,29 @@ class DeviceManager:
         Returns:
             tuple: (version_string, old_update_engine_boolean)
         """
-        old_update_engine = True
+        update_conf_path = f"{base_path}/usr/share/remarkable/update.conf" if base_path else "/usr/share/remarkable/update.conf"
+        os_release_path = f"{base_path}/etc/os-release" if base_path else "/etc/os-release"
 
         try:
-            update_conf_path = f"{base_path}/usr/share/remarkable/update.conf" if base_path else "/usr/share/remarkable/update.conf"
+            ftp.stat(update_conf_path)
             with ftp.file(update_conf_path) as file:
                 contents = file.read().decode("utf-8").strip("\n")
                 match = re.search("(?<=REMARKABLE_RELEASE_VERSION=).*", contents)
                 if not match:
-                    raise ValueError(f"REMARKABLE_RELEASE_VERSION not found in {update_conf_path}")
-                version = match.group()
+                    raise SystemError(f"REMARKABLE_RELEASE_VERSION not found in {update_conf_path}")
+                return match.group(), True
         except (IOError, OSError):
-            os_release_path = f"{base_path}/etc/os-release" if base_path else "/etc/os-release"
+            pass
+
+        try:
             with ftp.file(os_release_path) as file:
                 contents = file.read().decode("utf-8")
                 match = re.search("(?<=IMG_VERSION=).*", contents)
                 if not match:
-                    raise ValueError(f"IMG_VERSION not found in {os_release_path}")
-                version = match.group().strip('"')
-                old_update_engine = False
-
-        return version, old_update_engine
+                    raise SystemError(f"IMG_VERSION not found in {os_release_path}")
+                return match.group().strip('"'), False
+        except (IOError, OSError) as e:
+            raise SystemError(f"Cannot read version from {base_path or 'current partition'}: {e}") from e
 
     def _get_backup_partition_version(self) -> str:
         """Gets the version installed on the backup (inactive) partition
@@ -357,7 +359,7 @@ class DeviceManager:
 
             try:
                 version, _ = self._read_version_from_path(ftp, mount_point)
-            except Exception as e:
+            except (IOError, OSError, SystemError) as e:
                 self.logger.debug(f"Failed to read version from backup partition: {e}")
                 version = "unknown"
 
@@ -366,7 +368,7 @@ class DeviceManager:
 
             return version
 
-        except Exception as e:
+        except (IOError, OSError, SystemError, paramiko.SSHException) as e:
             self.logger.debug(f"Error getting backup partition version: {e}")
             return "unknown"
 
@@ -798,7 +800,11 @@ fi
         if not self.client:
             raise SystemError("No SSH connection to device")
 
-        ftp_client = self.client.open_sftp()
+        ftp_client = None
+        try:
+            ftp_client = self.client.open_sftp()
+        except Exception:
+            raise SystemError("Failed to open SFTP connection for bootloader update")
 
         script_path = "/tmp/update-bootloader.sh"
         boot_image_path = "/tmp/imx-boot"
@@ -849,7 +855,8 @@ fi
             self.logger.debug("Cleaning up local temporary files")
             os.unlink(tmp_script_path)
             os.unlink(tmp_boot_path)
-            ftp_client.close()
+            if ftp_client:
+                ftp_client.close()
 
     def install_ohma_update(self, version_available: dict) -> None:
         """Installs version from update folder on the device
