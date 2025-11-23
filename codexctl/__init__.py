@@ -100,24 +100,50 @@ class Manager:
 
         ### Mounting functionalities
         elif function in ("extract", "mount"):
-            try:
-                from .analysis import get_update_image
-            except ImportError:
-                raise ImportError(
-                    "remarkable_update_image is required for analysis. Please install it!"
-                )
-
             if function == "extract":
                 if not args["out"]:
                     args["out"] = os.getcwd() + "/extracted"
 
                 logger.debug(f"Extracting {args['file']} to {args['out']}")
-                image, volume = get_update_image(args["file"])
-                image.seek(0)
 
-                with open(args["out"], "wb") as f:
-                    f.write(image.read())
+                with open(args["file"], "rb") as f:
+                    magic = f.read(6)
+
+                if magic == b'070702':
+                    logger.info("Detected CPIO format (3.11+ SWU file)")
+                    from .cpio import extract_cpio_files
+
+                    if os.path.isdir(args["out"]):
+                        output_dir = args["out"]
+                    else:
+                        output_dir = args["out"]
+                        os.makedirs(output_dir, exist_ok=True)
+
+                    extract_cpio_files(args["file"], output_dir=output_dir)
+                    logger.info(f"Extracted SWU contents to {output_dir}")
+                else:
+                    logger.info("Detected old format (<3.11 .signed file)")
+                    try:
+                        from .analysis import get_update_image
+                    except ImportError:
+                        raise ImportError(
+                            "remarkable_update_image is required for extracting old format files. Please install it!"
+                        )
+
+                    image, volume = get_update_image(args["file"])
+                    image.seek(0)
+
+                    with open(args["out"], "wb") as f:
+                        f.write(image.read())
             else:
+                try:
+                    from .analysis import get_update_image
+                    from remarkable_update_fuse import UpdateFS
+                except ImportError:
+                    raise ImportError(
+                        "remarkable_update_image and remarkable_update_fuse are required for mounting. Please install them!"
+                    )
+
                 if args["out"] is None:
                     args["out"] = "/opt/remarkable/"
 
@@ -126,8 +152,6 @@ class Manager:
 
                 if not os.path.exists(args["filesystem"]):
                     raise SystemExit("Firmware file does not exist!")
-
-                from remarkable_update_fuse import UpdateFS
 
                 server = UpdateFS()
                 server.parse(
@@ -222,7 +246,7 @@ class Manager:
             elif function == "restore":
                 remarkable.restore_previous_version()
                 print(
-                    f"Device restored to previous version [{remarkable.get_device_status()[1]}]"
+                    f"Device restored to previous version [{remarkable.get_device_status()[4]}]"
                 )
                 remarkable.reboot_device()
                 print("Device rebooted")
@@ -281,6 +305,63 @@ class Manager:
 
                 #############################################################
 
+                bootloader_files_for_install = None
+
+                if (device_version_uses_new_engine and
+                    remarkable.hardware == HardwareType.RMPP and
+                    not update_file):
+
+                    current_version = remarkable.get_device_status()[2]
+
+                    if UpdateManager.is_bootloader_boundary_downgrade(current_version, version_number):
+                        print("\n" + "="*60)
+                        print("WARNING: Bootloader Update Required")
+                        print("="*60)
+                        print(f"Current version: {current_version}")
+                        print(f"Target version:  {version_number}")
+                        print()
+                        print("Downgrading from 3.22+ to <3.22 requires updating the")
+                        print("bootloader on both partitions. This process will:")
+                        print("  1. Download the current version's bootloader files")
+                        print("  2. Download the target OS version")
+                        print("  3. Install the target OS version")
+                        print("  4. Update bootloader on both partitions")
+                        print("  5. Reboot")
+                        print()
+
+                        response = input("Do you want to continue? (y/n): ")
+                        if response.lower() != 'y':
+                            raise SystemExit("Installation cancelled by user")
+
+                        expected_swu_name = f"remarkable-production-memfault-image-{current_version}-{remarkable.hardware.new_download_hw}-public"
+                        expected_swu_path = f"./{expected_swu_name}"
+
+                        if os.path.isfile(expected_swu_path):
+                            print(f"\nUsing existing {expected_swu_name} for bootloader extraction...")
+                            current_swu_path = expected_swu_path
+                        else:
+                            print("\nDownloading current version's SWU for bootloader extraction...")
+                            current_swu_path = self.updater.download_version(
+                                remarkable.hardware,
+                                current_version,
+                                "./"
+                            )
+
+                        if current_swu_path:
+                            print("Extracting bootloader files...")
+                            from .cpio import extract_cpio_files
+                            bootloader_files_for_install = extract_cpio_files(
+                                current_swu_path,
+                                filter_files=['update-bootloader.sh', 'imx-boot']
+                            )
+
+                            if not bootloader_files_for_install or len(bootloader_files_for_install) != 2:
+                                raise SystemError("Failed to extract bootloader files from current version")
+
+                            print(f"✓ Extracted update-bootloader.sh ({len(bootloader_files_for_install['update-bootloader.sh'])} bytes)")
+                            print(f"✓ Extracted imx-boot ({len(bootloader_files_for_install['imx-boot'])} bytes)")
+                            print()
+
                 if not update_file_requires_new_engine:
                     if update_file:  # Check if file exists
                         if os.path.dirname(
@@ -321,7 +402,7 @@ class Manager:
                         )
 
                 if device_version_uses_new_engine:
-                    remarkable.install_sw_update(update_file)
+                    remarkable.install_sw_update(update_file, bootloader_files=bootloader_files_for_install)
                 else:
                     remarkable.install_ohma_update(update_file)
 

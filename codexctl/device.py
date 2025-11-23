@@ -6,6 +6,7 @@ import threading
 import re
 import os
 import time
+from typing import Optional, Dict
 
 from .server import startUpdate
 
@@ -657,12 +658,13 @@ fi
 
         self.logger.debug("Device rebooted")
 
-    def install_sw_update(self, version_file: str) -> None:
+    def install_sw_update(self, version_file: str, bootloader_files: Optional[Dict[str, bytes]] = None) -> None:
         """
         Installs new version from version file path, utilising swupdate
 
         Args:
             version_file (str): Path to img file
+            bootloader_files (Optional[Dict[str, bytes]]): Bootloader files for Paper Pro downgrade
 
         Raises:
             SystemExit: If there was an error installing the update
@@ -702,6 +704,14 @@ fi
                         print("".join(_stderr.readlines()))
                         raise SystemError("Update failed!")
 
+            if bootloader_files:
+                print("\nApplying bootloader update...")
+                self._update_paper_pro_bootloader(
+                    bootloader_files['update-bootloader.sh'],
+                    bootloader_files['imx-boot']
+                )
+                print("✓ Bootloader update completed")
+
             print("Done! Now rebooting the device and disabling update service")
 
             #### Now disable automatic updates
@@ -721,6 +731,7 @@ fi
             self.client = self.connect_to_device(
                 remote_address=self.address, authentication=self.authentication
             )
+
             self.client.exec_command("systemctl stop swupdate memfaultd")
 
             print(
@@ -760,6 +771,81 @@ fi
 
             print("Update complete and device rebooting")
             os.system("reboot")
+
+    def _update_paper_pro_bootloader(self, bootloader_script: bytes, imx_boot: bytes) -> None:
+        """
+        Update bootloader on Paper Pro device for 3.22+ -> <3.22 downgrades.
+
+        This method uploads the bootloader script and image to the device,
+        then runs the update script twice (preinst and postinst) to update
+        both boot partitions.
+
+        Args:
+            bootloader_script: Contents of update-bootloader.sh
+            imx_boot: Contents of imx-boot image file
+
+        Raises:
+            SystemError: If bootloader update fails
+        """
+        import tempfile
+
+        self.logger.info("Starting bootloader update for Paper Pro")
+
+        if not self.client:
+            raise SystemError("No SSH connection to device")
+
+        ftp_client = self.client.open_sftp()
+
+        script_path = "/tmp/update-bootloader.sh"
+        boot_image_path = "/tmp/imx-boot"
+
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.sh') as tmp_script:
+            tmp_script.write(bootloader_script)
+            tmp_script_path = tmp_script.name
+
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.img') as tmp_boot:
+            tmp_boot.write(imx_boot)
+            tmp_boot_path = tmp_boot.name
+
+        try:
+            self.logger.debug("Uploading bootloader script to device")
+            ftp_client.put(tmp_script_path, script_path)
+
+            self.logger.debug("Uploading imx-boot image to device")
+            ftp_client.put(tmp_boot_path, boot_image_path)
+
+            self.logger.debug("Making bootloader script executable")
+            _stdin, stdout, _stderr = self.client.exec_command(f"chmod +x {script_path}")
+            stdout.channel.recv_exit_status()
+
+            self.logger.info("Running bootloader update script (preinst)")
+            _stdin, stdout, stderr = self.client.exec_command(
+                f"{script_path} preinst {boot_image_path}"
+            )
+            exit_status = stdout.channel.recv_exit_status()
+            if exit_status != 0:
+                error_msg = "".join(stderr.readlines())
+                raise SystemError(f"Bootloader preinst failed: {error_msg}")
+
+            self.logger.info("Running bootloader update script (postinst)")
+            _stdin, stdout, stderr = self.client.exec_command(
+                f"{script_path} postinst {boot_image_path}"
+            )
+            exit_status = stdout.channel.recv_exit_status()
+            if exit_status != 0:
+                error_msg = "".join(stderr.readlines())
+                raise SystemError(f"Bootloader postinst failed: {error_msg}")
+
+            self.logger.info("Bootloader update completed successfully")
+
+        finally:
+            self.logger.debug("Cleaning up temporary bootloader files on device")
+            self.client.exec_command(f"rm -f {script_path} {boot_image_path}")
+
+            self.logger.debug("Cleaning up local temporary files")
+            os.unlink(tmp_script_path)
+            os.unlink(tmp_boot_path)
+            ftp_client.close()
 
     def install_ohma_update(self, version_available: dict) -> None:
         """Installs version from update folder on the device
@@ -882,6 +968,3 @@ fi
             f"Transferring progress{int((transferred / toBeTransferred) * 100)}%",
             end="\r",
         )
-
-
-

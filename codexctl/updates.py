@@ -391,3 +391,29 @@ class UpdateManager:
             bool: If it uses the new update engine or not
         """
         return int(version.split(".")[0]) >= 3 and int(version.split(".")[1]) >= 11
+
+    @staticmethod
+    def is_bootloader_boundary_downgrade(current_version: str, target_version: str) -> bool:
+        """
+        Checks if downgrade crosses the 3.22 bootloader boundary (3.22+ -> <3.22).
+
+        Paper Pro devices require bootloader updates when downgrading from
+        version 3.22 or higher to any version below 3.22.
+
+        Args:
+            current_version (str): Currently installed version
+            target_version (str): Target version to install
+
+        Returns:
+            bool: True if crossing boundary downward (3.22+ -> <3.22)
+        """
+        try:
+            current_parts = [int(x) for x in current_version.split('.')]
+            target_parts = [int(x) for x in target_version.split('.')]
+
+            current_is_322_or_higher = current_parts >= [3, 22]
+            target_is_below_322 = target_parts < [3, 22]
+
+            return current_is_322_or_higher and target_is_below_322
+        except (ValueError, IndexError):
+            return False
