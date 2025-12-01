@@ -57,7 +57,7 @@ codexctl install latest
 codexctl download 3.15.4.2 --hardware rmpp -o out
 codexctl install ./out/remarkable-ct-prototype-image-3.15.4.2-ferrari-public.swu
 ```
--  (Paper Pro Move) version 3.23.0.64 to a folder named `out`
+-  Downloading rmppm version 3.23.0.64 to a folder named `out` and then installing it
 ```
 codexctl download 3.23.0.64 --hardware rmppm -o out
 codexctl install ./out/remarkable-production-image-3.23.0.64-chiappa-public.swu
@@ -84,7 +84,7 @@ codexctl restore
 codexctl download 3.8.0.1944 --hardware rm2
 codexctl cat 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed /etc/version
 ```
-- Extract a 3.11+ SWU firmware file to see its contents
+- Extract the contents of an upgrade file to a folder named `extracted`
 ```
 codexctl extract remarkable-production-image-3.22.0.64-ferrari-public.swu -o extracted
 ```

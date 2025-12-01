@@ -37,7 +37,7 @@ def get_update_image(file: str):
     return image, volume
 
 
-def get_swu_metadata(swu_file: str) -> Tuple[str, HardwareType]:
+def get_swu_metadata(swu_file: str) -> tuple[str, HardwareType]:
     """
     Extract version and hardware type from an SWU file.
 
