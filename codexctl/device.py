@@ -584,11 +584,6 @@ echo "fallback: ${OLDPART}"
             else:
                 raise SystemError(f"Cannot restore: unexpected current version format '{current_version}'")
 
-            if backup_version == "unknown":
-                raise SystemError(
-                    "Cannot restore: backup partition version could not be determined. "
-                )
-
             parts = backup_version.split('.')
             if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
                 target_is_new = [int(parts[0]), int(parts[1])] >= [3, 22]
