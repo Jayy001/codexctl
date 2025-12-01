@@ -106,30 +106,20 @@ class Manager:
 
                 logger.debug(f"Extracting {args['file']} to {args['out']}")
 
-                # Check CPIO magic to route between SWU (CPIO) and old .signed format
-                with open(args["file"], "rb") as f:
-                    magic = f.read(6)
+                try:
+                    from remarkable_update_image import UpdateImage
+                except ImportError:
+                    raise ImportError(
+                        "remarkable_update_image is required for extraction. Please install it!"
+                    ) from None
 
-                if magic in (b'070701', b'070702'):
-                    logger.info("Detected CPIO format (3.11+ SWU file)")
-                    from .analysis import extract_swu_files
+                image = UpdateImage(args["file"])
+                image.seek(0)
 
-                    extract_swu_files(args["file"], output_dir=args["out"])
-                    logger.info(f"Extracted SWU contents to {args['out']}")
-                else:
-                    logger.info("Detected old format (<3.11 .signed file)")
-                    try:
-                        from .analysis import get_update_image
-                    except ImportError:
-                        raise ImportError(
-                            "remarkable_update_image is required for extracting old format files. Please install it!"
-                        )
+                with open(args["out"], "wb") as f:
+                    f.write(image.read())
 
-                    image, volume = get_update_image(args["file"])
-                    image.seek(0)
-
-                    with open(args["out"], "wb") as f:
-                        f.write(image.read())
+                logger.info(f"Extracted image to {args['out']}")
             else:
                 try:
                     from .analysis import get_update_image
@@ -263,11 +253,11 @@ class Manager:
 
                 if update_file:
                     try:
-                        # Quick magic check to skip expensive metadata extraction on old .signed files
-                        with open(update_file, "rb") as f:
-                            magic = f.read(6)
+                        from remarkable_update_image import UpdateImage
+                        from remarkable_update_image.cpio import UpdateImage as CPIOUpdateImage
 
-                        if magic in (b'070701', b'070702'):
+                        image = UpdateImage(update_file)
+                        if isinstance(image, CPIOUpdateImage):
                             from .analysis import get_swu_metadata
                             version_number, swu_hardware = get_swu_metadata(update_file)
                             logger.info(f"Extracted from SWU: version={version_number}, hardware={swu_hardware.name}")
@@ -280,7 +270,7 @@ class Manager:
                                     f"Cannot install firmware for different hardware."
                                 )
                     except ValueError as e:
-                        logger.warning(f"Could not extract metadata from SWU: {e}")
+                        logger.warning(f"Could not extract metadata from update file: {e}")
 
                 if not version_number:
                     version_match = version_lookup(version)
@@ -374,13 +364,14 @@ class Manager:
                             )
 
                         print("Extracting bootloader files...")
-                        from .analysis import extract_swu_files
-                        bootloader_files_for_install = extract_swu_files(
-                            current_swu_path,
-                            filter_files=['update-bootloader.sh', 'imx-boot']
-                        )
+                        from remarkable_update_image import UpdateImage
+                        swu_image = UpdateImage(current_swu_path)
+                        bootloader_files_for_install = {
+                            'update-bootloader.sh': swu_image['update-bootloader.sh'].read(),
+                            'imx-boot': swu_image['imx-boot'].read(),
+                        }
 
-                        if not bootloader_files_for_install or len(bootloader_files_for_install) != 2:
+                        if not all(bootloader_files_for_install.values()):
                             raise SystemError("Failed to extract bootloader files from current version")
 
                         print(f"✓ Extracted update-bootloader.sh ({len(bootloader_files_for_install['update-bootloader.sh'])} bytes)")

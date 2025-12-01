@@ -1,12 +1,9 @@
 import ext4
 import warnings
 import errno
-import libconf
 
 from remarkable_update_image import UpdateImage
 from remarkable_update_image import UpdateImageSignatureException
-from remarkable_update_image.cpio import Archive
-from typing import Tuple, Optional, Dict
 from .device import HardwareType
 
 
@@ -48,95 +45,18 @@ def get_swu_metadata(swu_file: str) -> tuple[str, HardwareType]:
         Tuple of (version, hardware_type)
 
     Raises:
-        ValueError: If sw-description is missing or invalid
         SystemError: If hardware type is unsupported
     """
-    archive = Archive(swu_file)
-    archive.open()
-    try:
-        if b"sw-description" not in archive.keys():
-            raise ValueError(f"Not a valid SWU file: {swu_file}")
+    image = UpdateImage(swu_file)
 
-        sw_desc = archive[b"sw-description"].read().decode("utf-8")
-        info = libconf.loads(sw_desc)["software"]
+    hw_map = {
+        "reMarkable1": HardwareType.RM1,
+        "reMarkable2": HardwareType.RM2,
+        "ferrari": HardwareType.RMPP,
+        "chiappa": HardwareType.RMPPM,
+    }
 
-        version = info.get("version")
-        if not version:
-            raise ValueError(f"No version found in sw-description: {swu_file}")
+    if image.hardware_type not in hw_map:
+        raise SystemError(f"Unsupported hardware type in SWU file: {swu_file}")
 
-        if "reMarkable1" in info:
-            hardware = HardwareType.RM1
-        elif "reMarkable2" in info:
-            hardware = HardwareType.RM2
-        elif "ferrari" in info:
-            hardware = HardwareType.RMPP
-        elif "chiappa" in info:
-            hardware = HardwareType.RMPPM
-        else:
-            raise SystemError(f"Unsupported hardware type in SWU file: {swu_file}")
-
-        return version, hardware
-    finally:
-        archive.close()
-
-
-def extract_swu_files(
-    swu_file: str,
-    output_dir: Optional[str] = None,
-    filter_files: Optional[list] = None
-) -> Optional[Dict[str, bytes]]:
-    """
-    Extract files from an SWU (CPIO) archive.
-
-    Args:
-        swu_file: Path to the SWU file
-        output_dir: Directory to extract files to (for full extraction to disk)
-        filter_files: List of filenames to extract (selective extraction)
-
-    Returns:
-        If filter_files is provided: dict mapping filename -> file data (bytes)
-        If output_dir is provided: None (files written to disk)
-    """
-    import os
-    from pathlib import Path
-
-    archive = Archive(swu_file)
-    archive.open()
-    try:
-        if output_dir is not None:
-            output_path = Path(output_dir).resolve()
-            output_path.mkdir(parents=True, exist_ok=True)
-
-            for name in archive.keys():
-                if name == b"TRAILER!!!":
-                    continue
-
-                filename = name.decode('utf-8')
-                file_path = (output_path / filename).resolve()
-
-                if not file_path.is_relative_to(output_path):
-                    raise ValueError(f"Path traversal detected: {filename} resolves outside output directory")
-
-                file_path.parent.mkdir(parents=True, exist_ok=True)
-
-                with open(file_path, 'wb') as f:
-                    f.write(archive[name].read())
-
-            return None
-
-        else:
-            extracted = {}
-
-            if filter_files is None:
-                for name in archive.keys():
-                    if name != b"TRAILER!!!":
-                        extracted[name.decode('utf-8')] = archive[name].read()
-            else:
-                for filename in filter_files:
-                    entry = archive.get(filename.encode('utf-8'))
-                    if entry:
-                        extracted[filename] = entry.read()
-
-            return extracted
-    finally:
-        archive.close()
+    return image.version, hw_map[image.hardware_type]

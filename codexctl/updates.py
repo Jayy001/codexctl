@@ -411,14 +411,25 @@ class UpdateManager:
 
         Returns:
             bool: True if crossing boundary downward (3.22+ -> <3.22)
+
+        Raises:
+            ValueError: If either version is empty or has invalid format
         """
+        if not current_version or not current_version.strip():
+            raise ValueError("current_version cannot be empty")
+        if not target_version or not target_version.strip():
+            raise ValueError("target_version cannot be empty")
+
         try:
             current_parts = [int(x) for x in current_version.split('.')]
             target_parts = [int(x) for x in target_version.split('.')]
+        except ValueError as e:
+            raise ValueError(f"Invalid version format: {e}") from e
 
-            current_is_322_or_higher = current_parts >= [3, 22]
-            target_is_below_322 = target_parts < [3, 22]
+        if len(current_parts) < 2 or len(target_parts) < 2:
+            raise ValueError("Version must have at least 2 components (e.g., '3.22')")
 
-            return current_is_322_or_higher and target_is_below_322
-        except (ValueError, IndexError):
-            return False
+        current_is_322_or_higher = current_parts >= [3, 22]
+        target_is_below_322 = target_parts < [3, 22]
+
+        return current_is_322_or_higher and target_is_below_322

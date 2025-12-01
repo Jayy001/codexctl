@@ -6,7 +6,6 @@ import threading
 import re
 import os
 import time
-from typing import Optional, Dict
 
 from .server import startUpdate
 
@@ -25,16 +24,21 @@ class HardwareType(enum.Enum):
 
     @classmethod
     def parse(cls, device_type: str) -> "HardwareType":
-        if device_type.lower() in ("ppm", "rmppm", "chiappa", "remarkable chiappa"):
-            return cls.RMPPM
-        elif device_type.lower() in ("pp", "pro", "rmpp", "ferrari", "remarkable ferrari"):
-            return cls.RMPP
-        elif device_type.lower() in ("2", "rm2", "remarkable 2", "remarkable 2.0"):
-            return cls.RM2
-        elif device_type.lower() in ("1", "rm1", "remarkable 1", "remarkable 1.0", "remarkable prototype 1"):
-            return cls.RM1
+        match device_type.lower():
+            case "ppm" | "rmppm" | "chiappa" | "remarkable chiappa":
+                return cls.RMPPM
 
-        raise ValueError(f"Unknown hardware version: {device_type} (rm1, rm2, rmpp, rmppm)")
+            case "pp" | "pro" | "rmpp" | "ferrari" | "remarkable ferrari":
+                return cls.RMPP
+
+            case "2" | "rm2" | "remarkable 2" | "remarkable 2.0":
+                return cls.RM2
+
+            case "1" | "rm1" | "remarkable 1" | "remarkable 1.0" | "remarkable prototype 1":
+                return cls.RM1
+
+            case _:
+                raise ValueError(f"Unknown hardware version: {device_type} (rm1, rm2, rmpp, rmppm)")
 
     @property
     def old_download_hw(self):
@@ -44,9 +48,9 @@ class HardwareType(enum.Enum):
             case HardwareType.RM2:
                 return "reMarkable2"
             case HardwareType.RMPP:
-                raise ValueError("ReMarkable Paper Pro does not support the old update engine")
+                raise ValueError("reMarkable Paper Pro does not support the old update engine")
             case HardwareType.RMPPM:
-                raise ValueError("ReMarkable Paper Pro Move does not support the old update engine")
+                raise ValueError("reMarkable Paper Pro Move does not support the old update engine")
 
     @property
     def new_download_hw(self):
@@ -58,7 +62,7 @@ class HardwareType(enum.Enum):
             case HardwareType.RMPP:
                 return "rmpp"
             case HardwareType.RMPPM:
-                return "chiappa"
+                return "rmppm"
 
     @property
     def swupdate_hw(self):
@@ -80,9 +84,9 @@ class HardwareType(enum.Enum):
             case HardwareType.RM2:
                 return "rm2"
             case HardwareType.RMPP:
-                raise ValueError("ReMarkable Paper Pro does not support toltec")
+                raise ValueError("reMarkable Paper Pro does not support toltec")
             case HardwareType.RMPPM:
-                raise ValueError("ReMarkable Paper Pro Move does not support toltec")
+                raise ValueError("reMarkable Paper Pro Move does not support toltec")
 
 class DeviceManager:
     def __init__(
@@ -299,78 +303,76 @@ class DeviceManager:
         update_conf_path = f"{base_path}/usr/share/remarkable/update.conf" if base_path else "/usr/share/remarkable/update.conf"
         os_release_path = f"{base_path}/etc/os-release" if base_path else "/etc/os-release"
 
-        try:
-            ftp.stat(update_conf_path)
+        def file_exists(path: str) -> bool:
+            try:
+                ftp.stat(path)
+                return True
+            except FileNotFoundError:
+                return False
+
+        if file_exists(update_conf_path):
             with ftp.file(update_conf_path) as file:
                 contents = file.read().decode("utf-8").strip("\n")
                 match = re.search("(?<=REMARKABLE_RELEASE_VERSION=).*", contents)
-                if not match:
-                    raise SystemError(f"REMARKABLE_RELEASE_VERSION not found in {update_conf_path}")
-                return match.group(), True
-        except (IOError, OSError):
-            pass
+                if match:
+                    return match.group(), True
+                raise SystemError(f"REMARKABLE_RELEASE_VERSION not found in {update_conf_path}")
 
-        try:
+        if file_exists(os_release_path):
             with ftp.file(os_release_path) as file:
                 contents = file.read().decode("utf-8")
                 match = re.search("(?<=IMG_VERSION=).*", contents)
-                if not match:
-                    raise SystemError(f"IMG_VERSION not found in {os_release_path}")
-                return match.group().strip('"'), False
-        except (IOError, OSError) as e:
-            raise SystemError(f"Cannot read version from {base_path or 'current partition'}: {e}") from e
+                if match:
+                    return match.group().strip('"'), False
+                raise SystemError(f"IMG_VERSION not found in {os_release_path}")
+
+        raise SystemError(f"Cannot read version from {base_path or 'current partition'}: no version file found")
 
     def _get_backup_partition_version(self) -> str:
         """Gets the version installed on the backup (inactive) partition
 
         Returns:
-            str: Version string or "unknown"
+            str: Version string
+
+        Raises:
+            SystemError: If backup partition version cannot be determined
         """
         if not self.client:
-            return "unknown"
+            raise SystemError("Cannot get backup partition version: no SSH client connection")
+
+        ftp = self.client.open_sftp()
+
+        if self.hardware in (HardwareType.RMPP, HardwareType.RMPPM):
+            _stdin, stdout, _stderr = self.client.exec_command("swupdate -g")
+            active_device = stdout.read().decode("utf-8").strip()
+            active_part = int(active_device.split('p')[-1])
+            inactive_part = 3 if active_part == 2 else 2
+            device_base = re.sub(r'p\d+$', '', active_device)
+        else:
+            _stdin, stdout, _stderr = self.client.exec_command("rootdev")
+            active_device = stdout.read().decode("utf-8").strip()
+            active_part = int(active_device.split('p')[-1])
+            inactive_part = 3 if active_part == 2 else 2
+            device_base = re.sub(r'p\d+$', '', active_device)
+
+        mount_point = f"/tmp/mount_p{inactive_part}"
+
+        self.client.exec_command(f"mkdir -p {mount_point}")
+        _stdin, stdout, _stderr = self.client.exec_command(
+            f"mount -o ro {device_base}p{inactive_part} {mount_point}"
+        )
+        exit_status = stdout.channel.recv_exit_status()
+
+        if exit_status != 0:
+            error_msg = _stderr.read().decode('utf-8')
+            raise SystemError(f"Failed to mount backup partition: {error_msg}")
 
         try:
-            ftp = self.client.open_sftp()
-
-            if self.hardware in (HardwareType.RMPP, HardwareType.RMPPM):
-                _stdin, stdout, _stderr = self.client.exec_command("swupdate -g")
-                active_device = stdout.read().decode("utf-8").strip()
-                active_part = int(active_device.split('p')[-1])
-                inactive_part = 3 if active_part == 2 else 2
-                device_base = re.sub(r'p\d+$', '', active_device)
-            else:
-                _stdin, stdout, _stderr = self.client.exec_command("rootdev")
-                active_device = stdout.read().decode("utf-8").strip()
-                active_part = int(active_device.split('p')[-1])
-                inactive_part = 3 if active_part == 2 else 2
-                device_base = re.sub(r'p\d+$', '', active_device)
-
-            mount_point = f"/tmp/mount_p{inactive_part}"
-
-            self.client.exec_command(f"mkdir -p {mount_point}")
-            _stdin, stdout, _stderr = self.client.exec_command(
-                f"mount -o ro {device_base}p{inactive_part} {mount_point}"
-            )
-            exit_status = stdout.channel.recv_exit_status()
-
-            if exit_status != 0:
-                self.logger.debug(f"Failed to mount backup partition: {_stderr.read().decode('utf-8')}")
-                return "unknown"
-
-            try:
-                version, _ = self._read_version_from_path(ftp, mount_point)
-            except (IOError, OSError, SystemError) as e:
-                self.logger.debug(f"Failed to read version from backup partition: {e}")
-                version = "unknown"
-
+            version, _ = self._read_version_from_path(ftp, mount_point)
+            return version
+        finally:
             self.client.exec_command(f"umount {mount_point}")
             self.client.exec_command(f"rm -rf {mount_point}")
-
-            return version
-
-        except (IOError, OSError, SystemError, paramiko.SSHException) as e:
-            self.logger.debug(f"Error getting backup partition version: {e}")
-            return "unknown"
 
     def _get_paper_pro_partition_info(self, current_version: str) -> tuple[int, int, int]:
         """Gets partition information for Paper Pro devices
@@ -593,26 +595,31 @@ echo "fallback: ${OLDPART}"
             else:
                 raise SystemError(f"Cannot restore: unexpected backup version format '{backup_version}'")
 
-            RESTORE_CODE = "#!/bin/bash\n"
-            RESTORE_CODE += f"echo 'Switching from partition {current_part} to partition {inactive_part}'\n"
-            RESTORE_CODE += f"echo 'Current version: {current_version}'\n"
-            RESTORE_CODE += f"echo 'Target version: {backup_version}'\n"
+            code = [
+                "#!/bin/bash",
+                f"echo 'Switching from partition {current_part} to partition {inactive_part}'",
+                f"echo 'Current version: {current_version}'",
+                f"echo 'Target version: {backup_version}'",
+            ]
 
-            # Method 1: Legacy sysfs (if current OS < 3.22)
             if not current_is_new:
-                RESTORE_CODE += f"echo '{new_part_label}' > /sys/devices/platform/lpgpr/root_part\n"
-                RESTORE_CODE += "echo 'Set next boot via sysfs (legacy method)'\n"
+                code.extend([
+                    f"echo '{new_part_label}' > /sys/devices/platform/lpgpr/root_part",
+                    "echo 'Set next boot via sysfs (legacy method)'",
+                ])
 
-            # Method 2: MMC bootpart (if target OS >= 3.22 OR current OS >= 3.22)
             if target_is_new or current_is_new:
-                if inactive_part == 2:
-                    RESTORE_CODE += "mmc bootpart enable 1 0 /dev/mmcblk0boot0\n"
-                else:
-                    RESTORE_CODE += "mmc bootpart enable 2 0 /dev/mmcblk0boot1\n"
-                RESTORE_CODE += "echo 'Set next boot via mmc bootpart (new method)'\n"
+                code.extend([
+                    f"mmc bootpart enable {inactive_part - 1} 0 /dev/mmcblk0boot{inactive_part - 2}",
+                    "echo 'Set next boot via mmc bootpart (new method)'",
+                ])
 
-            RESTORE_CODE += f"echo '0' > /sys/devices/platform/lpgpr/root{new_part_label}_errcnt 2>/dev/null || true\n"
-            RESTORE_CODE += "echo 'Partition switch complete'\n"
+            code.extend([
+                f"echo '0' > /sys/devices/platform/lpgpr/root{new_part_label}_errcnt 2>/dev/null || true",
+                "echo 'Partition switch complete'",
+            ])
+
+            RESTORE_CODE = "\n".join(code)
 
         if self.client:
             self.logger.debug("Connecting to FTP")

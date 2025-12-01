@@ -57,7 +57,7 @@ codexctl install latest
 codexctl download 3.15.4.2 --hardware rmpp -o out
 codexctl install ./out/remarkable-ct-prototype-image-3.15.4.2-ferrari-public.swu
 ```
--  Downloading rmppm version 3.23.0.64 to a folder named `out` and then installing it
+- Downloading rmppm version 3.23.0.64 to a folder named `out` and then installing it
 ```
 codexctl download 3.23.0.64 --hardware rmppm -o out
 codexctl install ./out/remarkable-production-image-3.23.0.64-chiappa-public.swu
