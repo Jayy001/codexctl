@@ -59,4 +59,7 @@ def get_swu_metadata(swu_file: str) -> tuple[str, HardwareType]:
     if image.hardware_type not in hw_map:
         raise SystemError(f"Unsupported hardware type in SWU file: {swu_file}")
 
+    if image.version is None:
+        raise SystemError(f"Could not determine version from SWU file: {swu_file}")
+
     return image.version, hw_map[image.hardware_type]

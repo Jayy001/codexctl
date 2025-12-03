@@ -367,8 +367,8 @@ class Manager:
                         from remarkable_update_image import UpdateImage
                         swu_image = UpdateImage(current_swu_path)
                         bootloader_files_for_install = {
-                            'update-bootloader.sh': swu_image['update-bootloader.sh'].read(),
-                            'imx-boot': swu_image['imx-boot'].read(),
+                            'update-bootloader.sh': swu_image.archive[b'update-bootloader.sh'].read(),
+                            'imx-boot': swu_image.archive[b'imx-boot'].read(),
                         }
 
                         if not all(bootloader_files_for_install.values()):
