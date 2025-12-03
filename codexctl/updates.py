@@ -93,10 +93,10 @@ class UpdateManager:
             )
 
         return (
-            contents["remarkablepp"],
-            contents["remarkableppm"],
-            contents["remarkable2"],
-            contents["remarkable1"],
+            contents.get("remarkablepp", {}),
+            contents.get("remarkableppm", {}),
+            contents.get("remarkable2", {}),
+            contents.get("remarkable1", {}),
             provider_urls,
         )
 
