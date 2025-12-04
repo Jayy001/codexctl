@@ -126,7 +126,7 @@ class Manager:
                     from remarkable_update_fuse import UpdateFS
                 except ImportError:
                     raise ImportError(
-                        "remarkable_update_image and remarkable_update_fuse are required for mounting. Please install them!"
+                        "remarkable_update_fuse is required for mounting. Please install it!"
                     )
 
                 if args["out"] is None:
@@ -258,8 +258,20 @@ class Manager:
 
                         image = UpdateImage(update_file)
                         if isinstance(image, CPIOUpdateImage):
-                            from .analysis import get_swu_metadata
-                            version_number, swu_hardware = get_swu_metadata(update_file)
+                            if image.version is None:
+                                raise SystemError(f"Could not determine version from SWU file: {update_file}")
+
+                            version_number = image.version
+                            hw_map = {
+                                "reMarkable1": HardwareType.RM1,
+                                "reMarkable2": HardwareType.RM2,
+                                "ferrari": HardwareType.RMPP,
+                                "chiappa": HardwareType.RMPPM,
+                            }
+                            if image.hardware_type not in hw_map:
+                                raise SystemError(f"Unsupported hardware type in SWU file: {update_file}")
+
+                            hw_map[image.hardware_type]
                             logger.info(f"Extracted from SWU: version={version_number}, hardware={swu_hardware.name}")
 
                             if swu_hardware != remarkable.hardware:
@@ -339,7 +351,7 @@ class Manager:
                         print("  5. Reboot")
                         print()
 
-                        response = input("Do you want to continue? (y/n): ")
+                        response = input("Do you want to continue? (y/N): ")
                         if response.lower() != 'y':
                             raise SystemExit("Installation cancelled by user")
 

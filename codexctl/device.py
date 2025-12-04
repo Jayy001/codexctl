@@ -579,16 +579,16 @@ echo "fallback: ${OLDPART}"
             new_part_label = "a" if inactive_part == 2 else "b"
 
             parts = current_version.split('.')
-            if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
-                current_is_new = [int(parts[0]), int(parts[1])] >= [3, 22]
-            else:
+            if len(parts) < 2 or not parts[0].isdigit() or not parts[1].isdigit():
                 raise SystemError(f"Cannot restore: unexpected current version format '{current_version}'")
 
+            current_is_new = [int(parts[0]), int(parts[1])] >= [3, 22]
+
             parts = backup_version.split('.')
-            if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
-                target_is_new = [int(parts[0]), int(parts[1])] >= [3, 22]
-            else:
+            if len(parts) < 2 or not parts[0].isdigit() or not parts[1].isdigit():
                 raise SystemError(f"Cannot restore: unexpected backup version format '{backup_version}'")
+
+            target_is_new = [int(parts[0]), int(parts[1])] >= [3, 22]
 
             code = [
                 "#!/bin/bash",

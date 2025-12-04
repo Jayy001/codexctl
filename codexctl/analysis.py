@@ -32,34 +32,3 @@ def get_update_image(file: str):
         warnings.warn("Unable to open public key", RuntimeWarning)
 
     return image, volume
-
-
-def get_swu_metadata(swu_file: str) -> tuple[str, HardwareType]:
-    """
-    Extract version and hardware type from an SWU file.
-
-    Args:
-        swu_file: Path to the SWU file
-
-    Returns:
-        Tuple of (version, hardware_type)
-
-    Raises:
-        SystemError: If hardware type is unsupported
-    """
-    image = UpdateImage(swu_file)
-
-    hw_map = {
-        "reMarkable1": HardwareType.RM1,
-        "reMarkable2": HardwareType.RM2,
-        "ferrari": HardwareType.RMPP,
-        "chiappa": HardwareType.RMPPM,
-    }
-
-    if image.hardware_type not in hw_map:
-        raise SystemError(f"Unsupported hardware type in SWU file: {swu_file}")
-
-    if image.version is None:
-        raise SystemError(f"Could not determine version from SWU file: {swu_file}")
-
-    return image.version, hw_map[image.hardware_type]

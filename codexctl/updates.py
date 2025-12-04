@@ -84,13 +84,14 @@ class UpdateManager:
         self.logger.debug(f"Version ids contents are {contents}")
 
         provider_urls = contents.get("external-provider-urls", contents.get("external-provider-url"))
-        if isinstance(provider_urls, str):
-            provider_urls = [provider_urls]
         if provider_urls is None:
             raise SystemError(
                 f"version-ids.json at {file_location} is missing external provider URLs. "
                 "Please delete the file and try again, or open an issue on the repo."
             )
+
+        if isinstance(provider_urls, str):
+            provider_urls = [provider_urls]
 
         return (
             contents.get("remarkablepp", {}),

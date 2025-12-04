@@ -84,7 +84,7 @@ codexctl restore
 codexctl download 3.8.0.1944 --hardware rm2
 codexctl cat 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed /etc/version
 ```
-- Extract the contents of an upgrade file to a folder named `extracted`
+- Extract the filesystem image of an upgrade file as a file named `extracted`
 ```
 codexctl extract remarkable-production-image-3.22.0.64-ferrari-public.swu -o extracted
 ```
