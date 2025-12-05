@@ -207,6 +207,13 @@ class Manager:
                     )
                 remote = True
 
+            try:
+                from remarkable_update_image import UpdateImage
+            except ImportError:
+                raise ImportError(
+                    "remarkable_update_image is required for install. Please install it!"
+                ) from None
+
             from .device import DeviceManager
             from .server import get_available_version
 
@@ -271,7 +278,7 @@ class Manager:
                             if image.hardware_type not in hw_map:
                                 raise SystemError(f"Unsupported hardware type in SWU file: {update_file}")
 
-                            hw_map[image.hardware_type]
+                            swu_hardware = hw_map[image.hardware_type]
                             logger.info(f"Extracted from SWU: version={version_number}, hardware={swu_hardware.name}")
 
                             if swu_hardware != remarkable.hardware:
@@ -632,8 +639,4 @@ def main() -> None:
 
     ### Call function
     man = Manager(device, logger)
-    try:
-        man.call_func(args.command, vars(args))
-    except SystemError as e:
-        print(f"\nError: {e}", file=sys.stderr)
-        sys.exit(1)
+    man.call_func(args.command, vars(args))

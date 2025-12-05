@@ -1,10 +1,11 @@
 import enum
+import logging
+import os
+import re
 import socket
 import subprocess
-import logging
+import tempfile
 import threading
-import re
-import os
 import time
 
 from .server import startUpdate
@@ -795,8 +796,6 @@ fi
         Raises:
             SystemError: If bootloader update fails
         """
-        import tempfile
-
         self.logger.info("Starting bootloader update for Paper Pro")
 
         if not self.client:
