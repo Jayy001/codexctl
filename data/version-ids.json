@@ -1,5 +1,9 @@
 {
     "remarkable1": {
+        "3.24.0.149": [
+            "remarkable-production-image-3.24.0.149-rm1-public.swu",
+            "77ef0e05c43d1898ef956cb7cbd29bfa203f95cec2c9ab8e54ee53a8db5f37c5"
+        ],
         "3.23.0.64": [
             "remarkable-production-image-3.23.0.64-rm1-public.swu",
             "88c35f0e52b08e9246677babe7163d7917f40bf133ea5b9dfa70a7fc09f548af"
@@ -190,6 +194,10 @@
         ]
     },
     "remarkable2": {
+        "3.24.0.149": [
+            "remarkable-production-image-3.24.0.149-rm2-public.swu",
+            "91c0b6b698e079b51f229ad9ce49530e51a79cee4d77c9dfb1b4980b48254475"
+        ],
         "3.23.0.64": [
             "remarkable-production-image-3.23.0.64-rm2-public.swu",
             "6de624bc03f892b73f56e83d0fd3d49c3c69a6d63a5831509fee98416d776807"
@@ -392,6 +400,10 @@
         ]
     },
     "remarkablepp": {
+        "3.24.0.149": [
+            "remarkable-production-image-3.24.0.149-ferrari-public.swu",
+            "d4f6a10eada98db595748cbb75efc06c3a721191bc0a5101009c438c8b9f4668"
+        ],
         "3.23.0.64": [
             "remarkable-production-image-3.23.0.64-ferrari-public.swu",
             "c19301055b8cf4351d530a2f59a91fd6ebc8af8c36f0b8999c6557480c8554da"
@@ -450,6 +462,10 @@
         ]
     },
     "remarkableppm": {
+        "3.24.0.149": [
+            "remarkable-production-image-3.24.0.149-chiappa-public.swu",
+            "51a0fa3a145184c685fd44668cd6038f63acc7ff47a619987efa89d1ca419593"
+        ],
         "3.23.0.64": [
             "remarkable-production-image-3.23.0.64-chiappa-public.swu",
             "0a10ba1dbd873a442f144cb346c9497b820604a98203478345343a01be0d417f"
@@ -459,7 +475,7 @@
             "b494b36e6c1749bbe205ef26f2cea31728f6fe82aa5abf5057e37a09ec326ffa"
         ]
     },
-    "last-updated": 1763843954,
+    "last-updated": 1764910380,
     "external-provider-urls": [
         "https://storage.googleapis.com/remarkable-versions/REPLACE_ID",
         "https://remarkable-software.s3.us-east-2.amazonaws.com/REPLACE_ID"
