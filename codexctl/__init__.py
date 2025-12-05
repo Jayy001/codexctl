@@ -70,12 +70,17 @@ class Manager:
             remarkable_pp_versions = "\n".join(
                 self.updater.remarkablepp_versions.keys()
             )
+            remarkable_ppm_versions = "\n".join(
+                self.updater.remarkableppm_versions.keys()
+            )
             remarkable_2_versions = "\n".join(self.updater.remarkable2_versions.keys())
             remarkable_1_versions = "\n".join(self.updater.remarkable1_versions.keys())
 
             version_blocks = []
             if remarkable_version is None or remarkable_version == HardwareType.RMPP:
                 version_blocks.append(f"ReMarkable Paper Pro:\n{remarkable_pp_versions}")
+            if remarkable_version is None or remarkable_version == HardwareType.RMPPM:
+                version_blocks.append(f"ReMarkable Paper Pro Move:\n{remarkable_ppm_versions}")
             if remarkable_version is None or remarkable_version == HardwareType.RM2:
                 version_blocks.append(f"ReMarkable 2:\n{remarkable_2_versions}")
             if remarkable_version is None or remarkable_version == HardwareType.RM1:
@@ -95,24 +100,35 @@ class Manager:
 
         ### Mounting functionalities
         elif function in ("extract", "mount"):
-            try:
-                from .analysis import get_update_image
-            except ImportError:
-                raise ImportError(
-                    "remarkable_update_image is required for analysis. Please install it!"
-                )
-
             if function == "extract":
                 if not args["out"]:
                     args["out"] = os.getcwd() + "/extracted"
 
                 logger.debug(f"Extracting {args['file']} to {args['out']}")
-                image, volume = get_update_image(args["file"])
+
+                try:
+                    from remarkable_update_image import UpdateImage
+                except ImportError:
+                    raise ImportError(
+                        "remarkable_update_image is required for extraction. Please install it!"
+                    ) from None
+
+                image = UpdateImage(args["file"])
                 image.seek(0)
 
                 with open(args["out"], "wb") as f:
                     f.write(image.read())
+
+                logger.info(f"Extracted image to {args['out']}")
             else:
+                try:
+                    from .analysis import get_update_image
+                    from remarkable_update_fuse import UpdateFS
+                except ImportError:
+                    raise ImportError(
+                        "remarkable_update_fuse is required for mounting. Please install it!"
+                    )
+
                 if args["out"] is None:
                     args["out"] = "/opt/remarkable/"
 
@@ -121,8 +137,6 @@ class Manager:
 
                 if not os.path.exists(args["filesystem"]):
                     raise SystemExit("Firmware file does not exist!")
-
-                from remarkable_update_fuse import UpdateFS
 
                 server = UpdateFS()
                 server.parse(
@@ -193,6 +207,13 @@ class Manager:
                     )
                 remote = True
 
+            try:
+                from remarkable_update_image import UpdateImage
+            except ImportError:
+                raise ImportError(
+                    "remarkable_update_image is required for install. Please install it!"
+                ) from None
+
             from .device import DeviceManager
             from .server import get_available_version
 
@@ -209,17 +230,15 @@ class Manager:
                 version = self.updater.get_toltec_version(remarkable.hardware)
 
             if function == "status":
-                beta, prev, current, version_id = remarkable.get_device_status()
+                beta, prev, current, version_id, backup = remarkable.get_device_status()
                 print(
-                    f"\nCurrent version: {current}\nOld update engine: {prev}\nBeta active: {beta}\nVersion id: {version_id}"
+                    f"\nCurrent version: {current}\nBackup version: {backup}\nOld update engine: {prev}\nBeta active: {beta}\nVersion id: {version_id}"
                 )
 
             elif function == "restore":
-                if remarkable.hardware == HardwareType.RMPP:
-                    raise SystemError("Restore not available for rmpro.")
                 remarkable.restore_previous_version()
                 print(
-                    f"Device restored to previous version [{remarkable.get_device_status()[1]}]"
+                    f"Device restored to previous version [{remarkable.get_device_status()[4]}]"
                 )
                 remarkable.reboot_device()
                 print("Device rebooted")
@@ -236,18 +255,56 @@ class Manager:
                 def version_lookup(version: str | None) -> re.Match[str] | None:
                     return re.search(r"\b\d+\.\d+\.\d+\.\d+\b", cast(str, version))
 
-                version_number = version_lookup(version)
+                version_number = None
+                swu_hardware = None
+
+                if update_file:
+                    try:
+                        from remarkable_update_image import UpdateImage
+                        from remarkable_update_image.cpio import UpdateImage as CPIOUpdateImage
+
+                        image = UpdateImage(update_file)
+                        if isinstance(image, CPIOUpdateImage):
+                            if image.version is None:
+                                raise SystemError(f"Could not determine version from SWU file: {update_file}")
+
+                            version_number = image.version
+                            hw_map = {
+                                "reMarkable1": HardwareType.RM1,
+                                "reMarkable2": HardwareType.RM2,
+                                "ferrari": HardwareType.RMPP,
+                                "chiappa": HardwareType.RMPPM,
+                            }
+                            if image.hardware_type not in hw_map:
+                                raise SystemError(f"Unsupported hardware type in SWU file: {update_file}")
+
+                            swu_hardware = hw_map[image.hardware_type]
+                            logger.info(f"Extracted from SWU: version={version_number}, hardware={swu_hardware.name}")
+
+                            if swu_hardware != remarkable.hardware:
+                                raise SystemError(
+                                    f"Hardware mismatch!\n"
+                                    f"SWU file is for: {swu_hardware.name}\n"
+                                    f"Connected device is: {remarkable.hardware.name}\n"
+                                    f"Cannot install firmware for different hardware."
+                                )
+                    except ValueError as e:
+                        logger.warning(f"Could not extract metadata from update file: {e}")
 
                 if not version_number:
-                    version_number = version_lookup(
-                        input(
-                            "Failed to get the version number from the filename, please enter it: "
+                    version_match = version_lookup(version)
+                    if not version_match:
+                        version_match = version_lookup(
+                            input(
+                                "Failed to get the version number from the filename, please enter it: "
+                            )
                         )
-                    )
-                    if not version_number:
-                        raise SystemError("Invalid version!")
+                        if not version_match:
+                            raise SystemError("Invalid version!")
 
-                version_number = version_number.group()
+                    version_number = version_match.group()
+                else:
+                    version_number = str(version_number)
 
                 update_file_requires_new_engine = UpdateManager.uses_new_update_engine(
                     version_number
@@ -277,6 +334,68 @@ class Manager:
                         )
 
                 #############################################################
+
+                bootloader_files_for_install = None
+
+                if (device_version_uses_new_engine and
+                    remarkable.hardware == HardwareType.RMPP):
+
+                    current_version = remarkable.get_device_status()[2]
+
+                    if UpdateManager.is_bootloader_boundary_downgrade(current_version, version_number):
+                        print("\n" + "="*60)
+                        print("WARNING: Bootloader Update Required")
+                        print("="*60)
+                        print(f"Current version: {current_version}")
+                        print(f"Target version:  {version_number}")
+                        print()
+                        print("Downgrading from 3.22+ to <3.22 requires updating the")
+                        print("bootloader on both partitions. This process will:")
+                        print("  1. Download the current version's bootloader files")
+                        print("  2. Download the target OS version")
+                        print("  3. Install the target OS version")
+                        print("  4. Update bootloader on both partitions")
+                        print("  5. Reboot")
+                        print()
+
+                        response = input("Do you want to continue? (y/N): ")
+                        if response.lower() != 'y':
+                            raise SystemExit("Installation cancelled by user")
+
+                        expected_swu_name = f"remarkable-production-memfault-image-{current_version}-{remarkable.hardware.new_download_hw}-public"
+                        expected_swu_path = f"./{expected_swu_name}"
+
+                        if os.path.isfile(expected_swu_path):
+                            print(f"\nUsing existing {expected_swu_name} for bootloader extraction...")
+                            current_swu_path = expected_swu_path
+                        else:
+                            print("\nDownloading current version's SWU for bootloader extraction...")
+                            current_swu_path = self.updater.download_version(
+                                remarkable.hardware,
+                                current_version,
+                                "./"
+                            )
+
+                        if not current_swu_path:
+                            raise SystemError(
+                                f"Failed to download current version {current_version} for bootloader extraction. "
+                                f"This is required for safe downgrade across bootloader boundary."
+                            )
+
+                        print("Extracting bootloader files...")
+                        from remarkable_update_image import UpdateImage
+                        swu_image = UpdateImage(current_swu_path)
+                        bootloader_files_for_install = {
+                            'update-bootloader.sh': swu_image.archive[b'update-bootloader.sh'].read(),
+                            'imx-boot': swu_image.archive[b'imx-boot'].read(),
+                        }
+
+                        if not all(bootloader_files_for_install.values()):
+                            raise SystemError("Failed to extract bootloader files from current version")
+
+                        print(f"✓ Extracted update-bootloader.sh ({len(bootloader_files_for_install['update-bootloader.sh'])} bytes)")
+                        print(f"✓ Extracted imx-boot ({len(bootloader_files_for_install['imx-boot'])} bytes)")
+                        print()
 
                 if not update_file_requires_new_engine:
                     if update_file:  # Check if file exists
@@ -318,7 +437,7 @@ class Manager:
                         )
 
                 if device_version_uses_new_engine:
-                    remarkable.install_sw_update(update_file)
+                    remarkable.install_sw_update(update_file, bootloader_files=bootloader_files_for_install)
                 else:
                     remarkable.install_ohma_update(update_file)
 

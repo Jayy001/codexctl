@@ -1,9 +1,10 @@
 import ext4
-import warnings 
+import warnings
 import errno
 
 from remarkable_update_image import UpdateImage
 from remarkable_update_image import UpdateImageSignatureException
+from .device import HardwareType
 
 
 def get_update_image(file: str):

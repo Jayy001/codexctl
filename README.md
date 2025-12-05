@@ -7,6 +7,10 @@ A utility program that helps to manage the remarkable device version utilizing [
 
 If your reMarkable device is at or above 3.11.2.5 and you want to downgrade to a version below 3.11.2.5, codexctl cannot do this currently. Please refer to https://github.com/Jayy001/codexctl/issues/95#issuecomment-2305529048 for manual instructions.
 
+## Paper Pro bootloader updates
+
+When downgrading a Paper Pro device across the 3.20/3.22 firmware boundary, codexctl automatically handles bootloader updates. It will download the current version's firmware if needed and extract the necessary bootloader files (`update-bootloader.sh` and `imx-boot`) to ensure a safe downgrade.
+
 ## Installation
 
 You can find pre-compiled binaries on the [releases](https://github.com/Jayy001/codexctl/releases/) page. This includes a build for the reMarkable itself, as well as well as builds for linux, macOS, and Windows. Alternatively, you can install directly from pypi with `pip install codexctl`. Codexctl currently only has support for a **command line interfaces** but a graphical interface is soon to come.
@@ -53,6 +57,11 @@ codexctl install latest
 codexctl download 3.15.4.2 --hardware rmpp -o out
 codexctl install ./out/remarkable-ct-prototype-image-3.15.4.2-ferrari-public.swu
 ```
+- Downloading rmppm version 3.23.0.64 to a folder named `out` and then installing it
+```
+codexctl download 3.23.0.64 --hardware rmppm -o out
+codexctl install ./out/remarkable-production-image-3.23.0.64-chiappa-public.swu
+```
 - Backing up all documents to the cwd
 ```
 codexctl backup 
@@ -65,7 +74,7 @@ codexctl backup --incremental
 ```
 codexctl backup -l root -r FM --no-recursion --no-overwrite
 ```
-- Getting the version of the device and then switching to previous version (restore only for rm1/rm2)
+- Getting the version of the device and then switching to previous version
 ```
 codexctl status
 codexctl restore
@@ -74,4 +83,8 @@ codexctl restore
 ```
 codexctl download 3.8.0.1944 --hardware rm2
 codexctl cat 3.8.0.1944_reMarkable2-7eGpAv7sYB.signed /etc/version
+```
+- Extract the filesystem image of an upgrade file as a file named `extracted`
+```
+codexctl extract remarkable-production-image-3.22.0.64-ferrari-public.swu -o extracted
 ```

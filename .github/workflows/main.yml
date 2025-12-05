@@ -115,6 +115,21 @@ jobs:
     name: Build for remarkable
     runs-on: ubuntu-latest
     steps:
+      - name: Free up disk space
+        shell: bash
+        run: |
+          sudo rm -vrf \
+          /usr/lib/jvm \
+          /usr/share/dotnet \
+          /usr/share/swift \
+          /usr/local/.ghcup \
+          /usr/local/julia* \
+          /usr/local/lib/android \
+          /usr/local/share/chromium \
+          /opt/microsoft /opt/google \
+          /opt/az \
+          /usr/local/share/powershell \
+          | wc -l
       - name: Checkout the codexctl repository
         uses: actions/checkout@v4
       - name: Nuitka ccache
