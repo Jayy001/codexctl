@@ -737,24 +737,20 @@ fi
 
         else:
             print("Running swupdate")
-            command = f"/usr/sbin/swupdate-from-image-file {version_file}"
+            command = ["/usr/sbin/swupdate-from-image-file", version_file]
             self.logger.debug(command)
 
-            with subprocess.Popen(
-                command,
-                text=True,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env={"PATH": "/bin:/usr/bin:/sbin:/usr/sbin"},
-            ) as process:
-                if process.wait() != 0:
-                    print("".join(process.stderr.readlines()))
-                    raise SystemError("Update failed")
-
-                self.logger.debug(
-                    f"Stdout of swupdate: {''.join(process.stdout.readlines())}"
+            try:
+                output = subprocess.check_output(
+                    command,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    env={"PATH": "/bin:/usr/bin:/sbin:/usr/sbin"},
                 )
+                self.logger.debug(f"Stdout of swupdate: {output}")
+            except subprocess.CalledProcessError as e:
+                print(e.output)
+                raise SystemError("Update failed")
 
             print("Update complete and device rebooting")
             os.system("reboot")
