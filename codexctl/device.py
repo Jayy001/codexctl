@@ -679,8 +679,6 @@ fi
             SystemExit: If there was an error installing the update
 
         """
-        command = f'/usr/bin/swupdate -v -i VERSION_FILE -k /usr/share/swupdate/swupdate-payload-key-pub.pem -H "{self.hardware.swupdate_hw}:1.0" -e "stable,copy1"'
-
         if self.client:
             ftp_client = self.client.open_sftp()
 
@@ -693,25 +691,15 @@ fi
 
             print("\nDone! Running swupdate (PLEASE BE PATIENT, ~5 MINUTES)")
 
-            command = command.replace("VERSION_FILE", out_location)
+            command = f"/usr/sbin/swupdate-from-image-file {out_location}"
+            self.logger.debug(command)
+            _stdin, stdout, _stderr = self.client.exec_command(command)
 
-            for num in (1, 2):
-                command = command.replace(
-                    "stable,copy1", f"stable,copy{num}"
-                )  # terrible hack but it works
-                self.logger.debug(command)
-                _stdin, stdout, _stderr = self.client.exec_command(command)
+            exit_status = stdout.channel.recv_exit_status()
 
-                self.logger.debug(f"Stdout of swupdate checking: {stdout.readlines()}")
-
-                exit_status = stdout.channel.recv_exit_status()
-
-                if exit_status != 0:
-                    if "over our current root" in "".join(_stderr.readlines()):
-                        continue
-                    else:
-                        print("".join(_stderr.readlines()))
-                        raise SystemError("Update failed!")
+            if exit_status != 0:
+                print("".join(_stderr.readlines()))
+                raise SystemError("Update failed!")
 
             if bootloader_files:
                 print("\nApplying bootloader update...")
@@ -749,34 +737,24 @@ fi
 
         else:
             print("Running swupdate")
-            command = command.replace("VERSION_FILE", version_file)
+            command = f"/usr/sbin/swupdate-from-image-file {version_file}"
+            self.logger.debug(command)
 
-            for num in (1, 2):
-                command = command.replace(
-                    "stable,copy1", f"stable,copy{num}"
-                )  # terrible hack but it works
-                self.logger.debug(command)
+            with subprocess.Popen(
+                command,
+                text=True,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env={"PATH": "/bin:/usr/bin:/sbin:/usr/sbin"},
+            ) as process:
+                if process.wait() != 0:
+                    print("".join(process.stderr.readlines()))
+                    raise SystemError("Update failed")
 
-                with subprocess.Popen(
-                    command,
-                    text=True,
-                    shell=True,  # Being lazy...
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    env={"PATH": "/bin:/usr/bin:/sbin"},
-                ) as process:
-                    if process.wait() != 0:
-                        if "installing over our current root" in "".join(
-                            process.stderr.readlines()
-                        ):
-                            continue
-                        else:
-                            print("".join(process.stderr.readlines()))
-                            raise SystemError("Update failed")
-
-                    self.logger.debug(
-                        f"Stdout of update checking service is {''.join(process.stdout.readlines())}"
-                    )
+                self.logger.debug(
+                    f"Stdout of swupdate: {''.join(process.stdout.readlines())}"
+                )
 
             print("Update complete and device rebooting")
             os.system("reboot")
