@@ -261,7 +261,7 @@ class Manager:
                 if update_file:
                     try:
                         from remarkable_update_image import UpdateImage
-                        from remarkable_update_image.cpio import UpdateImage as CPIOUpdateImage
+                        from remarkable_update_image.image import CPIOUpdateImage
 
                         image = UpdateImage(update_file)
                         if isinstance(image, CPIOUpdateImage):
