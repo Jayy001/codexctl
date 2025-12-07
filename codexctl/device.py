@@ -2,6 +2,7 @@ import enum
 import logging
 import os
 import re
+import shlex
 import socket
 import subprocess
 import tempfile
@@ -304,21 +305,23 @@ class DeviceManager:
         update_conf_path = f"{base_path}/usr/share/remarkable/update.conf" if base_path else "/usr/share/remarkable/update.conf"
         os_release_path = f"{base_path}/etc/os-release" if base_path else "/etc/os-release"
 
-        def file_exists(path: str) -> bool:
-            if ftp:
+        if ftp:
+            def file_exists(path: str) -> bool:
                 try:
                     ftp.stat(path)
                     return True
                 except FileNotFoundError:
                     return False
-            return os.path.exists(path)
 
-        def read_file(path: str) -> str:
-            if ftp:
+            def read_file(path: str) -> str:
                 with ftp.file(path) as file:
                     return file.read().decode("utf-8")
-            with open(path, encoding="utf-8") as file:
-                return file.read()
+        else:
+            file_exists = os.path.exists
+
+            def read_file(path: str) -> str:
+                with open(path, encoding="utf-8") as file:
+                    return file.read()
 
         if file_exists(update_conf_path):
             contents = read_file(update_conf_path).strip("\n")
@@ -440,18 +443,32 @@ class DeviceManager:
 
         next_boot_part = current_part
 
+        if self.client:
+            ftp = self.client.open_sftp()
+
+            def file_exists(path: str) -> bool:
+                try:
+                    ftp.stat(path)
+                    return True
+                except FileNotFoundError:
+                    return False
+
+            def read_file(path: str) -> str:
+                with ftp.file(path) as file:
+                    return file.read().decode("utf-8")
+        else:
+            file_exists = os.path.exists
+
+            def read_file(path: str) -> str:
+                with open(path, encoding="utf-8") as file:
+                    return file.read()
+
         if is_new_version:
             boot_part_path = "/sys/bus/mmc/devices/mmc0:0001/boot_part"
             try:
-                if self.client:
-                    ftp = self.client.open_sftp()
-                    with ftp.file(boot_part_path) as file:
-                        boot_part_value = file.read().decode("utf-8").strip()
-                        next_boot_part = 2 if boot_part_value == "1" else 3
-                elif os.path.exists(boot_part_path):
-                    with open(boot_part_path, encoding="utf-8") as file:
-                        boot_part_value = file.read().strip()
-                        next_boot_part = 2 if boot_part_value == "1" else 3
+                if file_exists(boot_part_path):
+                    boot_part_value = read_file(boot_part_path).strip()
+                    next_boot_part = 2 if boot_part_value == "1" else 3
                 else:
                     is_new_version = False
             except (IOError, OSError):
@@ -460,15 +477,9 @@ class DeviceManager:
         if not is_new_version:
             root_part_path = "/sys/devices/platform/lpgpr/root_part"
             try:
-                if self.client:
-                    ftp = self.client.open_sftp()
-                    with ftp.file(root_part_path) as file:
-                        root_part_value = file.read().decode("utf-8").strip()
-                        next_boot_part = 2 if root_part_value == "a" else 3
-                elif os.path.exists(root_part_path):
-                    with open(root_part_path, encoding="utf-8") as file:
-                        root_part_value = file.read().strip()
-                        next_boot_part = 2 if root_part_value == "a" else 3
+                if file_exists(root_part_path):
+                    root_part_value = read_file(root_part_path).strip()
+                    next_boot_part = 2 if root_part_value == "a" else 3
             except (IOError, OSError) as e:
                 self.logger.debug(f"Failed to read next boot partition: {e}")
 
@@ -732,7 +743,7 @@ fi
 
             print("\nDone! Running swupdate (PLEASE BE PATIENT, ~5 MINUTES)")
 
-            command = f"bash -c 'source /usr/lib/swupdate/conf.d/09-swupdate-args && swupdate $SWUPDATE_ARGS -i {out_location}'"
+            command = f"bash -c 'source /usr/lib/swupdate/conf.d/09-swupdate-args && swupdate $SWUPDATE_ARGS -i {shlex.quote(out_location)}'"
             self.logger.debug(command)
             _stdin, stdout, _stderr = self.client.exec_command(command)
 
@@ -778,7 +789,7 @@ fi
 
         else:
             print("Running swupdate")
-            command = ["bash", "-c", f"source /usr/lib/swupdate/conf.d/09-swupdate-args && swupdate $SWUPDATE_ARGS -i {version_file}"]
+            command = ["bash", "-c", f"source /usr/lib/swupdate/conf.d/09-swupdate-args && swupdate $SWUPDATE_ARGS -i {shlex.quote(version_file)}"]
             self.logger.debug(command)
 
             try:
