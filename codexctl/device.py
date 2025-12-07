@@ -344,6 +344,9 @@ class DeviceManager:
 
         Returns:
             str: Active device path (e.g., /dev/mmcblk2p2)
+
+        Raises:
+            SystemError: If command fails or returns no output
         """
         if self.hardware in (HardwareType.RMPP, HardwareType.RMPPM):
             cmd = "swupdate -g"
@@ -351,10 +354,17 @@ class DeviceManager:
             cmd = "rootdev"
 
         if self.client:
-            _stdin, stdout, _stderr = self.client.exec_command(cmd)
-            return stdout.read().decode("utf-8").strip()
+            _stdin, stdout, stderr = self.client.exec_command(cmd)
+            output = stdout.read().decode("utf-8").strip()
+            exit_status = stdout.channel.recv_exit_status()
+            if exit_status != 0 or not output:
+                error = stderr.read().decode("utf-8", errors="ignore")
+                raise SystemError(f"Failed to get active device using '{cmd}': {error or 'no output'}")
+            return output
         else:
             result = subprocess.run(cmd.split(), capture_output=True, text=True)
+            if result.returncode != 0 or not result.stdout.strip():
+                raise SystemError(f"Failed to get active device using '{cmd}': {result.stderr or 'no output'}")
             return result.stdout.strip()
 
     def _parse_partition_info(self, active_device: str) -> tuple[int, int, str]:
