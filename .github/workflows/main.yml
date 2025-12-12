@@ -166,7 +166,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: runner.debug == '1'
         with:
-          name: ${{ matrix.os }}-compilation-report
+          name: remarkable-compilation-report
           path: compilation-report.xml
           if-no-files-found: warn
       - name: Upload executable
