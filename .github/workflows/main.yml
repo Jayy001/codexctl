@@ -42,7 +42,7 @@ jobs:
           - ubuntu-latest
           - windows-latest
           - macos-latest
-          - macos-13
+          - macos-15-intel
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install Apt packages
@@ -54,7 +54,7 @@ jobs:
           packages: libfuse-dev
           version: 1.0
       - name: Install brew packages
-        if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         run: brew install coreutils
       - name: Checkout the Git repository
         uses: actions/checkout@v4
