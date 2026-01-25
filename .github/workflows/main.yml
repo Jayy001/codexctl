@@ -34,7 +34,7 @@ defaults:
 
 jobs:
   remote:
-    name: Build for ${{ matrix.os }}
+    name: Build for ${{ matrix.os }}${{ matrix.debug == 1 && " (debug)" || "" }}
     strategy:
       fail-fast: false
       matrix:
@@ -43,6 +43,9 @@ jobs:
           - windows-latest
           - macos-latest
           - macos-15-intel
+        debug:
+          - 0
+          - 1
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install Apt packages
@@ -82,7 +85,7 @@ jobs:
         run: chmod +x ./scripts/github-make-executable.sh
       - name: Build codexctl
         shell: bash
-        run: ./scripts/github-make-executable.sh
+        run: DEBUG_BUILD=${{ matrix.debug }} ./scripts/github-make-executable.sh
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Upload Compilation Report
@@ -109,12 +112,18 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}
+          name: ${{ matrix.os }}${{ matrix.debug == 1 && "-debug" || "" }}
           path: dist/codexctl.exe
           if-no-files-found: error
   device:
-    name: Build for remarkable
+    name: Build for remarkable${{ matrix.debug == 1 && " (debug)" || "" }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        debug:
+          - 0
+          - 1
     steps:
       - name: Free up disk space
         shell: bash
@@ -161,7 +170,7 @@ jobs:
             cd /src
             source /opt/lib/nuitka/bin/activate
             chmod +x ./scripts/github-make-executable.sh
-            ./scripts/github-make-executable.sh
+            DEBUG_BUILD=${{ matrix.debug }} ./scripts/github-make-executable.sh
       - name: Upload Compilation Report
         uses: actions/upload-artifact@v4
         if: runner.debug == '1'
