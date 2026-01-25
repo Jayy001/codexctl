@@ -92,7 +92,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: (success() || failure()) && runner.debug == '1'
         with:
-          name: ${{ matrix.os }}-compilation-report
+          name: ${{ matrix.os }}${{ matrix.debug == 1 && '-debug' || '' }}-compilation-report
           path: compilation-report.xml
           if-no-files-found: warn
       - name: Move .ccache
@@ -105,7 +105,7 @@ jobs:
         if: matrix.os != 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}
+          name: ${{ matrix.os }}${{ matrix.debug == 1 && '-debug' || '' }}
           path: dist/codexctl
           if-no-files-found: error
       - name: Upload executable
@@ -175,7 +175,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: runner.debug == '1'
         with:
-          name: remarkable-compilation-report
+          name: remarkable${{ matrix.debug == 1 && '-debug' || '' }}-compilation-report
           path: compilation-report.xml
           if-no-files-found: warn
       - name: Upload executable
