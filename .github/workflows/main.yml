@@ -59,7 +59,12 @@ jobs:
       - name: Install windows packages
         if: matrix.os == 'windows-latest'
         run: |
-          winget install -e --id UPX.UPX --disable-interactivity --accept-source-agreements --accept-package-agreements
+          winget install -e \
+            --id UPX.UPX \
+            --disable-interactivity \
+            --accept-source-agreements \
+            --accept-package-agreements
+          echo "$LOCALAPPDATA/Microsoft/WinGet/Links/" >> $GITHUB_PATH
       - name: Install brew packages
         if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         run: brew install coreutils upx
