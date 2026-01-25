@@ -25,7 +25,7 @@ else
 endif
 CODEXCTL_FLAGS :=
 ifeq ($(DEBUG_BUILD),1)
-	CODEXCTL_FLAGS := --debug
+	CODEXCTL_FLAGS := --debug --no-debug-c-warnings
 endif
 
 UNAME_S := $(shell uname -s)
