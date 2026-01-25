@@ -34,7 +34,7 @@ defaults:
 
 jobs:
   remote:
-    name: Build for ${{ matrix.os }}${{ matrix.debug == 1 && " (debug)" || "" }}
+    name: Build for ${{ matrix.os }}${{ matrix.debug == 1 && ' (debug)' || '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -112,11 +112,11 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}${{ matrix.debug == 1 && "-debug" || "" }}
+          name: ${{ matrix.os }}${{ matrix.debug == 1 && '-debug' || '' }}
           path: dist/codexctl.exe
           if-no-files-found: error
   device:
-    name: Build for remarkable${{ matrix.debug == 1 && " (debug)" || "" }}
+    name: Build for remarkable${{ matrix.debug == 1 && ' (debug)' || '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -181,7 +181,7 @@ jobs:
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: remarkable
+          name: remarkable${{ matrix.debug == 1 && '-debug' || '' }}
           path: dist/codexctl
           if-no-files-found: error
   test_device:
