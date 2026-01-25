@@ -54,11 +54,15 @@ jobs:
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           execute_install_scripts: true
-          packages: libfuse-dev
+          packages: libfuse-dev upx-ucl
           version: 1.0
+      - name: Install windows packages
+        if: matrix.os == 'windows-latest'
+        run: |
+          winget install -e --id UPX.UPX --disable-interactivity --accept-source-agreements --accept-package-agreements
       - name: Install brew packages
         if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
-        run: brew install coreutils
+        run: brew install coreutils upx
       - name: Checkout the Git repository
         uses: actions/checkout@v4
       - name: ccache
