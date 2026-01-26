@@ -34,7 +34,7 @@ defaults:
 
 jobs:
   remote:
-    name: Build for ${{ matrix.os }}
+    name: Build for ${{ matrix.os }}${{ matrix.debug == 1 && ' (debug)' || '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -43,6 +43,9 @@ jobs:
           - windows-latest
           - macos-latest
           - macos-15-intel
+        debug:
+          - 0
+          - 1
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install Apt packages
@@ -51,11 +54,20 @@ jobs:
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           execute_install_scripts: true
-          packages: libfuse-dev
+          packages: libfuse-dev upx-ucl
           version: 1.0
+      - name: Install windows packages
+        if: matrix.os == 'windows-latest'
+        run: |
+          winget install -e \
+            --id UPX.UPX \
+            --disable-interactivity \
+            --accept-source-agreements \
+            --accept-package-agreements
+          echo "$LOCALAPPDATA/Microsoft/WinGet/Links/" >> $GITHUB_PATH
       - name: Install brew packages
         if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
-        run: brew install coreutils
+        run: brew install coreutils upx
       - name: Checkout the Git repository
         uses: actions/checkout@v4
       - name: ccache
@@ -82,14 +94,14 @@ jobs:
         run: chmod +x ./scripts/github-make-executable.sh
       - name: Build codexctl
         shell: bash
-        run: ./scripts/github-make-executable.sh
+        run: DEBUG_BUILD=${{ matrix.debug }} ./scripts/github-make-executable.sh
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Upload Compilation Report
         uses: actions/upload-artifact@v4
         if: (success() || failure()) && runner.debug == '1'
         with:
-          name: ${{ matrix.os }}-compilation-report
+          name: ${{ matrix.os }}${{ matrix.debug == 1 && '-debug' || '' }}-compilation-report
           path: compilation-report.xml
           if-no-files-found: warn
       - name: Move .ccache
@@ -102,19 +114,25 @@ jobs:
         if: matrix.os != 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}
+          name: ${{ matrix.os }}${{ matrix.debug == 1 && '-debug' || '' }}
           path: dist/codexctl
           if-no-files-found: error
       - name: Upload executable
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}
+          name: ${{ matrix.os }}${{ matrix.debug == 1 && '-debug' || '' }}
           path: dist/codexctl.exe
           if-no-files-found: error
   device:
-    name: Build for remarkable
+    name: Build for remarkable${{ matrix.debug == 1 && ' (debug)' || '' }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        debug:
+          - 0
+          - 1
     steps:
       - name: Free up disk space
         shell: bash
@@ -161,18 +179,18 @@ jobs:
             cd /src
             source /opt/lib/nuitka/bin/activate
             chmod +x ./scripts/github-make-executable.sh
-            ./scripts/github-make-executable.sh
+            DEBUG_BUILD=${{ matrix.debug }} ./scripts/github-make-executable.sh
       - name: Upload Compilation Report
         uses: actions/upload-artifact@v4
         if: runner.debug == '1'
         with:
-          name: remarkable-compilation-report
+          name: remarkable${{ matrix.debug == 1 && '-debug' || '' }}-compilation-report
           path: compilation-report.xml
           if-no-files-found: warn
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: remarkable
+          name: remarkable${{ matrix.debug == 1 && '-debug' || '' }}
           path: dist/codexctl
           if-no-files-found: error
   test_device:

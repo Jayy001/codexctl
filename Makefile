@@ -23,6 +23,12 @@ else
 	endif
 	CODEXCTL_BIN := codexctl
 endif
+CODEXCTL_FLAGS :=
+ifeq ($(DEBUG_BUILD),1)
+	CODEXCTL_FLAGS += --debug
+	CODEXCTL_FLAGS += --no-debug-c-warnings
+	CODEXCTL_FLAGS += --no-debug-immortal-assumptions
+endif
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
@@ -140,7 +146,7 @@ executable: $(VENV_BIN_ACTIVATE)
 	. $(VENV_BIN_ACTIVATE); \
 	python -m pip install \
 		--extra-index-url=https://wheels.eeems.codes/ \
-	    nuitka==2.7.12 \
+	    nuitka==2.8.10 \
 	    setuptools
 	@echo "[info] Building codexctl"
 	@set -e; \
@@ -152,6 +158,7 @@ executable: $(VENV_BIN_ACTIVATE)
 	    --output-dir=dist \
 	    --report=compilation-report.xml \
 	    --output-filename=codexctl \
+	    $(CODEXCTL_FLAGS) \
 	    main.py
 
 	if [ -d dist/codexctl.build ]; then \
