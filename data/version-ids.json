@@ -1,5 +1,9 @@
 {
     "remarkable1": {
+        "3.25.0.142": [
+            "remarkable-production-image-3.25.0.142-rm1-public.swu",
+            "38f79d2ea4fb0a9a0da4c3d0324547fee86083281c4741db33e68f75b071af1f"
+        ],
         "3.24.0.149": [
             "remarkable-production-image-3.24.0.149-rm1-public.swu",
             "77ef0e05c43d1898ef956cb7cbd29bfa203f95cec2c9ab8e54ee53a8db5f37c5"
@@ -194,6 +198,10 @@
         ]
     },
     "remarkable2": {
+        "3.25.0.142": [
+            "remarkable-production-image-3.25.0.142-rm2-public.swu",
+            "d043d2167ca21521fa5bc649f546ed36671fa935d27d596b32250109ce34eca0"
+        ],
         "3.24.0.149": [
             "remarkable-production-image-3.24.0.149-rm2-public.swu",
             "91c0b6b698e079b51f229ad9ce49530e51a79cee4d77c9dfb1b4980b48254475"
@@ -400,6 +408,10 @@
         ]
     },
     "remarkablepp": {
+        "3.25.0.142": [
+            "remarkable-production-image-3.25.0.142-ferrari-public.swu",
+            "ace3262945205804ba17e961accc00680c9cf1068cc94bc40053f989c9883dfe"
+        ],
         "3.24.0.149": [
             "remarkable-production-image-3.24.0.149-ferrari-public.swu",
             "d4f6a10eada98db595748cbb75efc06c3a721191bc0a5101009c438c8b9f4668"
@@ -462,6 +474,10 @@
         ]
     },
     "remarkableppm": {
+        "3.25.0.142": [
+            "remarkable-production-image-3.25.0.142-chiappa-public.swu",
+            "cf1962dd499501d7fc9f2bc6dcca137a20ba09efd3bd517d58882786cf24a4b0"
+        ],
         "3.24.0.149": [
             "remarkable-production-image-3.24.0.149-chiappa-public.swu",
             "51a0fa3a145184c685fd44668cd6038f63acc7ff47a619987efa89d1ca419593"
@@ -475,7 +491,7 @@
             "b494b36e6c1749bbe205ef26f2cea31728f6fe82aa5abf5057e37a09ec326ffa"
         ]
     },
-    "last-updated": 1764910380,
+    "last-updated": 1770041175,
     "external-provider-urls": [
         "https://storage.googleapis.com/remarkable-versions/REPLACE_ID",
         "https://remarkable-software.s3.us-east-2.amazonaws.com/REPLACE_ID"
