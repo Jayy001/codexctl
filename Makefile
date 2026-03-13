@@ -158,6 +158,8 @@ executable: $(VENV_BIN_ACTIVATE)
 	    --output-dir=dist \
 	    --report=compilation-report.xml \
 	    --output-filename=codexctl \
+	    --file-version=$(date +%s) \
+	    --product-version=$(grep ^version pyproject.toml | cut -d'=' -f2 | xargs) \
 	    $(CODEXCTL_FLAGS) \
 	    main.py
 
