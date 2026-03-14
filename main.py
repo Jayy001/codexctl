@@ -7,7 +7,7 @@
 # nuitka-project: --noinclude-unittest-mode=allow
 # nuitka-project: --nofollow-import-to=setuptools
 # nuitka-project-if: {OS} == "Darwin":
-#    nuitka-project: --onefile-tempdir-spec="{CACHE_DIR}/codexctl/{TIME}"
+#    nuitka-project: --onefile-tempdir-spec="{CACHE_DIR}/codexctl/{VERSION}"
 
 from codexctl import main
 
