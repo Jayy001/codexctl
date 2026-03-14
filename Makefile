@@ -158,6 +158,8 @@ executable: $(VENV_BIN_ACTIVATE)
 	    --output-dir=dist \
 	    --report=compilation-report.xml \
 	    --output-filename=codexctl \
+	    --product-version=$(shell date +%Y.%m.%d) \
+	    --file-version=$(shell date +%H.%M.%S) \
 	    $(CODEXCTL_FLAGS) \
 	    main.py
 
