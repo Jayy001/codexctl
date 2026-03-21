@@ -7,7 +7,7 @@ license = "GPLv3"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.12,<3.14"
 paramiko = "3.4.1"
 psutil = "6.0.0"
 requests = "2.32.4"
