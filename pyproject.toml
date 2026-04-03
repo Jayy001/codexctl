@@ -1,12 +1,20 @@
-[tool.poetry]
+[project]
 name = "codexctl"
 version = "1.2.1"
 description = "Automated update managment for the ReMarkable tablet"
 authors = ["Jayy001 <github@skii.dev>"]
 license = "GPLv3"
 readme = "README.md"
+dependencies = [
+    "loguru==0.7.3",
+    "pyqt6>=6.11.0",
+    "remarkable-update-fuse==1.3.2 ; sys_platform == 'linux'",
+    "remarkable-update-image==1.3.2 ; sys_platform != 'linux'",
+    "requests==2.32.5",
+    "textual>=8.2.2",
+]
 
-[tool.poetry.dependencies]
+[dependencies]
 python = ">=3.12,<3.14"
 paramiko = "3.4.1"
 psutil = "6.0.0"
@@ -14,11 +22,3 @@ requests = "2.32.4"
 loguru = "0.7.3"
 remarkable-update-image = { version = "1.3", markers = "sys_platform != 'linux'" }
 remarkable-update-fuse = { version = "1.3", markers = "sys_platform == 'linux'" }
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.scripts]
-codexctl = "codexctl.__main__:main"
-cxtl = "codexctl.__main__:main"
