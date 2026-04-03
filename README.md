@@ -15,7 +15,7 @@ When downgrading a Paper Pro device across the 3.20/3.22 firmware boundary, code
 
 You can find pre-compiled binaries on the [releases](https://github.com/Jayy001/codexctl/releases/) page. This includes a build for the reMarkable itself, as well as well as builds for linux, macOS, and Windows. Alternatively, you can install directly from pypi with `pip install codexctl`. Codexctl currently only has support for a **command line interfaces** but a graphical interface is soon to come.
 
-Finally, if you want to build it yourself, you can run `make executable` which requires python 3.11 or newer, python-venv and pip. Linux also requires libfuse-dev.
+Finally, if you want to build it yourself, first sudo pacman -S fuse2 pkgconf,  you can run `make executable` which requires python 3.11 or newer, python-venv and pip. Linux also requires libfuse-dev.
 
 ## General useage
 

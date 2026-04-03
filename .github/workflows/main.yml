@@ -39,7 +39,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
+          - linux-latest
           - windows-latest
           - macos-latest
           - macos-15-intel
