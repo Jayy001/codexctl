@@ -502,6 +502,8 @@ class DeviceManager:
             tuple: Beta status, old_update_engine, current version, version_id, backup version (in that order)
         """
         old_update_engine = True
+        version_id = ""
+        beta_contents = ""
 
         if self.client:
             self.logger.debug("Connecting to FTP")
@@ -509,12 +511,20 @@ class DeviceManager:
             self.logger.debug("Connected")
 
             xochitl_version, old_update_engine = self._read_version_from_path(ftp)
+            def exists(path:str) -> bool:
+                try:
+                    _ = ftp.stat(path)
+                    return True
+                except (FileNotFoundError, IOError):
+                    return False
 
-            with ftp.file("/etc/version") as file:
-                version_id = file.read().decode("utf-8").strip("\n")
+            if exists("/etc/version"):
+                with ftp.file("/etc/version") as file:
+                    version_id = file.read().decode("utf-8").strip("\n")
 
-            with ftp.file("/home/root/.config/remarkable/xochitl.conf") as file:
-                beta_contents = file.read().decode("utf-8")
+            if exists("/home/root/.config/remarkable/xochitl.conf"):
+                with ftp.file("/home/root/.config/remarkable/xochitl.conf") as file:
+                    beta_contents = file.read().decode("utf-8")
 
         else:
             xochitl_version, old_update_engine = self._read_version_from_path()
@@ -522,14 +532,10 @@ class DeviceManager:
             if os.path.exists("/etc/version"):
                 with open("/etc/version", encoding="utf-8") as file:
                     version_id = file.read().rstrip()
-            else:
-                version_id = ""
 
             if os.path.exists("/home/root/.config/remarkable/xochitl.conf"):
                 with open("/home/root/.config/remarkable/xochitl.conf", encoding="utf-8") as file:
                     beta_contents = file.read().rstrip()
-            else:
-                beta_contents = ""
 
         beta_possible = re.search("(?<=GROUP=).*", beta_contents)
         beta = "Release"
