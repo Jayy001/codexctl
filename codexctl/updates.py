@@ -396,7 +396,7 @@ class UpdateManager:
         Returns:
             bool: If it uses the new update engine or not
         """
-        return int(version.split(".")[0]) >= 3 and int(version.split(".")[1]) >= 11
+        return tuple([int(x) for x in version.split(".")]) > (3, 11, 2, 5)
 
     @staticmethod
     def is_bootloader_boundary_downgrade(current_version: str, target_version: str) -> bool:
