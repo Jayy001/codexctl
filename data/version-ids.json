@@ -1,5 +1,13 @@
 {
     "remarkable1": {
+        "3.27.1.0": [
+            "remarkable-production-image-3.27.1.0-rm1-public.swu",
+            "c7dc3e6ff076839664c56cd271a01d3862cbd92a58e23c9852e2b3f0f76604c9"
+        ],
+        "3.27.0.97": [
+            "remarkable-production-image-3.27.0.97-rm1-public.swu",
+            "49cc145e70eed8675d8fd28667e83f7f1f31e9f6d8f8483df475fc8a604985c1"
+        ],
         "3.26.0.68": [
             "remarkable-production-image-3.26.0.68-rm1-public.swu",
             "af2fd435704ab23db18a4d64754709aadd1c1075c67c69a9cf7762af038d2f6c"
@@ -206,6 +214,14 @@
         ]
     },
     "remarkable2": {
+        "3.27.1.0": [
+            "remarkable-production-image-3.27.1.0-rm2-public.swu",
+            "40f4b69ff4b546a9177b44e0f1b00e0e7bdc1b9694398b00b4fbca6301181ac2"
+        ],
+        "3.27.0.97": [
+            "remarkable-production-image-3.27.0.97-rm2-public.swu",
+            "d4a4956ea32b1c0fdd3ec7815915c0567c29d917d6c907c8046940e4b9473794"
+        ],
         "3.26.0.68": [
             "remarkable-production-image-3.26.0.68-rm2-public.swu",
             "40747938c408de032394c9d9751b8518c557f7eb37ae96b2f11faf67fe2ab2fc"
@@ -424,6 +440,14 @@
         ]
     },
     "remarkablepp": {
+        "3.27.1.0": [
+            "remarkable-production-image-3.27.1.0-ferrari-public.swu",
+            "2a140a2200c0b770f5e152f32bd8184ca45dab1cc9bae08f0e9d2e9c782d82e3"
+        ],
+        "3.27.0.97": [
+            "remarkable-production-image-3.27.0.97-ferrari-public.swu",
+            "c32790849db6748cfb84535d92bcb66673def9474d7c4afb884706d71d82e9bc"
+        ],
         "3.26.0.68": [
             "remarkable-production-image-3.26.0.68-ferrari-public.swu",
             "275b5d0f15c57aa50275acf643294f3f62a6559e1388ca00e2a9afd786da7270"
@@ -498,6 +522,14 @@
         ]
     },
     "remarkableppm": {
+        "3.27.1.0": [
+            "remarkable-production-image-3.27.1.0-chiappa-public.swu",
+            "786f326b177394d6ce210195034b2b0e0665b377945c72d5882d0ed8d43d9047"
+        ],
+        "3.27.0.97": [
+            "remarkable-production-image-3.27.0.97-chiappa-public.swu",
+            "8341b203f833f8269b5857fc857bea4734d83745e99c1cbef91499f275257c63"
+        ],
         "3.26.0.68": [
             "remarkable-production-image-3.26.0.68-chiappa-public.swu",
             "39c61cc68d4735d0e914a3319e90a494b6bc48337c9d8eaefa6f9f8d9d4fe4d2"
@@ -523,7 +555,7 @@
             "b494b36e6c1749bbe205ef26f2cea31728f6fe82aa5abf5057e37a09ec326ffa"
         ]
     },
-    "last-updated": 1773925455,
+    "last-updated": 1778173895,
     "external-provider-urls": [
         "https://storage.googleapis.com/remarkable-versions/REPLACE_ID",
         "https://remarkable-software.s3.us-east-2.amazonaws.com/REPLACE_ID"
