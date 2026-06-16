@@ -352,7 +352,7 @@ class Manager:
                         # `codexctl restore`
 
                 else:
-                    if update_file_requires_new_engine:
+                    if version_number != "3.11.2.5" && update_file_requires_new_engine:
                         raise SystemError(
                             "This version requires the new update engine, please upgrade your device to version 3.11.2.5 first."
                         )
