@@ -246,7 +246,7 @@ class UpdateManager:
 
         version_id, version_checksum = version_lookup[update_version]
         version = tuple([int(x) for x in update_version.split(".")])
-        if version version <= (3, 11, 2, 5):
+        if version <= (3, 11, 2, 5):
             file_name = (
                 f"{update_version}_{hardware_type.old_download_hw}-{version_id}.signed"
             )
