@@ -248,7 +248,14 @@ class UpdateManager:
             return
 
         version_id, version_checksum = version_lookup[update_version]
-        file_name = f"remarkable-production-memfault-image-{update_version}-{hardware_type.new_download_hw}-public"
+        version = tuple([int(x) for x in update_version.split(".")])
+        if version >= (3,):
+            file_name = (
+                f"{update_version}_{hardware_type.old_download_hw}-{version_id}.signed"
+            )
+
+        else:
+            file_name = f"remarkable-production-memfault-image-{update_version}-{hardware_type.new_download_hw}-public"
 
         for provider_url in self.external_provider_urls:
             file_url = provider_url.replace("REPLACE_ID", version_id)
