@@ -248,41 +248,26 @@ class UpdateManager:
             return
 
         version_id, version_checksum = version_lookup[update_version]
-        version = tuple([int(x) for x in update_version.split(".")])
-        if version >= (3,):
-            BASE_URL = BASE_URL_V3
+        file_name = f"remarkable-production-memfault-image-{update_version}-{hardware_type.new_download_hw}-public"
 
-        if version <= (3, 11, 2, 5):
-            file_name = (
-                f"{update_version}_{hardware_type.old_download_hw}-{version_id}.signed"
-            )
-            file_url = f"{BASE_URL}/{update_version}/{file_name}"
-            self.logger.debug(f"File URL is {file_url}, File name is {file_name}")
-            return self.__download_version_file(
+        for provider_url in self.external_provider_urls:
+            file_url = provider_url.replace("REPLACE_ID", version_id)
+            self.logger.debug(f"Trying to download from {file_url}")
+
+            result = self.__download_version_file(
                 file_url, file_name, download_folder, version_checksum
             )
 
-        else:
-            file_name = f"remarkable-production-memfault-image-{update_version}-{hardware_type.new_download_hw}-public"
+            if result is not None:
+                self.logger.debug(f"Successfully downloaded from {provider_url}")
+                return result
 
-            for provider_url in self.external_provider_urls:
-                file_url = provider_url.replace("REPLACE_ID", version_id)
-                self.logger.debug(f"Trying to download from {file_url}")
+            self.logger.debug(
+                f"Failed to download from {provider_url}, trying next source..."
+            )
 
-                result = self.__download_version_file(
-                    file_url, file_name, download_folder, version_checksum
-                )
-
-                if result is not None:
-                    self.logger.debug(f"Successfully downloaded from {provider_url}")
-                    return result
-
-                self.logger.debug(
-                    f"Failed to download from {provider_url}, trying next source..."
-                )
-
-            self.logger.error(f"Failed to download {file_name} from all sources")
-            return None
+        self.logger.error(f"Failed to download {file_name} from all sources")
+        return None
 
     def __generate_xml_data(self) -> str:
         """Generates and returns XML data for the update request"""
