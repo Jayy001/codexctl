@@ -565,7 +565,7 @@
     "external-provider-urls": [
         "https://storage.googleapis.com/remarkable-versions/REPLACE_ID",
         "https://remarkable-software.s3.us-east-2.amazonaws.com/REPLACE_ID",
-        "https://remarkable-software.s3.us-east-2.amazonaws.com/omaha/rm1/REPLACE_ID",
-        "https://remarkable-software.s3.us-east-2.amazonaws.com/omaha/rm2/REPLACE_ID"
+        "https://remarkable-software.s3.us-east-2.amazonaws.com/omaha/rm1/REPLACE_NAME",
+        "https://remarkable-software.s3.us-east-2.amazonaws.com/omaha/rm2/REPLACE_NAME"
     ]
 }

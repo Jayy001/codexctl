@@ -254,7 +254,7 @@ class UpdateManager:
             file_name = f"remarkable-production-memfault-image-{update_version}-{hardware_type.new_download_hw}-public"
 
         for provider_url in self.external_provider_urls:
-            file_url = provider_url.replace("REPLACE_ID", version_id)
+            file_url = provider_url.replace("REPLACE_ID", version_id).replace("REPLACE_NAME", file_name)
             self.logger.debug(f"Trying to download from {file_url}")
 
             result = self.__download_version_file(
