@@ -58,13 +58,13 @@ $(VENV_BIN_ACTIVATE): requirements.remote.txt requirements.txt
 	@echo "[info] Downloading remarkable update file"
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
-	python -m codexctl download --hardware rm2 --out .venv ${FW_VERSION}
+	python -m codexctl --verbose download --hardware rm2 --out .venv ${FW_VERSION}
 
 .venv/$(FW_FILE_SWU): $(VENV_BIN_ACTIVATE) $(OBJ)
 	@echo "[info] Downloading remarkable .swu update file"
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
-	python -m codexctl download --hardware rm2 --out .venv $(FW_VERSION_SWU)
+	python -m codexctl --verbose download --hardware rm2 --out .venv $(FW_VERSION_SWU)
 
 test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed .venv/$(FW_FILE_SWU)
 	@echo "[info] Running test"
