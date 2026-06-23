@@ -233,7 +233,6 @@ class UpdateManager:
 
             case HardwareType.RM2:
                 version_lookup = self.remarkable2_versions
-                BASE_URL_V3 += "2"
 
             case HardwareType.RM1:
                 version_lookup = self.remarkable1_versions
