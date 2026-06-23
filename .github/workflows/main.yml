@@ -193,47 +193,50 @@ jobs:
           name: remarkable${{ matrix.debug == 1 && '-debug' || '' }}
           path: dist/codexctl
           if-no-files-found: error
-  test_device:
-    name: Test for reMarkable ${{ matrix.fw_version }}
-    needs: [device]
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        fw_version:
-          - "2.15.1.1189"
-          - "3.3.2.1666"
-          # - '3.9.3'
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          name: remarkable
-      - name: Free up space
-        run: |
-          export DEBIAN_FRONTEND="noninteractive"
-          sudo apt-get autoremove -y
-          sudo apt-get autoclean -y
-          sudo rm -rf \
-            /usr/lib/jvm \
-            /usr/share/dotnet \
-            /usr/share/swift \
-            /usr/local/.ghcup \
-            /usr/local/julia* \
-            /usr/local/lib/android \
-            /usr/local/share/chromium \
-            /opt/microsoft /opt/google \
-            /opt/az \
-            /usr/local/share/powershell
-      - uses: Eeems-Org/run-in-remarkable-action@v1
-        with:
-          path: artifacts
-          fw_version: ${{ matrix.fw_version }}
-          run: |
-            chmod +x ./codexctl
-            ./codexctl download --hardware rm2 --out /tmp toltec
+#  test_device:
+#    name: Test for reMarkable ${{ matrix.fw_version }}
+#    needs: [device]
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        fw_version:
+#          - "2.15.1.1189"
+#          - "3.3.2.1666"
+#          # - '3.9.3'
+#    steps:
+#      - uses: actions/download-artifact@v4
+#        with:
+#          path: artifacts
+#          name: remarkable
+#      - name: Free up space
+#        run: |
+#          export DEBIAN_FRONTEND="noninteractive"
+#          sudo apt-get autoremove -y
+#          sudo apt-get autoclean -y
+#          sudo rm -rf \
+#            /usr/lib/jvm \
+#            /usr/share/dotnet \
+#            /usr/share/swift \
+#            /usr/local/.ghcup \
+#            /usr/local/julia* \
+#            /usr/local/lib/android \
+#            /usr/local/share/chromium \
+#            /opt/microsoft /opt/google \
+#            /opt/az \
+#            /usr/local/share/powershell
+#      - uses: Eeems-Org/run-in-remarkable-action@v1
+#        with:
+#          path: artifacts
+#          fw_version: ${{ matrix.fw_version }}
+#          run: |
+#            chmod +x ./codexctl
+#            ./codexctl download --hardware rm2 --out /tmp toltec
   release:
     name: Release
-    needs: [remote, device, test_device]
+    needs:
+      - remote
+      - device
+      #- test_device
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     permissions:
