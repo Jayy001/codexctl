@@ -254,7 +254,7 @@ jobs:
       - name: Install Poetry
         run: |
           sudo apt-get update
-          sudo apt-get install libfuse-dev pkg-config
+          sudo apt-get install -y libfuse-dev pkg-config
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       - uses: actions/download-artifact@v4
@@ -277,7 +277,7 @@ jobs:
           generateReleaseNotes: true
           makeLatest: true
       - name: Update version
-        run: sed -i "s/^version = \"(.*)\"$/version = \"\1.post$TAG\"/" pyproject.toml
+        run: sed -iE "s/^version = \"(.*)\"$/version = \"\1.post$TAG\"/" pyproject.toml
       - name: Install dependencies
         run: poetry install --no-interaction
       - name: Publish to pypi
