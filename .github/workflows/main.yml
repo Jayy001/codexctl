@@ -232,13 +232,12 @@ jobs:
 #            chmod +x ./codexctl
 #            ./codexctl download --hardware rm2 --out /tmp toltec
   release:
-    name: Release
+    name: ${{ github.ref == 'refs/heads/main' && 'Release' || 'Test release' }}
     needs:
       - remote
       - device
       #- test_device
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
     steps:
@@ -246,6 +245,18 @@ jobs:
         run: |
           echo "NAME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
           echo "TAG=$(date +%s)" >> $GITHUB_ENV
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Poetry
+        run: |
+          sudo apt-get update
+          sudo apt-get install libfuse-dev pkg-config
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -257,6 +268,7 @@ jobs:
             popd
           done
       - uses: ncipollo/release-action@v1
+        if: github.ref == 'refs/heads/main'
         with:
           artifacts: "artifacts/*.zip"
           name: ${{ env.NAME }}
@@ -264,3 +276,12 @@ jobs:
           commit: ${{ github.sha }}
           generateReleaseNotes: true
           makeLatest: true
+      - name: Update version
+        run: sed -i "s/^version = \"(.*)\"$/version = \"\1.post$TAG\"/" pyproject.toml
+      - name: Install dependencies
+        run: poetry install --no-interaction
+      - name: Publish to pypi
+        if: github.ref == 'refs/heads/main'
+        run: poetry publish --build
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
