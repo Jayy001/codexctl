@@ -282,9 +282,11 @@ jobs:
           tag: ${{ env.TAG }}
       - name: Install dependencies
         run: poetry install --no-interaction
+      - name: Build package
+        run: poetry build
       - name: Publish to pypi
         if: github.ref == 'refs/heads/main'
-        run: poetry publish --build
+        run: poetry publish
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
       - name: Test output
