@@ -277,7 +277,9 @@ jobs:
           generateReleaseNotes: true
           makeLatest: true
       - name: Update version
-        run: sed -iE "s/^version = \"(.*)\"$/version = \"\1.post$TAG\"/" pyproject.toml
+        run: sed -iE "s/^version = \"(.*)\"$/version = \"\1.post$tag\"/" pyproject.toml
+        env:
+          tag: ${{ env.TAG }}
       - name: Install dependencies
         run: poetry install --no-interaction
       - name: Publish to pypi
@@ -285,3 +287,10 @@ jobs:
         run: poetry publish --build
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Test output
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "name: ${{ env.NAME }}"
+          echo "tag: ${{ env.TAG }}"
+          echo "commit: ${{ github.sha }}"
+          echo "version: $(grep '^version = ' pyproject.toml | cut -d= -f2 | jq -r)"
