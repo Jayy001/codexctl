@@ -69,7 +69,7 @@ jobs:
         if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         run: brew install coreutils upx
       - name: Checkout the Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -81,7 +81,7 @@ jobs:
           mv .ccache "$nuitka_cache/ccache"
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: "pip"
@@ -98,7 +98,7 @@ jobs:
         env:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Upload Compilation Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: (success() || failure()) && runner.debug == '1'
         with:
           name: ${{ matrix.os }}${{ matrix.debug == 1 && '-debug' || '' }}-compilation-report
@@ -112,14 +112,14 @@ jobs:
           nuitka_cache: ${{ github.workspace }}/.nuitka
       - name: Upload executable
         if: matrix.os != 'windows-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.os }}${{ matrix.debug == 1 && '-debug' || '' }}
           path: dist/codexctl
           if-no-files-found: error
       - name: Upload executable
         if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.os }}${{ matrix.debug == 1 && '-debug' || '' }}
           path: dist/codexctl.exe
@@ -150,7 +150,7 @@ jobs:
           /usr/local/share/powershell \
           | wc -l
       - name: Checkout the codexctl repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Nuitka ccache
         uses: actions/cache@v3
         with:
@@ -181,56 +181,56 @@ jobs:
             chmod +x ./scripts/github-make-executable.sh
             DEBUG_BUILD=${{ matrix.debug }} ./scripts/github-make-executable.sh
       - name: Upload Compilation Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: runner.debug == '1'
         with:
           name: remarkable${{ matrix.debug == 1 && '-debug' || '' }}-compilation-report
           path: compilation-report.xml
           if-no-files-found: warn
       - name: Upload executable
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: remarkable${{ matrix.debug == 1 && '-debug' || '' }}
           path: dist/codexctl
           if-no-files-found: error
-#  test_device:
-#    name: Test for reMarkable ${{ matrix.fw_version }}
-#    needs: [device]
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix:
-#        fw_version:
-#          - "2.15.1.1189"
-#          - "3.3.2.1666"
-#          # - '3.9.3'
-#    steps:
-#      - uses: actions/download-artifact@v4
-#        with:
-#          path: artifacts
-#          name: remarkable
-#      - name: Free up space
-#        run: |
-#          export DEBIAN_FRONTEND="noninteractive"
-#          sudo apt-get autoremove -y
-#          sudo apt-get autoclean -y
-#          sudo rm -rf \
-#            /usr/lib/jvm \
-#            /usr/share/dotnet \
-#            /usr/share/swift \
-#            /usr/local/.ghcup \
-#            /usr/local/julia* \
-#            /usr/local/lib/android \
-#            /usr/local/share/chromium \
-#            /opt/microsoft /opt/google \
-#            /opt/az \
-#            /usr/local/share/powershell
-#      - uses: Eeems-Org/run-in-remarkable-action@v1
-#        with:
-#          path: artifacts
-#          fw_version: ${{ matrix.fw_version }}
-#          run: |
-#            chmod +x ./codexctl
-#            ./codexctl download --hardware rm2 --out /tmp toltec
+  #  test_device:
+  #    name: Test for reMarkable ${{ matrix.fw_version }}
+  #    needs: [device]
+  #    runs-on: ubuntu-latest
+  #    strategy:
+  #      matrix:
+  #        fw_version:
+  #          - "2.15.1.1189"
+  #          - "3.3.2.1666"
+  #          # - '3.9.3'
+  #    steps:
+  #      - uses: actions/download-artifact@v8
+  #        with:
+  #          path: artifacts
+  #          name: remarkable
+  #      - name: Free up space
+  #        run: |
+  #          export DEBIAN_FRONTEND="noninteractive"
+  #          sudo apt-get autoremove -y
+  #          sudo apt-get autoclean -y
+  #          sudo rm -rf \
+  #            /usr/lib/jvm \
+  #            /usr/share/dotnet \
+  #            /usr/share/swift \
+  #            /usr/local/.ghcup \
+  #            /usr/local/julia* \
+  #            /usr/local/lib/android \
+  #            /usr/local/share/chromium \
+  #            /opt/microsoft /opt/google \
+  #            /opt/az \
+  #            /usr/local/share/powershell
+  #      - uses: Eeems-Org/run-in-remarkable-action@v1
+  #        with:
+  #          path: artifacts
+  #          fw_version: ${{ matrix.fw_version }}
+  #          run: |
+  #            chmod +x ./codexctl
+  #            ./codexctl download --hardware rm2 --out /tmp toltec
   release:
     name: ${{ github.ref == 'refs/heads/main' && 'Release' || 'Test release' }}
     needs:
@@ -246,18 +246,18 @@ jobs:
           echo "NAME=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_ENV
           echo "TAG=$(date +%s)" >> $GITHUB_ENV
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.13'
+          python-version: "3.13"
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install Poetry
         run: |
           sudo apt-get update
           sudo apt-get install -y libfuse-dev pkg-config
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
       - name: Rename artifacts
