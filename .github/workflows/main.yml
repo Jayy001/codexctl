@@ -152,7 +152,7 @@ jobs:
       - name: Checkout the codexctl repository
         uses: actions/checkout@v7
       - name: Nuitka ccache
-        uses: actions/cache@v3
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/.nuitka
           key: ${{ github.job }}-remarkable
