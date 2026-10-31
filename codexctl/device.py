@@ -298,7 +298,7 @@ class DeviceManager:
                         remote_address, username="root", key_filename=key_path
                     )
                 except Exception:
-                    print("Error while connecting to device: {error}")
+                    print(f"Error while connecting to device: {error}")
 
                     continue
                 break
