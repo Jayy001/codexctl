@@ -1,5 +1,13 @@
 {
     "remarkable1": {
+        "3.28.0.172": [
+            "remarkable-production-image-3.28.0.172-rm1-public.swu",
+            "4e572f72ae17ce1f1e8a2bbb7f3e9cddc6b0ba7d168bc75328216aaeee9eb910"
+        ],
+        "3.27.3.0": [
+            "remarkable-production-image-3.27.3.0-rm1-public.swu",
+            "f88371b73c935106368ef8ca7a4e9e5f0edf67c02b02a7a933f81e34830356bd"
+        ],
         "3.27.1.0": [
             "remarkable-production-image-3.27.1.0-rm1-public.swu",
             "c7dc3e6ff076839664c56cd271a01d3862cbd92a58e23c9852e2b3f0f76604c9"
@@ -214,6 +222,14 @@
         ]
     },
     "remarkable2": {
+        "3.28.0.172": [
+            "remarkable-production-image-3.28.0.172-rm2-public.swu",
+            "9b91cfe303d1c7c3458f2e511a635341653a2f90535240cb5374fb93fa0f0ad6"
+        ],
+        "3.27.3.0": [
+            "remarkable-production-image-3.27.3.0-rm2-public.swu",
+            "29026911850014ef94930f3af3a7128f5eb7aab6f0cec3d9d8191b4f3d62236f"
+        ],
         "3.27.1.0": [
             "remarkable-production-image-3.27.1.0-rm2-public.swu",
             "40f4b69ff4b546a9177b44e0f1b00e0e7bdc1b9694398b00b4fbca6301181ac2"
@@ -440,6 +456,14 @@
         ]
     },
     "remarkablepp": {
+        "3.28.0.172": [
+            "remarkable-production-image-3.28.0.172-ferrari-public.swu",
+            "2c920ed07c3862f801c527cdc9fe89d1b07a16aad60e3b76236c71585349dade"
+        ],
+        "3.27.3.0": [
+            "remarkable-production-image-3.27.3.0-ferrari-public.swu",
+            "6740d9e10ec68c69a89be7c42747d9ed6b56cb70ba56121dae5ddb03bcfc9158"
+        ],
         "3.27.1.0": [
             "remarkable-production-image-3.27.1.0-ferrari-public.swu",
             "2a140a2200c0b770f5e152f32bd8184ca45dab1cc9bae08f0e9d2e9c782d82e3"
@@ -522,6 +546,14 @@
         ]
     },
     "remarkableppm": {
+        "3.28.0.172": [
+            "remarkable-production-image-3.28.0.172-chiappa-public.swu",
+            "ebbbd8fb3a7c63f0d722988fe2652d6e7c36c090afeb5676134fb0b2b4a8dcbd"
+        ],
+        "3.27.3.0": [
+            "remarkable-production-image-3.27.3.0-chiappa-public.swu",
+            "184a0bc984cd5f9f6ec16990f93132a5545cc91288d9f53d8fd9c18cf650d604"
+        ],
         "3.27.1.0": [
             "remarkable-production-image-3.27.1.0-chiappa-public.swu",
             "786f326b177394d6ce210195034b2b0e0665b377945c72d5882d0ed8d43d9047"
@@ -556,12 +588,24 @@
         ]
     },
     "remarkableppure": {
+        "3.28.0.172": [
+            "remarkable-production-image-3.28.0.172-tatsu-public.swu",
+            "a9372f222abd12f7c7aeb36a3667eee6f0e8841ee885a23797c41019bcd848e0"
+        ],
+        "3.27.3.0": [
+            "remarkable-production-image-3.27.3.0-tatsu-public.swu",
+            "07095cc19fb88085d9ebe2b30a5b72fec2de9b614c1b53d54fc53561293bb967"
+        ],
+        "3.27.2.2": [
+            "remarkable-production-image-3.27.2.2-tatsu-public.swu",
+            "2c64bea8d89ebd2eb81f84485db97bec36dd4bd1fcfbb13e99e0c3ca446a997d"
+        ],
         "3.27.1.0": [
             "remarkable-production-image-3.27.1.0-tatsu-public.swu",
             "7008c8376e49a65b766bbd672f83454d55290af73b099bba396f3d9b2276ce3f"
         ]
     },
-    "last-updated": 1778173895,
+    "last-updated": 1788452897,
     "external-provider-urls": [
         "https://storage.googleapis.com/remarkable-versions/REPLACE_ID",
         "https://remarkable-software.s3.us-east-2.amazonaws.com/REPLACE_ID",
