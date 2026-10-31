@@ -106,6 +106,10 @@ test: $(VENV_BIN_ACTIVATE) .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed .ve
 	fi
 
 test-executable: .venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed .venv/$(FW_FILE_SWU)
+	if [ ! -f dist/${CODEXCTL_BIN} ];then \
+	  echo "executable missing"; \
+	  ls -l dist; \
+	fi
 	@set -e; \
 	. $(VENV_BIN_ACTIVATE); \
 	dist/${CODEXCTL_BIN} extract --out ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.img" ".venv/${FW_VERSION}_reMarkable2-${FW_DATA}.signed"; \
