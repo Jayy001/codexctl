@@ -12,8 +12,8 @@ paramiko = "3.4.1"
 psutil = "6.0.0"
 requests = "2.32.4"
 loguru = "0.7.3"
-remarkable-update-image = { version = "1.4.1", markers = "sys_platform != 'linux'" }
-remarkable-update-fuse = { version = "1.4.2", markers = "sys_platform == 'linux'" }
+remarkable-update-image = { version = "1.4.2", markers = "sys_platform != 'linux'" }
+remarkable-update-fuse = { version = "1.4.3", markers = "sys_platform == 'linux'" }
 
 [build-system]
 requires = ["poetry-core"]

@@ -1,5 +1,5 @@
 #!/bin/bash
-set +e
+set -e -o pipefail
 
 DEBUG_BUILD=$DEBUG_BUILD \
   make executable 2>&1 |
